@@ -1,5 +1,4 @@
-function [] = plot_gpfa(trial_data,params_struct)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Plot GPFA results
 %   vis_data is focused on single trial plotting, including GPFA
 %   trajectories, whereas this function will be intended for summarizing
@@ -33,7 +32,9 @@ function [] = plot_gpfa(trial_data,params_struct)
 %   align_idx            : (cell array) which idx_EVENT field of trial_data to use for alignment (Defaults to empty, which means start at the beginning of the available data and plot all)
 %                            Format is {'idx_EVENT_START',time in msec before; 'idx_EVENT_STOP', time in msec after}
 %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [] = plot_gpfa(trial_data,params_struct)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isfield(params_struct,'gpfa_params'), gpfa_params = params_struct.gpfa_params; else gpfa_params = []; end
 if isfield(params_struct,'gpfa_array'), gpfa_array = params_struct.gpfa_array; else error('No Array Specified'); end
 if isfield(params_struct,'max_trials'), max_trials = params_struct.max_trials; else max_trials = length(trial_data); end
@@ -43,8 +44,7 @@ if isfield(params_struct,'plot_direction_range'), plot_direction_range = params_
 if isfield(params_struct,'plot_dims'), plot_dims = params_struct.plot_dims; else plot_dims = 1:8; end
 if isfield(params_struct,'align_idx'), align_idx = params_struct.align_idx; else align_idx = {}; end
 if isfield(params_struct,'plot_3d'), plot_3d = params_struct.plot_3d; else plot_3d = false; end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   These are parameters that are probably the same all the time
 % so it's probably not worth making it an input parameter, but they're here
 data_bin_size = 10; %bin size of data in msec
@@ -54,9 +54,9 @@ event_db = {'idx_target_on','tgt'; ... % list of possible field names for events
     'idx_movement_on','mv'; ...
     'idx_peak_speed','pk'; ...
     'idx_reward','rwd'};
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   These are a lot of parameters for plotting
 % Presumably we won't change these but just in case they are easy to find
 font_size          = 12;       % default font size
@@ -76,7 +76,7 @@ condition_colors  = [0 0 0; ... % colors for different plotting conditions
     1 0 0; ...
     0 0 1; ...
     0 1 0];
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % find what directions are within plot_direction_range
 all_directions = unique([trial_data.target_direction]);

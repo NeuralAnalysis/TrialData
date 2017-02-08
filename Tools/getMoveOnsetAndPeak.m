@@ -1,17 +1,25 @@
-function trial_data = getMoveOnsetAndPeak(trial_data,min_ds)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% This will find a time bin representing movement onset and peak speed
-%   Currently for kinematics but could be easily adapted to force
+% function trial_data = getMoveOnsetAndPeak(trial_data,min_ds)
+%
+%   This will find a time bin representing movement onset and peak speed
+% Currently for kinematics but could be easily adapted to force
 %
 % INPUTS:
-%   trial_data: (struct) trial_data struct
-%   min_ds: (optional) minimum diff(speed) to find movement onset
+%   trial_data : (struct) trial_data struct
+%   min_ds     : (optional) minimum diff(speed) to find movement onset
 %
 % OUTPUTS:
-%   trial_data: same struct, with fields for:
+%   trial_data : same struct, with fields for:
 %       idx_peak_speed and
 %       idx_movement_onset
+% 
+% Written by Matt Perich. Updated Feb 2017.
+% 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function trial_data = getMoveOnsetAndPeak(trial_data,min_ds)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Set up a default value
 if nargin < 2, min_ds = 0.3; end
 
 for i = 1:length(trial_data)

@@ -1,12 +1,25 @@
-function [trial_data,bad_trials] = pruneBadTrials(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% This will identify and prune bad trials
+% function [trial_data, bad_trials] = pruneBadTrials(trial_data, params);
+% 
+% This function will identify and remove bad trials. Not much supported at
+% the moment, but functionality can be expanded. Will remove any trials
+% with any idx_ fields that are NaN.
 %
 % INPUTS:
 %   trial_data : trial data struct
 %   params     : (struct) has parameter values
 %       .min_trial_time : minimum time from start to end (in # bins)
+%
+% OUTPUTS:
+%   trial_data : struct with bad trials removed
+%   bad_trials : struct containing said bad trials
+% 
+% Written by Matt Perich. Updated Feb 2017.
+% 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [trial_data,bad_trials] = pruneBadTrials(trial_data,params)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 if nargin > 1
     if isfield(params,'min_trial_time'), min_trial_time = params.min_trial_time; else, min_trial_time = 10; end
 end

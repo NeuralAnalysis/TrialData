@@ -1,4 +1,4 @@
-function metric = get_learning_metrics(trial_data, which_metric, params)
+function metric = getLearningMetrics(trial_data, which_metric, params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % will compute and plot behavioral adaptation metrics
 %
@@ -6,13 +6,16 @@ function metric = get_learning_metrics(trial_data, which_metric, params)
 %   trial_data: the struct
 %   metric: which metric
 %           'angle': angular takeoff error
-%           'corr': speed profile correlation coefficients
-%           'time': time to target
+%           'corr' : speed profile correlation coefficients
+%           'time' : time to target
 %   params: struct with the following options
 %           'result_codes': which to include. Default is 'R', 'I'.
 %           'use_bl_ref'  : (bool) whether to use diff from BL for angle
 %           'time_window' : {'idx_start',bins after; 'idx_end',bins after} currently for angle
 %           'corr_samples': how many datapoints to interpolate trajectory onto for corr
+% 
+% Written by Matt Perich. Updated Feb 2017.
+% 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 result_codes = {'R','I'};
 corr_samples = 1000;

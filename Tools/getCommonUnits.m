@@ -1,6 +1,22 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% function trial_data = getCommonUnits(trial_data)
+%
+%   Looks across all trials of a trial_data struct and ensure the units
+% are all common. This is mostly a sanity check slash housekeeping thing.
+%
+% NOTE: each array is currently hard-coded to max out at 96 channels
+%
+% INPUTS:
+%   trial_data : the struct
+%
+% OUTPUTS:
+%   trial_data : same struct, but with unmatched units removed
+% 
+% Written by Matt Perich. Updated Feb 2017.
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = getCommonUnits(trial_data)
-% will look across all trials of a trial_data struct and ensure the units
-% are all common
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % figure out which arrays are here
 fn = fieldnames(trial_data);

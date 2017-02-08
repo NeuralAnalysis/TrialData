@@ -1,18 +1,29 @@
-function trial_data = parseFileByTrial_cds(cds,inputArgs)
-%   data: CDS object
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% function trial_data = parseFileByTrial_cds(cds,inputArgs)
 %
-% inputArgs:
-%   meta: a struct with a field for each meta parameter you want attached to this file
-%       This can handle any arbitrary information
-%       For my learning stuff: .perturbation, .epoch, .angle_dir, .rotation_angle, .force_magnitude, .force_angle
-%   trialResults: which reward codes to use ('R','A','F','I')
-%   binSize: default 0.01 sec
-%   extraTime: [time before, time after] beginning and end of trial (default [0.5 0.3] sec)
-if isfield(inputArgs,'trialResults'), trialResults = inputArgs.trialResults; else trialResults = {'R'}; end
-if isfield(inputArgs,'excludeUnits'), excludeUnits = inputArgs.excludeUnits; else excludeUnits = [0,255]; end
-if isfield(inputArgs,'binSize'), binSize = inputArgs.binSize; else binSize = 0.01; end
-if isfield(inputArgs,'extraTime'), extraTime = inputArgs.extraTime; else extraTime = [0.2 0.2]; end
-if ~isfield(inputArgs,'meta'), warning('WARNING: no meta information provided.'); end
+% INPUTS:
+%   cds    : CDS object
+%   params : a struct containing parameters
+%     .meta         : a struct with a field for each meta parameter you want attached 
+%                       to this file. This can handle any arbitrary information!
+%     .trialResults : which reward codes to use ('R','A','F','I')
+%     .binSize      : default 0.01 sec
+%     .extraTime    : [time before, time after] beginning and end of trial (default [0.5 0.3] sec)
+%
+% OUTPUTS:
+%   trial_data : the trial_data struct
+% 
+% Written by Matt Perich. Updated Feb 2017.
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function trial_data = parseFileByTrial_cds(cds,params)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if isfield(params,'trialResults'), trialResults = params.trialResults; else trialResults = {'R'}; end
+if isfield(params,'excludeUnits'), excludeUnits = params.excludeUnits; else excludeUnits = [0,255]; end
+if isfield(params,'binSize'), binSize = params.binSize; else binSize = 0.01; end
+if isfield(params,'extraTime'), extraTime = params.extraTime; else extraTime = [0.2 0.2]; end
+if ~isfield(params,'meta'), warning('WARNING: no meta information provided.'); end
 % note: will discretize extraTime to nearest multiple of binSize
 
 % do some input processing
@@ -46,9 +57,9 @@ for i = 1:length(idx_trials)
     trial_data(i).result = cds.trials.result(iTrial);
     
     % loop along all meta fields
-    if isfield(inputArgs,'meta')
-        for fn = fieldnames(inputArgs.meta)
-            trial_data(i).(fn) = inputArgs.meta.(fn);
+    if isfield(params,'meta')
+        for fn = fieldnames(params.meta)
+            trial_data(i).(fn) = params.meta.(fn);
         end
     end
     
@@ -58,11 +69,11 @@ for i = 1:length(idx_trials)
     
     % get kinematics
     if ~isempty(cds.kin)
-    dt_kin = cds.kin.t(2)-cds.kin.t(1);
-    t_dec = decimate(cds.kin.t(idx),round(binSize/dt_kin));
-    trial_data(i).pos = [decimate(cds.kin.x(idx),round(binSize/dt_kin)) decimate(cds.kin.y(idx),round(binSize/dt_kin))];
-    trial_data(i).vel = [decimate(cds.kin.vx(idx),round(binSize/dt_kin)) decimate(cds.kin.vy(idx),round(binSize/dt_kin))];
-    trial_data(i).acc = [decimate(cds.kin.ax(idx),round(binSize/dt_kin)) decimate(cds.kin.ay(idx),round(binSize/dt_kin))];
+        dt_kin = cds.kin.t(2)-cds.kin.t(1);
+        t_dec = decimate(cds.kin.t(idx),round(binSize/dt_kin));
+        trial_data(i).pos = [decimate(cds.kin.x(idx),round(binSize/dt_kin)) decimate(cds.kin.y(idx),round(binSize/dt_kin))];
+        trial_data(i).vel = [decimate(cds.kin.vx(idx),round(binSize/dt_kin)) decimate(cds.kin.vy(idx),round(binSize/dt_kin))];
+        trial_data(i).acc = [decimate(cds.kin.ax(idx),round(binSize/dt_kin)) decimate(cds.kin.ay(idx),round(binSize/dt_kin))];
     end
     
     % get force
@@ -74,6 +85,23 @@ for i = 1:length(idx_trials)
         idx = cds.force.t >= t_start & cds.force.t <= t_end;
         trial_data(i).force = [decimate(cds.force.fx(idx),round(binSize/dt_force)) decimate(cds.force.fy(idx),round(binSize/dt_force))];
         if size(trial_data(i).force,1) ~= size(trial_data(i).pos,1)
+            error('Decimated force size does not match kinematics.');
+        end
+    end
+    
+    % get EMG
+    if ~isempty(cds.emg)
+        dt_emg = cds.emg.t(2)-cds.emg.t(1);
+        if ~exist('t_dec','var') % we only need one of these
+            t_dec = decimate(cds.emg.t(idx),round(binSize/dt_emg));
+        end
+        idx = cds.emg.t >= t_start & cds.emg.t <= t_end;
+        
+        fn = cds.emg.Properties.VariableNames;
+        trial_data(i).emg = decimate(table2array(cds.emg(idx,~strcmpi(fn,'t'))),round(binSize/dt_emg));
+        trial_data(i).emg_names = fn(~strcmpi(fn,'t'));
+        
+         if size(trial_data(i).emg,1) ~= size(trial_data(i).pos,1)
             error('Decimated force size does not match kinematics.');
         end
     end

@@ -1,19 +1,27 @@
-function trial_data = truncateAndBin(trial_data,varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Will truncate all of the time-signals of each trial_data trial and also
-% compute new bins if desired
+% function trial_data = truncateAndBin(trial_data, varargin)
+% 
+%   Will truncate all of the time-signals of each trial_data trial and also
+% compute new bins if desired. Can do either one of those alone by simply
+% passing in the inputs required for each. Note that the truncation happens
+% BEFORE the re-binning.
 %
 % INPUTS:
-%   trial_data: (struct) trial_data struct
-%   bin_size: (int) how many bins to group together
-%   idx_start: (cell) {'idx_to_align_start',num_bins_after}
-%   idx_end: (cell) {'idx_to_align_end',num_bins_after}
+%   trial_data : (struct) trial_data struct
+%   bin_size   : (int) how many bins to group together
+%   idx_start  : (cell) {'idx_to_align_start',num_bins_after}
+%   idx_end    : (cell) {'idx_to_align_end',num_bins_after}
 %
 % Note bin number for alignment can be negative to go before idx
 % Also note that start is assumed to always come before end
 %
 % EXAMPLE:
 %   trial_data = truncateAndBin(trial_data, 5, {'idx_target_on',0}, {'idx_trial_end',-3});
+% 
+% Written by Matt Perich. Updated Feb 2017.
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function trial_data = truncateAndBin(trial_data,varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 kin_vars = {'pos','vel','speed','acc','force','emg','targ'}; % hard coded list of options
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

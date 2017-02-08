@@ -1,9 +1,12 @@
-function [ ] = vis_data( trial_data, param_struct )
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Function to visualize data. Plots in two-column format, where one column
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% function [ ] = vis_data( trial_data, param_struct )
+%
+%   Function to visualize data. Plots in two-column format, where one column
 % is a 2-D position plot (and, optionally, a 3-D GPFA trajectory plot), and
 % the second column is a stack of time-varying signals (e.g. continuous
 % data, spike rasters, GPFA dimensions, etc).
+%
+% NOTE: needs some tweaking to fix the positions etc
 %
 % INPUTS:
 % Trial_data is a struct array where each element is a trial.
@@ -30,16 +33,18 @@ function [ ] = vis_data( trial_data, param_struct )
 %
 % NOTE: There are a lot more parameters hard-coded at the top of the function
 %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if isfield(param_struct,'trials'), trials_to_plot = param_struct.trials; else error('No trials specified.'); end
-if isfield(param_struct,'signals'), plot_signals = param_struct.signals; else plot_signals = {'vel'}; end
-if isfield(param_struct,'plot_gpfa'), plot_gpfa = param_struct.plot_gpfa; else plot_gpfa = false; end
-if isfield(param_struct,'gpfa_dims'), gpfa_dims = param_struct.gpfa_dims; else gpfa_dims = 1:3; end
-if isfield(param_struct,'gpfa_array'), gpfa_array = param_struct.gpfa_array; else gpfa_array = 'M1'; end
-if isfield(param_struct,'gpfa_params'), gpfa_params = param_struct.gpfa_params; else gpfa_params = []; end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [ ] = vis_data( trial_data, param_struct )
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if isfield(param_struct,'trials'), trials_to_plot = param_struct.trials; else, error('No trials specified.'); end
+if isfield(param_struct,'signals'), plot_signals = param_struct.signals; else, plot_signals = {'vel'}; end
+if isfield(param_struct,'plot_gpfa'), plot_gpfa = param_struct.plot_gpfa; else, plot_gpfa = false; end
+if isfield(param_struct,'gpfa_dims'), gpfa_dims = param_struct.gpfa_dims; else, gpfa_dims = 1:3; end
+if isfield(param_struct,'gpfa_array'), gpfa_array = param_struct.gpfa_array; else, gpfa_array = 'M1'; end
+if isfield(param_struct,'gpfa_params'), gpfa_params = param_struct.gpfa_params; else, gpfa_params = []; end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   These are parameters that are probably the same all the time
 % so it's probably not worth making it an input parameter, but they're here
 data_bin_size = 10; %bin size of data in msec
@@ -54,9 +59,9 @@ event_db = {'idx_trial_start','strt'; ...
     'idx_peak_speed','pk'; ...
     'idx_reward','rw'; ...
     'idx_trial_end','end'};
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   These are a lot of parameters for plotting
 % Presumably we won't change these but just in case they are easy to find
 pos_range    = [-9,9];   % range for 2-D position plot axes
@@ -78,7 +83,7 @@ trial_event_colors = [0    0.4470    0.7410; ... % using default Matlab r2014b c
     0.4660    0.6740    0.1880; ...
     0.3010    0.7450    0.9330; ...
     0.6350    0.0780    0.1840];
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 num_trials_to_plot = length(trials_to_plot);
 

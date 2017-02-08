@@ -1,17 +1,40 @@
-function trial_data = convBasisFunc(trial_data,which_vars,params)
-% will convolve basis_func with which_vars fields of trial_data
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% function trial_data = convBasisFunc(trial_data, which_vars, params)
+% 
+%   Convolves raised cosine basis functions of specified width and spacing
+% with any signal. Adds field for each of which_vars called
+% which_vars_shift, where each column is the original signal convolved with
+% one of the bases. If which_var has N columns, then they will be
+% next to each other in which_vars_shift (size of _shift is N*rcb_n)
 %
-% basis_funcs: {NUMBER,  % how many basis funcs
-%               SPACING} % angle (typically pi/2)
+% Note: based on Pillow's makeBasis_postSpike code (in TrialData/util).
+%
+% INPUTS:
+%   trial_data : the struct
+%   which_vars : name (or names, as cell array) of field of trial_data to convolve
+%   params     : parameter struct (all are required)
+%       .dt         : size of time bins in s
+%       .rcb_hpeaks : vector containing location of first and last RCB vectors
+%       .rcb_b      : nonlinear stretching of basis axes (large be is more linear)
+%       .rcb_n      : how many basis vectors
+% 
+% OUTPUTS:
+%   trial_data : struct with fields added for convolved
+% 
+% Written by Matt Perich. Updated Feb 2017.
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function trial_data = convBasisFunc(trial_data,which_vars,params)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 dt = params.dt;
 rcb_hpeaks = params.rcb_hpeaks;
 rcb_b = params.rcb_b;
-rcb_n = params.unit_lags;
+rcb_n = params.rcb_n;
 
-if ~iscell(which_vars)
-    which_vars = {which_vars};
-end
+if ~iscell(which_vars), which_vars = {which_vars}; end
 
+% Here is the documentation from Pillow's code so you know what's going on
 % Inputs:
 %     prs = param structure with fields:
 %            ncols = # of basis vectors
@@ -38,12 +61,12 @@ end
 [~, ~, b] = makeBasis_PostSpike(struct('ncols',rcb_n,'hpeaks',rcb_hpeaks,'b',rcb_b),dt);
 
 
-% compute the raised cosine basis function
+% do the convolution for each trial
 for iTrial = 1:length(trial_data) % loop along trials
-    for iVar = 1:length(which_vars)
+    for iVar = 1:length(which_vars) % loop along variables
         temp = trial_data(iTrial).(which_vars{iVar});
         temp_conv = zeros(size(temp,1),size(temp,2)*size(b,2));
-        for iFunc = 1:size(b,2)
+        for iFunc = 1:size(b,2) % loop along basis funcs
             for i = 1:size(temp,2)
                 temp_conv(:,i+(iFunc-1)*size(temp,2)) = conv(temp(:,i),b(:,iFunc),'same');
             end

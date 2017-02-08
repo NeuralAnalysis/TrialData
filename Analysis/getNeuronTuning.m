@@ -1,5 +1,6 @@
 function pds = getNeuronTuning(trial_data,which_method,params)
 % will compute tuning curves using desired method
+% A WORK IN PROGRESS
 win = params.window; % {'idx_OF_START',BINS_AFTER; 'idx_OF_END', BINS_AFTER}
 array = params.array;
 dt = 0.01;

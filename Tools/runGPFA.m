@@ -1,6 +1,7 @@
-function [trial_data, gpfa_out] = runGPFA(trial_data,params)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Run Gaussian Process Factor Analysis (GPFA) for a set of neural data.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% function [trial_data, gpfa_out] = runGPFA(trial_data, params)
+%
+%   Run Gaussian Process Factor Analysis (GPFA) for a set of neural data.
 % 
 % INPUTS:
 % Trial_data is a struct array where each element is a trial.
@@ -10,13 +11,13 @@ function [trial_data, gpfa_out] = runGPFA(trial_data,params)
 %                    Each element is a count of binned spikes. ARRAY is currently 'M1' and/or 'PMd'
 % 
 % Fields for params input struct:
-%   arrays      : which arrays to use, e.g. 'M1' (put in cell for multiple)
-%   save_dir    : directory to save GPFA results in Byron's code. Pass in [] to skip (default)
-%   method      : gpfa, pca, etc. See Byron's code
-%   xdim        : assumed number of latent dimensions (default to 8, find optimal using CV)
-%   kernsd      : kernal width (default to 30, find optimal using CV)
-%   bin_w       : bin size desired for GPFA in msec (default to 30)
-%   data_bin_w  : bin size of input data in msec (default to 10)
+%   .arrays      : which arrays to use, e.g. 'M1' (put in cell for multiple)
+%   .save_dir    : directory to save GPFA results in Byron's code. Pass in [] to skip (default)
+%   .method      : gpfa, pca, etc. See Byron's code
+%   .xdim        : assumed number of latent dimensions (default to 8, find optimal using CV)
+%   .kernsd      : kernal width (default to 30, find optimal using CV)
+%   .bin_w       : bin size desired for GPFA in msec (default to 30)
+%   .data_bin_w  : bin size of input data in msec (default to 10)
 %
 % OUTPUTS:
 % Field for gpfa_out output struct:
@@ -30,18 +31,22 @@ function [trial_data, gpfa_out] = runGPFA(trial_data,params)
 %   gpfa_out.params.data_bin_width : data bin width (copy of input)
 %
 % Based on the GPFA Matlab codepack by Byron Yu. http://users.ece.cmu.edu/~byronyu/software.shtml
+%   Note that I made some modifications to their code to make it work better with our data
+%   These functions are copied in TrialData/util and have _matt appended
 % 
-% Written by Matt Perich. Updated 12/2015.
+% Written by Matt Perich 12/2015. Updated 02/2017.
 % 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if isfield(params,'arrays'), arrays = params.arrays; else error('Arrays not specified.'); end
-if isfield(params,'save_dir'), save_dir = params.save_dir; else save_dir = []; end
-if isfield(params,'method'), method = params.method; else method = 'gpfa'; end
-if isfield(params,'xdim'), xDim = params.xdim; else xDim = 8; end
-if isfield(params,'kern_sd'), kernSD = params.kernsd; else kernSD = 30; end
-if isfield(params,'bin_w'), bin_w = params.bin_w; else bin_w = 20; end
-if isfield(params,'data_bin_w'), data_bin_w = params.data_bin_w; else data_bin_w = 10; end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [trial_data, gpfa_out] = runGPFA(trial_data, params)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if isfield(params,'arrays'), arrays = params.arrays; else, error('Arrays not specified.'); end
+if isfield(params,'save_dir'), save_dir = params.save_dir; else, save_dir = []; end
+if isfield(params,'method'), method = params.method; else, method = 'gpfa'; end
+if isfield(params,'xdim'), xDim = params.xdim; else, xDim = 8; end
+if isfield(params,'kern_sd'), kernSD = params.kernsd; else, kernSD = 30; end
+if isfield(params,'bin_w'), bin_w = params.bin_w; else, bin_w = 20; end
+if isfield(params,'data_bin_w'), data_bin_w = params.data_bin_w; else, data_bin_w = 10; end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if ~iscell(arrays), arrays = {arrays}; end
 % get the desired spikes

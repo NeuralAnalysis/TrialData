@@ -1,16 +1,44 @@
-function [w, scores, eigen, mu,trial_data] = getPCA(trial_data, params)
-% array can be cell array with multiple arrays. Then neurons should also be
-% cell array with indices for each.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% function [w, scores, eigen, mu, trial_data] = getPCA(trial_data, params)
 %
-% Must provide array and bin size
-if isfield(params,'array'),array = params.array; else error('Need to specify array'); end
-if isfield(params,'bin_size'), bin_size = params.bin_size; else error('Must provide a bin size for smoothing'); end
-if isfield(params,'trial_idx'), trial_idx = params.trial_idx; else trial_idx = 1:length(trial_data); end
-if isfield(params,'neurons'), neurons = params.neurons; else neurons = []; end
-if isfield(params,'do_smoothing'), do_smoothing = params.do_smoothing; else do_smoothing = true; end
-if isfield(params,'add_scores'), add_scores = params.add_scores; else add_scores = false; end
-if isfield(params,'kernel_SD'), kernel_SD = params.kernel_SD; else kernel_SD = 2*bin_size; end
-if isfield(params,'do_plot'), do_plot = params.do_plot; else do_plot = false; end
+%   Computes PCA projection for neural data.
+%
+% INPUTS:
+%   trial_data : the struct
+%   params     : struct containing parameters
+%     .array        : which units (can be cell array with multiple)
+%     .bin_size     : size of time bins in trial_data
+%     .trial_idx    : which trials to use (default: all)
+%     .neurons      : which neurons to use (default: all) Note: for multiple arrays,
+%                       neurons should be cell array with indices for each array
+%     .add_scores   : flag to add latent variables to trial_data
+%                       appears as field ARRAY_spikes_pca
+%     .do_smoothing : flag to convolve spikes with gaussian (default: true)
+%     .kernel_SD    : kernel s.d. for smoothing (default: 2*bin_size)
+%     .do_plot      : flag to make scree plot (default: false)
+%
+% OUTPUTS:
+%   w          : weight matrix for PCA projections
+%   scores     : scores for the PCs
+%   eigen      : eigenvalues for PC ranking
+%   mu         : mean for each input (for demeaning later)
+%                  NOTE: if you use w later, you MUST demean using mu!!!
+%   trial_data : if desired, will add scores for each trial
+% 
+% Written by Matt Perich. Updated Feb 2017.
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [w, scores, eigen, mu, trial_data] = getPCA(trial_data, params)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if isfield(params,'array'),array = params.array; else, error('Need to specify array'); end
+if isfield(params,'bin_size'), bin_size = params.bin_size; else, error('Must provide a bin size for smoothing'); end
+if isfield(params,'trial_idx'), trial_idx = params.trial_idx; else, trial_idx = 1:length(trial_data); end
+if isfield(params,'neurons'), neurons = params.neurons; else, neurons = []; end
+if isfield(params,'do_smoothing'), do_smoothing = params.do_smoothing; else, do_smoothing = true; end
+if isfield(params,'add_scores'), add_scores = params.add_scores; else, add_scores = false; end
+if isfield(params,'kernel_SD'), kernel_SD = params.kernel_SD; else, kernel_SD = 2*bin_size; end
+if isfield(params,'do_plot'), do_plot = params.do_plot; else, do_plot = false; end
 
 % concatenate specified trials
 if iscell(array) && length(array) > 1
