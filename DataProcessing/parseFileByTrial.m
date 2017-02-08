@@ -11,5 +11,9 @@ if isa(data,'commonDataStructure')
     trial_data = parseFileByTrial_cds(data,inputArgs);
 else
     error('BDF not currently supported.');
-    trial_data = parseFileByTrial_bdf(data,inputArgs);
+    %trial_data = parseFileByTrial_bdf(data,inputArgs);
 end
+
+% Extra stuff
+trial_data = getMoveOnsetAndPeak(trial_data);
+trial_data = pruneBadTrials(trial_data);
