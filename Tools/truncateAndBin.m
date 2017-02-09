@@ -15,6 +15,9 @@
 % Note bin number for alignment can be negative to go before idx
 % Also note that start is assumed to always come before end
 %
+% To do:
+%   1) Minor bug when new window doesn't include idx_ entries
+%
 % EXAMPLE:
 %   trial_data = truncateAndBin(trial_data, 5, {'idx_target_on',0}, {'idx_trial_end',-3});
 % 

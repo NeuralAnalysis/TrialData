@@ -35,7 +35,7 @@ nm = conv(kernel,ones(1,nbr_samples))';
 
 % do the smoothing
 for i = 1:nbr_chs
-    aux_smoothed_FR     = conv(kernel,fr(:,i)) ./ nm;
+    aux_smoothed_FR     = conv(kernel',fr(:,i)) ./ nm;
     % cut off the edges so that the result of conv is same length as the
     % original data
 	fr_smooth(:,i)    = aux_smoothed_FR(kernel_hl+1:end-kernel_hl);

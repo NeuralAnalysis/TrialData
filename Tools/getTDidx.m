@@ -34,6 +34,12 @@
 function [return_idx, trial_data] = getTDidx(trial_data,varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% can pass in a single cell that contains all varargin, so you can
+% dynamically build inputs in the calling function
+if iscell(varargin) && length(varargin)==1
+    varargin = varargin{1};
+end
+
 if rem(length(varargin),2) ~= 0
     error('Inputs must be provided in pairs stating ...'' VARIABLE '',''VALUE'',...');
 end
