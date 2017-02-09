@@ -23,11 +23,14 @@
 %
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [avg_data,cond_idx] = trialAverage(trial_data,conditions, params)
+function [avg_data,cond_idx] = trialAverage(trial_data, conditions, params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if nargin < 3, params = struct(); end
-if isfield(params,'do_stretch'), do_stretch = params.do_stretch; else, do_stretch = false; end
-if isfield(params,'num_samp'), num_samp = params.do_stretch; else, num_samp = 100; end
+% DEFAULT PARAMETER VALUES
+do_stretch  =  false;
+num_samp    =  1000;
+if nargin > 2
+    eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
+end
 if ~iscell(conditions), conditions = {conditions}; end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get list of time-varying signals that we will average over

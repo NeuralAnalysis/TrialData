@@ -26,7 +26,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = convBasisFunc(trial_data,which_vars,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 dt = params.dt;
 rcb_hpeaks = params.rcb_hpeaks;
 rcb_b = params.rcb_b;

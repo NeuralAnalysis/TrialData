@@ -19,9 +19,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [trial_data,bad_trials] = pruneBadTrials(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+min_trial_time = 10;
 if nargin > 1
-    if isfield(params,'min_trial_time'), min_trial_time = params.min_trial_time; else, min_trial_time = 10; end
+    eval(structvars(length(fieldnames(params)),params)); %get parameters
 end
 
 bad_idx = true(1,length(trial_data));

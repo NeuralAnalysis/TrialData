@@ -70,18 +70,22 @@ end
 % get defaults or process parameters
 if ~exist('params','var'), params = struct(); end
 if isfield(params,'array'),array = params.array; else, error('Need to specify array'); end
-if isfield(params,'trial_idx'), trial_idx = params.trial_idx; else, trial_idx = 1:length(trial_data); end
-if isfield(params,'neurons'), neurons = params.neurons; else, neurons = []; end
-if isfield(params,'sqrt_transform'), sqrt_transform = params.sqrt_transform; else, sqrt_transform = true; end
-if isfield(params,'do_smoothing'), do_smoothing = params.do_smoothing; else, do_smoothing = true; end
-if isfield(params,'bin_size'), bin_size = params.bin_size; else, bin_size = NaN; end
-if isfield(params,'kernel_SD'), kernel_SD = params.kernel_SD; else, kernel_SD = 2*bin_size; end
-if isfield(params,'trial_avg'), trial_avg = params.trial_avg; else, trial_avg = false; end
-if isfield(params,'trial_avg_cond'), trial_avg_cond = params.trial_avg_cond; else, trial_avg_cond = NaN; end
-if isfield(params,'do_plot'), do_plot = params.do_plot; else, do_plot = false; end
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DEFAULT PARAMETER VALUES
+trial_idx       =  1:length(trial_data);
+neurons         =  [];
+sqrt_transform  =  true;
+do_smoothing    =  true;
+bin_size        =  NaN;
+kernel_SD       =  0.05;
+trial_avg       =  false;
+trial_avg_cond  =  NaN;
+do_plot         =  false;
+eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if trial_avg && any(isnan(trial_avg_cond)), error('Must provide conditions to average trials over.'); end
 if do_smoothing && isnan(bin_size), error('No bin size provided!'); end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % process and prepare inputs

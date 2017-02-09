@@ -19,10 +19,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = smoothSpikes(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if isfield(params,'sqrt_transform'), sqrt_transform = params.sqrt_transform; else, sqrt_transform = true; end
-if isfield(params,'do_smoothing'), do_smoothing = params.do_smoothing; else, do_smoothing = true; end
-if isfield(params,'bin_size'), bin_size = params.bin_size; else, bin_size = NaN; end
-if isfield(params,'kernel_SD'), kernel_SD = params.kernel_SD; else, kernel_SD = 2*bin_size; end
+% DEFAULT PARAMETER VALUES
+sqrt_transform  =  true;
+do_smoothing    =  true;
+bin_size        =  NaN;
+kernel_SD       =  0.05;
+if nargin > 1
+    eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
+end
+if do_smoothing && isnan(bin_size), error('No bin size provided!'); end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if do_smoothing || sqrt_transform % if false just passes back trial_data
     % find the _spikes fields

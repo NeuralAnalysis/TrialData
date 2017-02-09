@@ -40,12 +40,13 @@
 function [trial_data, gpfa_out] = runGPFA(trial_data, params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isfield(params,'arrays'), arrays = params.arrays; else, error('Arrays not specified.'); end
-if isfield(params,'save_dir'), save_dir = params.save_dir; else, save_dir = []; end
-if isfield(params,'method'), method = params.method; else, method = 'gpfa'; end
-if isfield(params,'xdim'), xDim = params.xdim; else, xDim = 8; end
-if isfield(params,'kern_sd'), kernSD = params.kernsd; else, kernSD = 30; end
-if isfield(params,'bin_w'), bin_w = params.bin_w; else, bin_w = 20; end
-if isfield(params,'data_bin_w'), data_bin_w = params.data_bin_w; else, data_bin_w = 10; end
+save_dir    =  [];
+method      =  'gpfa';
+xDim        =  8;
+kernSD      =  30;
+bin_w       =  20;
+data_bin_w  =  10;
+eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if ~iscell(arrays), arrays = {arrays}; end

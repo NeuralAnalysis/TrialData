@@ -21,13 +21,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = getTargetDirection(trial_data, params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-reach_distance = 8; % cm
-hold_time = 0.5; % s
-dt = 0.01; % s
+% Set defaults and process parameter inputs
+reach_distance  =  8; % cm
+hold_time       =  0.5; % s
+dt              =  0.01; % s
 if nargin == 2
-    if isfield(params,'reach_distance'), reach_distance = params.reach_distance; end
-    if isfield(params,'dt'), dt = params.dt; end
-    if isfield(params,'hold_time'), hold_time = params.hold_time; end
+    eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
 end
 
 for i = 1:length(trial_data)

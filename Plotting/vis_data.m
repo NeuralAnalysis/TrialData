@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function [ ] = vis_data( trial_data, param_struct )
+% function [ ] = vis_data( trial_data, params )
 %
 %   Function to visualize data. Plots in two-column format, where one column
 % is a 2-D position plot (and, optionally, a 3-D GPFA trajectory plot), and
@@ -34,25 +34,24 @@
 % NOTE: There are a lot more parameters hard-coded at the top of the function
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [ ] = vis_data( trial_data, param_struct )
+function [ ] = vis_data( trial_data, params )
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if isfield(param_struct,'trials'), trials_to_plot = param_struct.trials; else, error('No trials specified.'); end
-if isfield(param_struct,'signals'), plot_signals = param_struct.signals; else, plot_signals = {'vel'}; end
-if isfield(param_struct,'plot_gpfa'), plot_gpfa = param_struct.plot_gpfa; else, plot_gpfa = false; end
-if isfield(param_struct,'gpfa_dims'), gpfa_dims = param_struct.gpfa_dims; else, gpfa_dims = 1:3; end
-if isfield(param_struct,'gpfa_array'), gpfa_array = param_struct.gpfa_array; else, gpfa_array = 'M1'; end
-if isfield(param_struct,'gpfa_params'), gpfa_params = param_struct.gpfa_params; else, gpfa_params = []; end
+% DEFAULT PARAMETERS
+if isfield(params,'trials'), trials_to_plot = params.trials; else, error('No trials specified.'); end
+plot_signals      =   {'vel'};
+plot_gpfa         =   false;
+gpfa_dims         =   1:3;
+gpfa_array        =   'M1';
+gpfa_params       =   [];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   These are parameters that are probably the same all the time
-% so it's probably not worth making it an input parameter, but they're here
-data_bin_size = 10; %bin size of data in msec
-pos_offset = [0, -23]; % offset to zero position
-% pos_offset = [3-1.7, -33+2.2]; % offset to zero position
-target_size = 2; % target size in cm
-target_distance = 8; % distance of outer targets in cm
-event_db = {'idx_trial_start','strt'; ...
+%   These are parameters that are less likely to change but can still be
+%   overwritten as an input parameter (not documented in help call though)
+data_bin_size     =   10; %bin size of data in msec
+pos_offset        =   [0, -23]; % offset to zero position
+% pos_offset      =   [3-1.7, -33+2.2]; % offset to zero position
+target_size       =   2; % target size in cm
+target_distance   =   8; % distance of outer targets in cm
+event_db          =   {'idx_trial_start','strt'; ...
     'idx_target_on','tgt'; ... % list of possible field names for events and a shorthand name
     'idx_go_cue','go'; ...         % add any new events here
     'idx_movement_on','mv'; ...
@@ -60,29 +59,29 @@ event_db = {'idx_trial_start','strt'; ...
     'idx_reward','rw'; ...
     'idx_trial_end','end'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   These are a lot of parameters for plotting
-% Presumably we won't change these but just in case they are easy to find
-pos_range    = [-9,9];   % range for 2-D position plot axes
-font_size    = 12;       % default font size
-line_width   = 2;        % standard line width
-dot_width    = 3;        % standard width for dot markers
-event_symbol = 'o';      % standard symbol for event markers
-pos_cols     = 2;        % how many columns for position plot
-time_cols    = 3;        % how many columns for time-variable plots
-kin_rows     = 3;        % how many rows for kinematic plots
-event_rows   = 1;        % how many rows for event markers
-traj_rows    = 3;        % how many rows for time-varying trajectory plots
-spike_rows   = 4;        % how many rows for spike markers
-pos_location = 'right'; % if position plot is on 'left' or 'right'
-trial_event_colors = [0    0.4470    0.7410; ... % using default Matlab r2014b color order for trial events
+% These are a lot of parameters for plotting
+%   Presumably we won't change these but just in case you can
+pos_range          =   [-9,9];   % range for 2-D position plot axes
+font_size          =   12;       % default font size
+line_width         =   2;        % standard line width
+dot_width          =   3;        % standard width for dot markers
+event_symbol       =   'o';      % standard symbol for event markers
+pos_cols           =   2;        % how many columns for position plot
+time_cols          =   3;        % how many columns for time-variable plots
+kin_rows           =   3;        % how many rows for kinematic plots
+event_rows         =   1;        % how many rows for event markers
+traj_rows          =   3;        % how many rows for time-varying trajectory plots
+spike_rows         =   4;        % how many rows for spike markers
+pos_location       =   'right'; % if position plot is on 'left' or 'right'
+trial_event_colors =   [0    0.4470    0.7410; ... % using default Matlab r2014b color order for trial events
     0.8500    0.3250    0.0980; ...
     0.9290    0.6940    0.1250; ...
     0.4940    0.1840    0.5560; ...
     0.4660    0.6740    0.1880; ...
     0.3010    0.7450    0.9330; ...
     0.6350    0.0780    0.1840];
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 num_trials_to_plot = length(trials_to_plot);

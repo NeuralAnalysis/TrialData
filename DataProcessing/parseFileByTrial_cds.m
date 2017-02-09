@@ -6,6 +6,7 @@
 %   params : a struct containing parameters
 %     .meta         : a struct with a field for each meta parameter you want attached 
 %                       to this file. This can handle any arbitrary information!
+%     .excludeUnits : ID for which units to exclude (Default: [0,255])
 %     .trialResults : which reward codes to use ('R','A','F','I')
 %     .binSize      : default 0.01 sec
 %     .extraTime    : [time before, time after] beginning and end of trial (default [0.5 0.3] sec)
@@ -18,14 +19,20 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = parseFileByTrial_cds(cds,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if isfield(params,'trialResults'), trialResults = params.trialResults; else trialResults = {'R'}; end
-if isfield(params,'excludeUnits'), excludeUnits = params.excludeUnits; else excludeUnits = [0,255]; end
-if isfield(params,'binSize'), binSize = params.binSize; else binSize = 0.01; end
-if isfield(params,'extraTime'), extraTime = params.extraTime; else extraTime = [0.2 0.2]; end
+% DEFAULT PARAMETERS
+trialResults  =  {'R'};
+excludeUnits  =  [0,255];
+binSize       =  0.01;
+extraTime     =  [0.2, 0.2];
+if nargin > 1
+    eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
+else
+    params = struct();
+end
 if ~isfield(params,'meta'), warning('WARNING: no meta information provided.'); end
-% note: will discretize extraTime to nearest multiple of binSize
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % do some input processing
 if ~iscell(trialResults), trialResults = {trialResults}; end
 

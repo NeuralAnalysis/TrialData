@@ -8,7 +8,7 @@
 %
 % TO DO:
 %   - add scores from each space to trial_data
-%   - give option to select trial subsets
+%   - give option to select trial subsets (and get rid of do_bl thing)
 %
 % INPUTS:
 %   trial_data : the struct
@@ -41,6 +41,7 @@ if isfield(params,'out_dims'), out_dims = params.out_dims; else, error('Need to 
 if isfield(params,'in_neurons'), in_neurons = params.in_neurons; else, in_neurons = 1:size(trial_data(1).([in_array '_spikes']),2); end
 if isfield(params,'out_neurons'), out_neurons = params.out_neurons; else, out_neurons = 1:size(trial_data(1).([out_array '_spikes']),2); end
 
+% dumb hard coded thing for matt's personal use. SHOULD BE REMOVED
 do_bl = false;
 
 if do_bl
