@@ -13,6 +13,9 @@
 % Will truncate to remove all non-overlapping segments, and will adjust the
 % idx fields to reflect that. Note you can only shift back in time for now.
 %
+% To do:
+%   1) fix time length bug!
+%
 % INPUTS:
 %   trial_data : (struct) obvious
 %   varargin   : pairs of ...'field',SHIFT,...
@@ -26,8 +29,6 @@
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = dupeAndShift(trial_data,varargin)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-kin_vars = {'pos','vel','speed','acc','force','emg'}; % hard coded list of options
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if length(varargin) == 1 && iscell(varargin)
@@ -50,8 +51,8 @@ which_fields = which_fields(sort_idx);
 max_shift = max(the_shifts);
 
 % get names of the kinematic and spiking fields
-fn_time = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_spikes')) |  ismember(fn,kin_vars));
-fn_idx = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'idx_')));
+fn_time = getTDfields(trial_data,'time');
+fn_idx = getTDfields(trial_data,'idx');
 
 for i = 1:length(trial_data)
     for j = 1:length(which_fields)

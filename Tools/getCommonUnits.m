@@ -2,7 +2,7 @@
 % function trial_data = getCommonUnits(trial_data)
 %
 %   Looks across all trials of a trial_data struct and ensure the units
-% are all common. This is mostly a sanity check slash housekeeping thing.
+% are all common. This is mostly a sanity check/housekeeping thing.
 %
 % NOTE: each array is currently hard-coded to max out at 96 channels
 %
@@ -11,17 +11,15 @@
 %
 % OUTPUTS:
 %   trial_data : same struct, but with unmatched units removed
-% 
+%
 % Written by Matt Perich. Updated Feb 2017.
-% 
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = getCommonUnits(trial_data)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % figure out which arrays are here
-fn = fieldnames(trial_data);
-fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_spikes')));
-arrays = strrep(fn,'_spikes','')';
+arrays = getTDfields(trial_data,'arrays');
 
 for idx_array = 1:length(arrays)
     array = arrays{idx_array};

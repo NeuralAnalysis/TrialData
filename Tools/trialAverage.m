@@ -20,7 +20,9 @@
 %   cond_idx : cell array containing indices for each condition
 %
 % EXAMPLES:
-%
+%   e.g. to average over all target directions and task epochs
+%       avg_data = trialAverage(trial_data,{'target_direction','epoch'});
+%       Note: gives a struct of size #_TARGETS * #_EPOCHS
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [avg_data,cond_idx] = trialAverage(trial_data, conditions, params)
@@ -34,18 +36,7 @@ end
 if ~iscell(conditions), conditions = {conditions}; end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get list of time-varying signals that we will average over
-%   note: assumes rows are time and columns are unique vars
-% use pos to get the time points
-fn = fieldnames(trial_data(1));
-t = size(trial_data(1).pos,1);
-idx = false(1,length(fn));
-for ifn = 1:length(fn)
-    % it's a time signal if it's the same size as position
-    %   kinda hack-y but it works
-    idx(ifn) = size(trial_data(1).(fn{ifn}),1)==t;
-end
-time_vars = fn(idx);
-clear ifn t fn idx;
+time_vars = getTDfields(trial_data,'time');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Time warp each trial to the same number of points, if desired
@@ -53,7 +44,7 @@ if do_stretch
     for trial = 1:length(trial_data)
         for iVar = 1:length(time_vars)
             temp = trial_data(trial).(time_vars{iVar});
-            trial_data(trial).(time_vars{iVar}) = interp1(1:length(temp),temp,linspace(1,length(temp),num_samp));
+            trial_data(trial).(time_vars{iVar}) = interp1(1:size(temp,1),temp,linspace(1,size(temp,1),num_samp));
         end
     end
 end
@@ -84,6 +75,11 @@ num_conds = size(all_conds,1);
 cond_idx = cell(1,num_conds);
 avg_data = repmat(struct(),1,num_conds);
 for i = 1:num_conds
+    avg_data(i).monkey = trial_data(1).monkey;
+    avg_data(i).date = trial_data(1).date;
+    avg_data(i).task = trial_data(1).task;
+    avg_data(i).bin_size = trial_data(1).bin_size;
+    
     func_in = cell(1,2*size(all_conds,2));
     for iCond = 1:size(all_conds,2)
         func_in{2*(iCond-1)+1}   = conditions{iCond};
@@ -96,6 +92,7 @@ for i = 1:num_conds
     for v = 1:length(time_vars)
         avg_data(i).(time_vars{v}) = mean(cat(3,trial_data(cond_idx{i}).(time_vars{v})),3);
     end
+    
 end
 
 

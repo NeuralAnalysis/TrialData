@@ -17,7 +17,7 @@
 % Written by Matt Perich. Updated Feb 2017.
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function trial_data = parseFileByTrial_cds(cds,params)
+function [trial_data,td_params] = parseFileByTrial_cds(cds,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
 trialResults  =  {'R'};
@@ -62,6 +62,7 @@ for i = 1:length(idx_trials)
     end
     trial_data(i).trial_id = iTrial;
     trial_data(i).result = cds.trials.result(iTrial);
+    trial_data(i).bin_size = binSize;
     
     % loop along all meta fields
     if isfield(params,'meta')

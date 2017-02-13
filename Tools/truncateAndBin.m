@@ -8,7 +8,7 @@
 %
 % INPUTS:
 %   trial_data : (struct) trial_data struct
-%   bin_size   : (int) how many bins to group together
+%   num_bins   : (int) how many bins to group together
 %   idx_start  : (cell) {'idx_to_align_start',num_bins_after}
 %   idx_end    : (cell) {'idx_to_align_end',num_bins_after}
 %
@@ -31,12 +31,12 @@ kin_vars = {'pos','vel','speed','acc','force','emg','targ'}; % hard coded list o
 
 if nargin == 2 % only a bin size was passed. Just rebin.
     do_trunc = false;
-    bin_size = varargin{1};
+    num_bins = varargin{1};
 elseif nargin == 3 % only the start/end indices were passed. Just truncate.
     do_trunc = true;
     idx_start = varargin{1};
     idx_end = varargin{2};
-    bin_size = 1;
+    num_bins = 1;
 elseif nargin == 4
     do_trunc = true;
     temp = find(cellfun(@(x) iscell(x),varargin));
@@ -44,7 +44,7 @@ elseif nargin == 4
     idx_start = varargin{temp(1)};
     idx_end = varargin{temp(2)};
     
-    bin_size = varargin{cellfun(@(x) ~iscell(x),varargin)};
+    num_bins = varargin{cellfun(@(x) ~iscell(x),varargin)};
 else
     error('Inputs not recognized.');
 end
@@ -54,13 +54,13 @@ fn_spikes = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_spikes'
 fn_kin = fn(ismember(fn,kin_vars) | ismember(fn,cellfun(@(x) [x '_shift'],kin_vars,'Uni',0)));
 fn_idx = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'idx_')));
 
-for iTrial = 1:length(trial_data)
+for trial = 1:length(trial_data)
     % assumes there will always be a pos
-    t = 1:size(trial_data(iTrial).pos,1);
+    t = 1:size(trial_data(trial).pos,1);
     
     if do_trunc
-        t_start = floor(trial_data(iTrial).(idx_start{1}) + idx_start{2});
-        t_end = ceil(trial_data(iTrial).(idx_end{1}) + idx_end{2});
+        t_start = floor(trial_data(trial).(idx_start{1}) + idx_start{2});
+        t_end = ceil(trial_data(trial).(idx_end{1}) + idx_end{2});
         if t_end > t(end)
             warning('Requested end time went beyond trial time...')
             t_end = length(t);
@@ -70,33 +70,40 @@ for iTrial = 1:length(trial_data)
         t_end = length(t);
     end
     
-    t_bin = t(t_start):bin_size:t(t_end);
+    t_bin = t(t_start):num_bins:t(t_end);
+    % THIS IS A HACK FOR NOW BECAUSE MATT IS TOO LAZY TO REMAKE HIS SAVED
+    % STRUCTS FROM SCRATCH
+    if ~isfield(trial_data(trial),'bin_size')
+        disp('shit');
+        trial_data(trial).bin_size = 0.01;
+    end
+    trial_data(trial).bin_size = num_bins * trial_data(trial).bin_size;
     
     % process spike fields
     for iArray = 1:length(fn_spikes)
-        temp = trial_data(iTrial).(fn_spikes{iArray});
+        temp = trial_data(trial).(fn_spikes{iArray});
         % fr is size bins x neurons
         fr = zeros(length(t_bin)-1,size(temp,2));
         for iBin = 1:length(t_bin)-1
             fr(iBin,:) = sum(temp(t_bin(iBin):t_bin(iBin+1)-1,:),1);
         end
-        trial_data(iTrial).(fn_spikes{iArray}) = fr;
+        trial_data(trial).(fn_spikes{iArray}) = fr;
     end
     
     % process kinematic fields
     for iKin = 1:length(fn_kin)
-        temp = trial_data(iTrial).(fn_kin{iKin});
+        temp = trial_data(trial).(fn_kin{iKin});
         % fr is size bins x neurons
         kin = zeros(length(t_bin)-1,size(temp,2));
         for iBin = 1:length(t_bin)-1
             kin(iBin,:) = mean(temp(t_bin(iBin):t_bin(iBin+1)-1,:),1);
         end
-        trial_data(iTrial).(fn_kin{iKin}) = kin;
+        trial_data(trial).(fn_kin{iKin}) = kin;
     end
     
     % process idx fields
     for iIdx = 1:length(fn_idx)
-        trial_data(iTrial).(fn_idx{iIdx}) = find(t_bin <= t(trial_data(iTrial).(fn_idx{iIdx})),1,'last');
+        trial_data(trial).(fn_idx{iIdx}) = find(t_bin <= t(trial_data(trial).(fn_idx{iIdx})),1,'last');
     end
 end
 

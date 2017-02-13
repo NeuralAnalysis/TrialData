@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function varargout = getPCA(trial_data, varargin)
 %
-% [w, mu, eigen, scores, trial_data, params] = getPCA(trial_data, params);
+% [w, mu, scores, trial_data, params] = getPCA(trial_data, params);
 %   Computes PCA projection for neural data. If you request trial_data as
 % a final output, will add scores to each trial for use later. Must pass in
 % 'array' field for struct. Note that this can be a cell of strings to pool
@@ -25,7 +25,6 @@
 %                       neurons should be cell array with indices for each array
 %     .sqrt_transform : flag to square root transform spikes (default: true)
 %     .do_smoothing   : flag to convolve spikes with gaussian (default: true)
-%     .bin_size       : size of time bins in trial_data (required for smoothing)
 %     .kernel_SD      : kernel s.d. for smoothing (default: 2*bin_size)
 %     .trial_avg      : flag to trial average (requires condition input) (default: false)
 %     .trial_avg_cond : (string/cell) which conditions to average over
@@ -45,7 +44,7 @@
 %       [w,mu,~,~,params] = getPCA(trial_data, struct('array','M1','bin_size',0.01));
 %   e.g. to add scores to trial_data later using the above output
 %       trial_data = getPCA(trial_data, w, mu, params);
-% 
+%
 % Written by Matt Perich. Updated Feb 2017.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -76,15 +75,13 @@ trial_idx       =  1:length(trial_data);
 neurons         =  [];
 sqrt_transform  =  true;
 do_smoothing    =  true;
-bin_size        =  NaN;
 kernel_SD       =  0.05;
 trial_avg       =  false;
-trial_avg_cond  =  NaN;
+trial_avg_cond  =  {};
 do_plot         =  false;
 eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if trial_avg && any(isnan(trial_avg_cond)), error('Must provide conditions to average trials over.'); end
-if do_smoothing && isnan(bin_size), error('No bin size provided!'); end
+if trial_avg && isempty(trial_avg_cond), error('Must provide conditions to average trials over.'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -93,6 +90,7 @@ if ~iscell(array), array = {array}; end
 if isempty(neurons)
     for i = 1:length(array), neurons{i} = 1:size(trial_data(1).([array{i} '_spikes']),2); end
 end
+if ~iscell(neurons), neurons = {neurons}; end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % loop along trials to square root transform and smooth if desired
 td = smoothSpikes(trial_data(trial_idx),params);
@@ -106,8 +104,7 @@ for i = 1:length(array)
     fr = [fr, temp_fr(:,neurons{i})];
 end
 % get the time points that separate each trial later
-trial_markers = [1,cumsum(cellfun(@(x) size(x,1),{td.pos}))];
-trial_markers(end) = trial_markers(end)+1;
+trial_markers = [1,1+cumsum(cellfun(@(x) size(x,1),{td.pos}))];
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -136,22 +133,17 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Add scores to trial_data
-if ~new_pca || nargout > 3
-    if trial_avg, trial_data = td; end % THIS IS A HACK FOR NOW
-    for trial = 1:length(trial_data)
-        idx = trial_markers(trial):trial_markers(trial+1)-1;
-        trial_data(trial).([[array{:}] '_pca']) = (fr(idx,:)-repmat(mu,length(idx),1))*w;
-    end
+if trial_avg, trial_data = td; end % THIS IS A HACK FOR NOW
+for trial = 1:length(trial_data)
+    idx = trial_markers(trial):trial_markers(trial+1)-1;
+    trial_data(trial).([[array{:}] '_pca']) = (fr(idx,:)-repmat(mu,length(idx),1))*w;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Package up outputs
-if new_pca
-    varargout{1} = w;
-    varargout{2} = mu;
-    varargout{3} = scores;
-    varargout{4} = trial_data;
-    varargout{5} = struct('array',array,'sqrt_transform',sqrt_transform,'do_smoothing',do_smoothing,'bin_size',bin_size,'kernel_SD',kernel_SD);
-else
-    varargout{1} = trial_data;
+varargout{1} = trial_data;
+if new_pca && nargout == 2
+    pca_params = struct('array',array,'sqrt_transform',sqrt_transform,'do_smoothing',do_smoothing,'bin_size',bin_size,'kernel_SD',kernel_SD);
+    pca_info = struct('w',w,'mu',mu,'scores',scores,'eigen',eigen,'params',pca_params);
+    varargout{2} = pca_info;
 end

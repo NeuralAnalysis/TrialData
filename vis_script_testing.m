@@ -20,6 +20,8 @@ load([data_folder '/' data_fname])
 %% Choose visualization parameters
 
 param_struct.trials = 10;
+param_struct.plot_signals = {'pos','vel','force'};
+param_struct.pos_location = 'left';
 
 
 %% Visualize
