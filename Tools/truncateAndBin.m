@@ -1,6 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function trial_data = truncateAndBin(trial_data, varargin)
-% 
+%
 %   Will truncate all of the time-signals of each trial_data trial and also
 % compute new bins if desired. Can do either one of those alone by simply
 % passing in the inputs required for each. Note that the truncation happens
@@ -15,14 +15,11 @@
 % Note bin number for alignment can be negative to go before idx
 % Also note that start is assumed to always come before end
 %
-% To do:
-%   1) Minor bug when new window doesn't include idx_ entries
-%
 % EXAMPLE:
 %   trial_data = truncateAndBin(trial_data, 5, {'idx_target_on',0}, {'idx_trial_end',-3});
-% 
+%
 % Written by Matt Perich. Updated Feb 2017.
-% 
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = truncateAndBin(trial_data,varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -71,12 +68,16 @@ for trial = 1:length(trial_data)
     end
     
     t_bin = t(t_start):num_bins:t(t_end);
+    %%%%
     % THIS IS A HACK FOR NOW BECAUSE MATT IS TOO LAZY TO REMAKE HIS SAVED
-    % STRUCTS FROM SCRATCH
+    % STRUCTS FROM SCRATCH. CAN BE DELETED ONCE IT GOES PUBLIC.
     if ~isfield(trial_data(trial),'bin_size')
-        disp('shit');
+        disp('Bin size not found in struct. Defaulting to 10 ms.');
         trial_data(trial).bin_size = 0.01;
     end
+    %%%%
+    
+    % update entry to new bin size
     trial_data(trial).bin_size = num_bins * trial_data(trial).bin_size;
     
     % process spike fields
@@ -103,7 +104,12 @@ for trial = 1:length(trial_data)
     
     % process idx fields
     for iIdx = 1:length(fn_idx)
-        trial_data(trial).(fn_idx{iIdx}) = find(t_bin <= t(trial_data(trial).(fn_idx{iIdx})),1,'last');
+        temp = t(trial_data(trial).(fn_idx{iIdx}));
+        if temp < t_bin(1) || temp > t_bin(end)
+            trial_data(trial).(fn_idx{iIdx}) = [];
+        else
+            trial_data(trial).(fn_idx{iIdx}) = find(t_bin <= temp,1,'last');
+        end
     end
 end
 

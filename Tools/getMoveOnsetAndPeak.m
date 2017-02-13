@@ -2,11 +2,12 @@
 % function trial_data = getMoveOnsetAndPeak(trial_data,min_ds)
 %
 %   This will find a time bin representing movement onset and peak speed
-% Currently for kinematics but could be easily adapted to force
+% Currently for kinematics but could be easily adapted to force, etc.
 %
 % INPUTS:
 %   trial_data : (struct) trial_data struct
-%   min_ds     : (optional) minimum diff(speed) to find movement onset
+%   params     : parameter struct
+%     .min_ds     : minimum diff(speed) to find movement onset
 %
 % OUTPUTS:
 %   trial_data : same struct, with fields for:
@@ -16,10 +17,14 @@
 % Written by Matt Perich. Updated Feb 2017.
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function trial_data = getMoveOnsetAndPeak(trial_data,min_ds)
+function trial_data = getMoveOnsetAndPeak(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Set up a default value
-if nargin < 2, min_ds = 0.3; end
+% DEFAULT PARAMETERS
+min_ds = 0.3;
+if nargin > 1
+    eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 for i = 1:length(trial_data)
     % use velocity to find bin corresponding to movement onset, movement offset, and peak speed

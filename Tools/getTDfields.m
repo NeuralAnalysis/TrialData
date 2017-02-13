@@ -4,7 +4,6 @@
 %   Will return a cell array which lists all of the field names of a given
 % type. Useful to list all spiking variables, kinematic variables, etc.
 %
-%
 % INPUTS:
 %   trial_data : the struct
 %   which_type : (string) the type of field. Options:
@@ -16,9 +15,6 @@
 %
 % OUTPUTS:
 %   fn : the fieldnames of which_type
-%
-% To do:
-%   1) time appears to be broken
 %
 % Written by Matt Perich. Updated Feb 2017.
 %
@@ -58,4 +54,7 @@ switch lower(which_type)
         fn = strrep(fn,'_spikes','')';
     case 'idx'
         fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'idx_')));
+    otherwise
+        warning('Category not recognized.')
+        fn = {};
 end

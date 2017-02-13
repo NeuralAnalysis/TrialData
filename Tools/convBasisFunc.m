@@ -13,7 +13,6 @@
 %   trial_data : the struct
 %   which_vars : name (or names, as cell array) of field of trial_data to convolve
 %   params     : parameter struct (all are required)
-%       .dt         : size of time bins in s
 %       .rcb_hpeaks : vector containing location of first and last RCB vectors
 %       .rcb_b      : nonlinear stretching of basis axes (large be is more linear)
 %       .rcb_n      : how many basis vectors
@@ -26,10 +25,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = convBasisFunc(trial_data,which_vars,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-dt = params.dt;
 rcb_hpeaks = params.rcb_hpeaks;
 rcb_b = params.rcb_b;
 rcb_n = params.rcb_n;
+
+bin_size = trial_data(1).bin_size;
 
 if ~iscell(which_vars), which_vars = {which_vars}; end
 
@@ -57,7 +57,7 @@ if ~iscell(which_vars), which_vars = {which_vars}; end
 %  ihbasprs.b = .5;
 %  ihbasprs.absref = .1;  %% (optional)
 %  [iht,ihbas,ihbasis] = makeBasis_PostSpike(ihprs,dt);
-[~, ~, b] = makeBasis_PostSpike(struct('ncols',rcb_n,'hpeaks',rcb_hpeaks,'b',rcb_b),dt);
+[~, ~, b] = makeBasis_PostSpike(struct('ncols',rcb_n,'hpeaks',rcb_hpeaks,'b',rcb_b),bin_size);
 
 
 % do the convolution for each trial

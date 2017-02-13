@@ -1,4 +1,3 @@
-function metric = getLearningMetrics(trial_data, which_metric, params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % will compute and plot behavioral adaptation metrics
 %
@@ -17,14 +16,14 @@ function metric = getLearningMetrics(trial_data, which_metric, params)
 % Written by Matt Perich. Updated Feb 2017.
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-result_codes = {'R','I'};
+function metric = getLearningMetrics(trial_data, which_metric, params)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+result_codes = {'R'};
 corr_samples = 1000;
 time_window = {'idx_movement_on',0; 'idx_peak_speed',0};
 use_bl_ref = true;
-if nargin == 3
-    if isfield(params,'result_codes'), result_codes = params.result_codes; end
-    if isfield(params,'time_window'), time_window = params.time_window; end
-    if isfield(params,'use_bl_ref'), use_bl_ref = params.use_bl_ref; end
+if nargin > 2
+    eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 velorpos = 'vel';

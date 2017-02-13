@@ -13,9 +13,6 @@
 % Will truncate to remove all non-overlapping segments, and will adjust the
 % idx fields to reflect that. Note you can only shift back in time for now.
 %
-% To do:
-%   1) fix time length bug!
-%
 % INPUTS:
 %   trial_data : (struct) obvious
 %   varargin   : pairs of ...'field',SHIFT,...
