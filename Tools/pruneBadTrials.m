@@ -1,14 +1,18 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function [trial_data, bad_trials] = pruneBadTrials(trial_data, params);
 %
-% This function will identify and remove bad trials. Not much supported at
-% the moment, but functionality can be expanded. Will remove any trials
-% with any idx_ fields that are NaN.
+%   This function will identify and remove bad trials. Not much supported
+% at the moment, but functionality can be expanded.
+%       1) Will remove any trials with any idx_ fields that are NaN
+%       2) Will remove trials according to ranges input
+%
 %
 % INPUTS:
 %   trial_data : trial data struct
 %   params     : (struct) has parameter values
-%       .trial_time : [min,max] time from start to end (in # bins)
+%       .ranges : {'idx_START','idx_END',[MIN_#BINS,MAX_#BINS]; etc...}
+%                 ex: {'idx_go_cue','idx_movement_on',[5 30]} to remove
+%                     reaction times smaller than 5 and larger than 30 bins
 %
 % OUTPUTS:
 %   trial_data : struct with bad trials removed
@@ -19,7 +23,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [trial_data,bad_trials] = pruneBadTrials(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-trial_time = [0,Inf];
+ranges = [];
 if nargin > 1
     eval(structvars(length(fieldnames(params)),params)); %get parameters
 end
@@ -36,14 +40,19 @@ for iTrial = 1:length(trial_data)
         err = true;
     end
     
-    % there are a few problems I've run into that make things break
-    if td.idx_trial_end - td.idx_target_on < trial_time(1) || ...
-            td.idx_trial_end - td.idx_target_on > trial_time(2)
-        err = true;
+    %%%% LOOK FOR TRIALS THAT ARE OUTSIDE THE ALLOWABLE LENGTH
+    if ~isempty(ranges)
+        if size(ranges,2) ~= 3, error('Ranges input not properly formatted.'); end
+        for i = 1:size(ranges,1)
+            if td.(ranges{i,2}) - td.(ranges{i,1}) < ranges{i,3}(1) || ...
+                    td.(ranges{i,2}) - td.(ranges{i,1}) > ranges{i,3}(2)
+                err = true;
+            end
+        end
     end
     
     if err, bad_idx(iTrial) = true; end
 end
-disp(['Pruning ' num2str(sum(bad_idx)) ' trials with bad trial info...']);
+disp(['Pruning ' num2str(sum(bad_idx)) ' trials.']);
 bad_trials = trial_data(bad_idx);
-trial_data(bad_idx) = [];
+trial_data = trial_data(~bad_idx);

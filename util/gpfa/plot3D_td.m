@@ -1,4 +1,4 @@
-function plot3D_matt(seq, xspec, varargin)
+function plot3D_td(seq, xspec, varargin)
 %
 % plot3D(seq, xspec, ...)
 %

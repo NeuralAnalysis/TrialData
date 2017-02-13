@@ -32,7 +32,7 @@
 %
 % Based on the GPFA Matlab codepack by Byron Yu. http://users.ece.cmu.edu/~byronyu/software.shtml
 %   Note that I made some modifications to their code to make it work better with our data
-%   These functions are copied in TrialData/util and have _matt appended
+%   These functions are copied in TrialData/util and have _td appended
 % 
 % Written by Matt Perich 12/2015. Updated 02/2017.
 % 
@@ -65,7 +65,7 @@ end
 runIdx = ['-' [arrays{:}]];
 
 % Extract neural trajectories
-result = neuralTraj_matt(runIdx, dat, save_dir, 'method', method, 'xDim', xDim,...
+result = neuralTraj_td(runIdx, dat, save_dir, 'method', method, 'xDim', xDim,...
     'kernSDList', kernSD,'binWidth',bin_w,'dataBinWidth',data_bin_w);
 
 % Orthonormalize neural trajectories

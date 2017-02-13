@@ -1,4 +1,4 @@
-function result = gpfaEngine_matt(seqTrain, seqTest, fname, varargin)
+function result = gpfaEngine_td(seqTrain, seqTest, fname, varargin)
 %
 % gpfaEngine(seqTrain, seqTest, fname, ...)
 %

@@ -1,4 +1,4 @@
-function seq = getSeq_matt(dat, binWidth, varargin)
+function seq = getSeq_td(dat, binWidth, varargin)
 %
 % seq = getSeq(dat, binWidth, ...)  
 %

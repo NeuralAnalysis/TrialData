@@ -1,4 +1,4 @@
-function result = twoStageEngine_matt(seqTrain, seqTest, fname, varargin)
+function result = twoStageEngine_td(seqTrain, seqTest, fname, varargin)
 %
 % twoStageEngine(seqTrain, seqTest, fname, ...)
 %

@@ -1,4 +1,4 @@
-function result = neuralTraj_matt(runIdx, dat, directory, varargin)
+function result = neuralTraj_td(runIdx, dat, directory, varargin)
 %
 % result = neuralTraj(runIdx, dat, ...)
 %
@@ -61,7 +61,7 @@ else
 end
 
 % Obtain binned spike counts
-seq  = getSeq_matt(dat, binWidth, extraOpts{:});
+seq  = getSeq_td(dat, binWidth, extraOpts{:});
 if isempty(seq)
     fprintf('Error: No valid trials.  Exiting.\n');
     result = [];
@@ -138,7 +138,7 @@ for cvf = 0:numFolds
     
     % The following does the heavy lifting.
     if isequal(method, 'gpfa')
-        result = gpfaEngine_matt(seqTrain, seqTest, fname,...
+        result = gpfaEngine_td(seqTrain, seqTest, fname,...
             'xDim', xDim, 'binWidth', binWidth, extraOpts{:});
         
     elseif ismember(method, {'fa', 'ppca', 'pca'})

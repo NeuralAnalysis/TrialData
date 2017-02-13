@@ -23,9 +23,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = truncateAndBin(trial_data,varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-kin_vars = {'pos','vel','speed','acc','force','emg','targ'}; % hard coded list of options
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 if nargin == 2 % only a bin size was passed. Just rebin.
     do_trunc = false;
     num_bins = varargin{1};
@@ -46,10 +43,18 @@ else
     error('Inputs not recognized.');
 end
 
-fn = fieldnames(trial_data);
-fn_spikes = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_spikes')));
-fn_kin = fn(ismember(fn,kin_vars) | ismember(fn,cellfun(@(x) [x '_shift'],kin_vars,'Uni',0)));
-fn_idx = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'idx_')));
+fn_spikes = getTDfields(trial_data,'spikes');
+fn_kin = getTDfields(trial_data,'cont');
+fn_idx = getTDfields(trial_data,'idx');
+
+%%%%
+% THIS IS A HACK FOR NOW BECAUSE MATT IS TOO LAZY TO REMAKE HIS SAVED
+% STRUCTS FROM SCRATCH. CAN BE DELETED ONCE IT GOES PUBLIC.
+if ~isfield(trial_data,'bin_size')
+    disp('Bin size not found in struct. Defaulting to 10 ms.');
+    [trial_data.bin_size] = deal(0.01);
+end
+%%%%
 
 for trial = 1:length(trial_data)
     % assumes there will always be a pos
@@ -68,14 +73,6 @@ for trial = 1:length(trial_data)
     end
     
     t_bin = t(t_start):num_bins:t(t_end);
-    %%%%
-    % THIS IS A HACK FOR NOW BECAUSE MATT IS TOO LAZY TO REMAKE HIS SAVED
-    % STRUCTS FROM SCRATCH. CAN BE DELETED ONCE IT GOES PUBLIC.
-    if ~isfield(trial_data(trial),'bin_size')
-        disp('Bin size not found in struct. Defaulting to 10 ms.');
-        trial_data(trial).bin_size = 0.01;
-    end
-    %%%%
     
     % update entry to new bin size
     trial_data(trial).bin_size = num_bins * trial_data(trial).bin_size;
