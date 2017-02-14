@@ -1,12 +1,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function [trial_data,pca_info] = getPCA(trial_data, varargin)
 %
-% [w, mu, scores, trial_data, params] = getPCA(trial_data, params);
-%   Computes PCA projection for neural data. If you request trial_data as
-% a final output, will add scores to each trial for use later. Must pass in
-% 'array' field for struct. Note that this can be a cell of strings to pool
-% data from multiple arrays. In this case, the rows of w will be as if you
-% concatenated the two arrays together in the order they were provided.
+% [trial_data,pca_info] = getPCA(trial_data, params);
+%   Computes PCA projection for neural data. Will add scores to each trial
+% for use later. Must pass in 'array' field for struct. Note that this can
+% be a cell of strings to pool data from multiple arrays. In this case, the
+% rows of w will be as if you concatenated the two arrays together in the
+% order they were provided.
 %
 % trial_data = getPCA(trial_data, w, mu, params);
 %   Uses an old w and mu from previous getPCA call to add scores to
@@ -25,9 +25,9 @@
 %                       neurons should be cell array with indices for each array
 %     .sqrt_transform : flag to square root transform spikes (default: true)
 %     .do_smoothing   : flag to convolve spikes with gaussian (default: true)
-%     .kernel_SD      : kernel s.d. for smoothing (default: 2*bin_size)
-%     .trial_avg      : flag to trial average (requires condition input) (default: false)
+%     .kernel_SD      : kernel s.d. in s for smoothing (default: 0.05)
 %     .trial_avg_cond : (string/cell) which conditions to average over
+%                          NOTE: if empty or not passed in, won't trial average
 %     .do_plot        : flag to make scree plot (default: false)
 %
 % OUTPUTS:
@@ -79,25 +79,27 @@ neurons         =  [];
 sqrt_transform  =  true;
 do_smoothing    =  true;
 kernel_SD       =  0.05;
-trial_avg       =  false;
 trial_avg_cond  =  {};
 do_plot         =  false;
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if trial_avg && isempty(trial_avg_cond), error('Must provide conditions to average trials over.'); end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % process and prepare inputs
+if isempty(trial_avg_cond), trial_avg = false; end
 if ~iscell(array), array = {array}; end
 if isempty(neurons)
     for i = 1:length(array), neurons{i} = 1:size(trial_data(1).([array{i} '_spikes']),2); end
 end
 if ~iscell(neurons), neurons = {neurons}; end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% loop along trials to square root transform and smooth if desired
-td = smoothSpikes(trial_data(trial_idx),params);
+% square root transform and smooth if desired
+smooth_params = struct( ...
+    'sqrt_transform',sqrt_transform, ...
+    'do_smoothing',do_smoothing, ...
+    'kernel_SD',kernel_SD);
+td = smoothSpikes(trial_data(trial_idx),smooth_params);
 if trial_avg, td = trialAverage(td,trial_avg_cond); end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % concatenate specified trials
 fr = [];
@@ -151,7 +153,6 @@ if new_pca && nargout == 2
         'sqrt_transform',sqrt_transform, ...
         'do_smoothing',do_smoothing, ...
         'kernel_SD',kernel_SD, ...
-        'trial_avg', trial_avg, ...
         'trial_avg_cond',trial_avg_cond);
     pca_info = struct('w',w,'mu',mu,'scores',scores,'eigen',eigen,'params',pca_params);
 end

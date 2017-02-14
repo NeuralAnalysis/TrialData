@@ -34,7 +34,7 @@ for iTrial = 1:length(trial_data)
     
     % loop along all indices and make sure they aren't NaN
     fn = getTDfields(td,'idx');
-    if any(cellfun(@(x) isnan(td.(x)),fn))
+    if any(cell2mat(cellfun(@(x) isnan(td.(x)),fn,'uni',0)))
         err = true;
     end
     
