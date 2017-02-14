@@ -1,32 +1,34 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% will compute and plot behavioral adaptation metrics
+% function metric = getLearningMetrics(trial_data,params)
+%
+%   Computes and plot behavioral adaptation metrics.
 %
 % INPUTS:
 %   trial_data: the struct
-%   metric: which metric
-%           'angle': angular takeoff error
-%           'corr' : speed profile correlation coefficients
-%           'time' : time to target
 %   params: struct with the following options
-%           'result_codes': which to include. Default is 'R', 'I'.
-%           'use_bl_ref'  : (bool) whether to use diff from BL for angle
-%           'time_window' : {'idx_start',bins after; 'idx_end',bins after} currently for angle
-%           'corr_samples': how many datapoints to interpolate trajectory onto for corr
+%     .which_metric : which metric
+%                       'angle': angular takeoff error
+%                       'corr' : speed profile correlation coefficients
+%                       'time' : time to target
+%     .result_codes : which to include. Default is 'R', 'I'.
+%     .use_bl_ref   : (bool) whether to use diff from BL for angle
+%     .time_window  : {'idx_start',bins after; 'idx_end',bins after} currently for angle
+%     .corr_samples : how many datapoints to interpolate trajectory onto for corr
+%     .vel_or_pos   : 'vel' or 'pos', for velocity or position (angle only)
 % 
 % Written by Matt Perich. Updated Feb 2017.
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function metric = getLearningMetrics(trial_data, which_metric, params)
+function metric = getLearningMetrics(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-result_codes = {'R'};
-corr_samples = 1000;
+which_metric = 'angle';
 time_window = {'idx_movement_on',0; 'idx_peak_speed',0};
 use_bl_ref = true;
-if nargin > 2
-    eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
-end
+result_codes = {'R'};
+corr_samples = 1000;
+vel_or_pos = 'vel';
+if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-velorpos = 'vel';
 
 if isfield(trial_data(1),'result')
     trial_data = trial_data(ismember({trial_data.result},result_codes));
@@ -36,6 +38,7 @@ end
 
 utheta = unique([trial_data.target_direction]);
 metric = zeros(length(trial_data),1);
+
 switch lower(which_metric)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case 'angle'
@@ -52,7 +55,7 @@ switch lower(which_metric)
                 for iTrial = 1:length(bl_idx)
                     t1 = trial_data(bl_idx(iTrial)).(time_window{1,1})+time_window{1,2};
                     t2 = trial_data(bl_idx(iTrial)).(time_window{2,1})+time_window{2,2};
-                    switch velorpos
+                    switch vel_or_pos
                         case 'vel'
                             temp(iTrial) = angleDiff(minusPi2Pi(trial_data(bl_idx(iTrial)).target_direction), ...
                                 atan2(trial_data(bl_idx(iTrial)).vel(t2,2) - ...
@@ -77,7 +80,7 @@ switch lower(which_metric)
         for iTrial = 1:length(trial_data)
             t1 = trial_data(iTrial).(time_window{1,1})+time_window{1,2};
             t2 = trial_data(iTrial).(time_window{2,1})+time_window{2,2};
-            switch velorpos
+            switch vel_or_pos
                 case 'vel'
                     temp = angleDiff(trial_data(iTrial).target_direction, ...
                         atan2(trial_data(iTrial).vel(t2,2) - ...

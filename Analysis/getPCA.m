@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function varargout = getPCA(trial_data, varargin)
+% function [trial_data,pca_info] = getPCA(trial_data, varargin)
 %
 % [w, mu, scores, trial_data, params] = getPCA(trial_data, params);
 %   Computes PCA projection for neural data. If you request trial_data as
@@ -48,7 +48,7 @@
 % Written by Matt Perich. Updated Feb 2017.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function varargout = getPCA(trial_data, varargin)
+function [trial_data,pca_info] = getPCA(trial_data, varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Process inputs
 if length(varargin) == 1 % only params is provided
@@ -79,7 +79,7 @@ kernel_SD       =  0.05;
 trial_avg       =  false;
 trial_avg_cond  =  {};
 do_plot         =  false;
-eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
+assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if trial_avg && isempty(trial_avg_cond), error('Must provide conditions to average trials over.'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -95,7 +95,6 @@ if ~iscell(neurons), neurons = {neurons}; end
 % loop along trials to square root transform and smooth if desired
 td = smoothSpikes(trial_data(trial_idx),params);
 if trial_avg, td = trialAverage(td,trial_avg_cond); end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % concatenate specified trials
 fr = [];
@@ -141,9 +140,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Package up outputs
-varargout{1} = trial_data;
 if new_pca && nargout == 2
     pca_params = struct('array',array,'sqrt_transform',sqrt_transform,'do_smoothing',do_smoothing,'bin_size',bin_size,'kernel_SD',kernel_SD);
     pca_info = struct('w',w,'mu',mu,'scores',scores,'eigen',eigen,'params',pca_params);
-    varargout{2} = pca_info;
 end

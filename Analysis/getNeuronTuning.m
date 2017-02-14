@@ -30,7 +30,7 @@ function [tcs,fr,covar] = getNeuronTuning(trial_data,which_method,params)
 covariate  =  'target';
 win        =  params.window;
 array      =  params.array;
-eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
+assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 bin_size = trial_data(1).bin_size;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

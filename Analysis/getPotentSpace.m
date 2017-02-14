@@ -47,7 +47,7 @@ if ~isfield(params,'out_dims'), error('Need to specify output dimensionality'); 
 in_neurons   =  [];
 out_neurons  =  [];
 use_trials   =  1:length(trial_data);
-eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
+assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isempty(in_neurons), in_neurons = 1:size(trial_data(1).([in_array '_spikes']),2); end
 if isempty(out_neurons), out_neurons = 1:size(trial_data(1).([out_array '_spikes']),2); end

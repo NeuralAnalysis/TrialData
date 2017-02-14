@@ -6,9 +6,14 @@
 % ms after target presentation and 500 ms after movement onset in a
 % variable delay center out task.
 %
+% NOTE: the way this works, there are some best practices. You should make
+% every struct you append have no overlapping time values (unless you want
+% them to repeat). You should also pass them in chronologically, so the
+% idx_ fields continue to have something resembling meaning (unless you
+% don't want them to).
+%
 % To do:
 %   1) check that all have same metadata
-%   2) deal with idx_?
 %
 % INPUTS:
 %   varargin : any number of trial_data structs
@@ -16,11 +21,20 @@
 %
 % OUTPUTS:
 %   combined : a new trial_data struct with each trial combined
+%                adds field 'stitch_marks', which has the bin numbers
+%                corresponding to the beginning of each discontinuity
+%
+% Written by Matt Perich. Updated Feb 2017.
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function combined = appendTDs(varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 combined = varargin{1};
+for trial = 1:length(combined)
+    combined(trial).stitch_marks = 1;
+end
+
 if length(varargin) > 1
     % check that all have same number of trials
     if length(unique(cellfun(@(x) length(x),varargin))) > 1
@@ -28,15 +42,29 @@ if length(varargin) > 1
     end
     % get the list of time variables
     fn_time = getTDfields(combined,'time');
+    fn_idx  = getTDfields(combined,'idx');
     
     for i = 2:length(varargin)
         td = varargin{i};
         for trial = 1:length(combined)
-            for j = 1:length(fn_time)
-                combined(trial).(fn_time{j}) = [combined(trial).(fn_time{j}); td(trial).(fn_time{j})];
+            combined(trial).stitch_marks = [combined(trial).stitch_marks, size(combined(trial).(fn_time{1}),1)];
+            
+            % append the time variables
+            for var = 1:length(fn_time)
+                combined(trial).(fn_time{var}) = [combined(trial).(fn_time{var}); td(trial).(fn_time{var})];
+            end
+            
+            % adjust the idx_values
+            for var = 1:length(fn_idx)
+                if ~isempty(td(trial).(fn_idx{var}))
+                    combined(trial).(fn_idx{var}) = td(trial).(fn_idx{var})+size(combined(trial).(fn_time{1}),1);
+                end
             end
         end
     end
 else
     warning('Only one trial_data struct provided. Nothing to append.');
 end
+
+% ensure logical order
+combined = reorderTDfields(combined);

@@ -11,8 +11,8 @@
 %
 % INPUTS:
 %   trial_data : the struct
-%   which_vars : name (or names, as cell array) of field of trial_data to convolve
 %   params     : parameter struct (all are required)
+%       .which_vars : name (or names, as cell array) of field of trial_data to convolve
 %       .rcb_hpeaks : vector containing location of first and last RCB vectors
 %       .rcb_b      : nonlinear stretching of basis axes (large be is more linear)
 %       .rcb_n      : how many basis vectors
@@ -23,15 +23,23 @@
 % Written by Matt Perich. Updated Feb 2017.
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function trial_data = convBasisFunc(trial_data,which_vars,params)
+function trial_data = convBasisFunc(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-rcb_hpeaks = params.rcb_hpeaks;
-rcb_b = params.rcb_b;
-rcb_n = params.rcb_n;
-
+% DEFAULTS
+[rcb_hpeaks, rcb_b, rcb_n] = deal([]);
+which_vars = getTDfields(trial_data,'time'); % default to all time signals
+if nargin > 1
+    assignParams(who,params); % overwrite parameters
+    if isempty([rcb_hpeaks, rcb_b, rcb_n])
+        error('Requires peaks/b/n parameters.');
+    end
+else
+    error('Requires params input.');
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 bin_size = trial_data(1).bin_size;
-
 if ~iscell(which_vars), which_vars = {which_vars}; end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Here is the documentation from Pillow's code so you know what's going on
 % Inputs:
@@ -59,7 +67,6 @@ if ~iscell(which_vars), which_vars = {which_vars}; end
 %  [iht,ihbas,ihbasis] = makeBasis_PostSpike(ihprs,dt);
 [~, ~, b] = makeBasis_PostSpike(struct('ncols',rcb_n,'hpeaks',rcb_hpeaks,'b',rcb_b),bin_size);
 
-
 % do the convolution for each trial
 for iTrial = 1:length(trial_data) % loop along trials
     for iVar = 1:length(which_vars) % loop along variables
@@ -73,3 +80,6 @@ for iTrial = 1:length(trial_data) % loop along trials
         trial_data(iTrial).([which_vars{iVar} '_shift']) = temp_conv;
     end
 end
+
+% restore logical order
+trial_data = reorderTDfields(trial_data);

@@ -27,9 +27,7 @@ s_thresh   =  7;
 % change but you can overwrite them if you need to.
 start_idx  =  'idx_go_cue';
 end_idx    =  'idx_trial_end';
-if nargin > 1
-    eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
-end
+if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 for trial = 1:length(trial_data)
@@ -62,5 +60,8 @@ for trial = 1:length(trial_data)
     trial_data(trial).idx_movement_on = on_idx;
     trial_data(trial).idx_peak_speed = peak_idx;
 end
+
+% restore logical order
+trial_data = reorderTDfields(trial_data);
 
 end

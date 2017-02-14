@@ -24,9 +24,7 @@
 function [trial_data,bad_trials] = pruneBadTrials(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ranges = [];
-if nargin > 1
-    eval(structvars(length(fieldnames(params)),params)); %get parameters
-end
+if nargin > 1, assignParams(who,params); end % overwrite parameters
 
 bad_idx = false(1,length(trial_data));
 for iTrial = 1:length(trial_data)

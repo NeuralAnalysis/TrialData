@@ -24,9 +24,7 @@ sqrt_transform  =  true;
 do_smoothing    =  true;
 kernel_SD       =  0.05;
 calc_fr         =  false;
-if nargin > 1 % if new params were passed in
-    eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
-end
+if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 bin_size = trial_data(1).bin_size;

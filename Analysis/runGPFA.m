@@ -46,7 +46,7 @@ xDim        =  8;
 kernSD      =  30;
 bin_w       =  20;
 data_bin_w  =  10;
-eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
+assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if ~iscell(arrays), arrays = {arrays}; end

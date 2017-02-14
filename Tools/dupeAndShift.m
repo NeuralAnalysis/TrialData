@@ -83,3 +83,6 @@ for i = 1:length(trial_data)
     
 end
 
+% restore logical order
+trial_data = reorderTDfields(trial_data);
+

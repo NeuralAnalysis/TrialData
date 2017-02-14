@@ -39,25 +39,24 @@ function [ ] = vis_data( trial_data, params )
 % DEFAULT PARAMETERS
 if isfield(params,'trials'), trials_to_plot = params.trials; else, error('No trials specified.'); end
 plot_signals      =   {'vel'};
-plot_gpfa         =   false;
-gpfa_dims         =   1:3;
-gpfa_array        =   'M1';
-gpfa_params       =   [];
+plot_pca          =   false;
+pca_dims          =   1:3;
+pca_array         =   'M1';
+pca_params        =   [];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   These are parameters that are less likely to change but can still be
 %   overwritten as an input parameter (not documented in help call though)
-data_bin_size     =   10; %bin size of data in msec
-pos_offset        =   [0, -23]; % offset to zero position
-% pos_offset      =   [3-1.7, -33+2.2]; % offset to zero position
+pos_offset        =   [0, -30]; % offset to zero position
 target_size       =   2; % target size in cm
 target_distance   =   8; % distance of outer targets in cm
-event_db          =   {'idx_trial_start','strt'; ...
-    'idx_target_on','tgt'; ... % list of possible field names for events and a shorthand name
-    'idx_go_cue','go'; ...         % add any new events here
-    'idx_movement_on','mv'; ...
-    'idx_peak_speed','pk'; ...
-    'idx_reward','rw'; ...
-    'idx_trial_end','end'};
+event_db          =   { ...
+    'idx_trial_start', 'strt'; ...
+    'idx_target_on',   'tgt'; ... % list of possible field names for events and a shorthand name
+    'idx_go_cue',      'go'; ...         % add any new events here
+    'idx_movement_on', 'mv'; ...
+    'idx_peak_speed',  'pk'; ...
+    'idx_reward',      'rw'; ...
+    'idx_trial_end',   'end'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % These are a lot of parameters for plotting
 %   Presumably we won't change these but just in case you can
@@ -81,23 +80,21 @@ trial_event_colors =   [0    0.4470    0.7410; ... % using default Matlab r2014b
     0.3010    0.7450    0.9330; ...
     0.6350    0.0780    0.1840];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
+assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+bin_size     =   trial_data(1).bin_size; %bin size of data in s
+
+% check for foolish inputs
+if max(trials_to_plot) > length(trial_data)
+    error('Requested too many trials.');
+end
+
 
 num_trials_to_plot = length(trials_to_plot);
 
 % If GPFA plotting is desired, checks that data exists and params provided
-if plot_gpfa
-    if isfield(trial_data,[gpfa_array '_gpfa'])
-        if ~isempty(gpfa_params)
-            gpfa_bin_w = gpfa_params.([gpfa_array '_gpfa']).bin_width;
-            gpfa_x_dim = gpfa_params.([gpfa_array '_gpfa']).xdim;
-        else
-            error('GPFA parameter struct input not provided. See documentation.');
-        end
-    else
-        error('GPFA data not present in trial_data.');
-    end
+if plot_pca && ~isfield(trial_data,[pca_array '_pca'])
+    error('PCA data not present in trial_data.');
 end
 
 % allow for a variable number of arrays and events
@@ -110,7 +107,7 @@ clear fn;
 
 % find how many rows are needed
 num_rows = length(plot_signals)*kin_rows + event_rows + num_arrays*spike_rows;
-if plot_gpfa, num_rows=num_rows+length(gpfa_dims)*traj_rows; end
+if plot_pca, num_rows=num_rows+length(pca_dims)*traj_rows; end
 
 num_cols = pos_cols + time_cols;
 % use this to partition the subplot space
@@ -127,7 +124,7 @@ switch lower(pos_location)
 end
 
 % add 2D or 3D GPFA trajectory plot below position plot
-if plot_gpfa
+if plot_pca
     pos_rows_max = floor(num_rows/2);
 else
     pos_rows_max = num_rows;
@@ -175,31 +172,31 @@ for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Plot GPFA trajectory path
-    if plot_gpfa
+    if plot_pca
         subplot(num_rows,num_cols, ...
             reshape(subplot_grid(pos_rows_max+1:num_rows,pos_start+1:pos_start+pos_cols)',1,pos_cols*(num_rows-pos_rows_max)));
         hold all;
-        plot3(trial_data(tr_num).([gpfa_array '_gpfa'])(1,:), ...
-            trial_data(tr_num).([gpfa_array '_gpfa'])(2,:), ...
-            trial_data(tr_num).([gpfa_array '_gpfa'])(3,:), ...
+        plot3(trial_data(tr_num).([pca_array '_pca'])(:,1), ...
+            trial_data(tr_num).([pca_array '_pca'])(:,2), ...
+            trial_data(tr_num).([pca_array '_pca'])(:,3), ...
             'linewidth',line_width,'color','k');
         
         % now plot event markers
         for iEvent = 1:length(events)
             % scale bin index to fit gpfa bins
-            idx = round(trial_data(tr_num).(events{iEvent})*(data_bin_size/gpfa_bin_w));
+            idx = trial_data(tr_num).(events{iEvent});
             
-            plot3(trial_data(tr_num).([gpfa_array '_gpfa'])(1,idx), ...
-                trial_data(tr_num).([gpfa_array '_gpfa'])(2,idx), ...
-                trial_data(tr_num).([gpfa_array '_gpfa'])(3,idx), ...
+            plot3(trial_data(tr_num).([pca_array '_pca'])(idx,1), ...
+                trial_data(tr_num).([pca_array '_pca'])(idx,2), ...
+                trial_data(tr_num).([pca_array '_pca'])(idx,3), ...
                 event_symbol,'linewidth',dot_width,'color',trial_event_colors(iEvent,:));
         end
         
         set(gca,'XTick',[],'YTick',[],'ZTick',[], ...
             'Box','off','TickDir','out','FontSize',font_size);
-        xlabel('Factor 1','FontSize',font_size);
-        ylabel('Factor 2','FontSize',font_size);
-        zlabel('Factor 3','FontSize',font_size);
+        xlabel('PC1','FontSize',font_size);
+        ylabel('PC2','FontSize',font_size);
+        zlabel('PC3','FontSize',font_size);
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -244,25 +241,17 @@ for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're
     row_tally = row_tally + event_rows;
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Plot GPFA dimension traces over time
-    if plot_gpfa
-        if ~isempty(gpfa_params)
-            for iDim = 1:length(gpfa_dims)
-                if gpfa_dims(iDim) <= gpfa_x_dim
-                    subplot(num_rows,num_cols, ...
-                        reshape(subplot_grid(row_tally+1:row_tally+traj_rows,time_start+1:time_start+time_cols)',1,(num_cols-pos_cols)*traj_rows ));
-                    plot(trial_data(tr_num).([gpfa_array '_gpfa'])(gpfa_dims(iDim),:),'k','LineWidth',line_width);
-                    axis('tight');
-                    set(gca,'Box','off','TickDir','out','YTick',[],'XTickLabels',[],'FontSize',font_size);
-                    ylabel([gpfa_array ' ' num2str(gpfa_dims(iDim))],'FontSize',font_size)
-                    
-                    row_tally = row_tally + traj_rows;
-                else
-                    warning(['Requested dimension (' num2str(gpfa_dims(iDim)) ') is larger than available latent dimensions (xDim = ' num2str(gpfa_x_dim) '. Skipping.']);
-                end
-            end
-        else
-            error('No GPFA parameter struct provided. See documentation.');
+    % Plot PCA dimension traces over time
+    if plot_pca
+        for iDim = 1:length(pca_dims)
+            subplot(num_rows,num_cols, ...
+                reshape(subplot_grid(row_tally+1:row_tally+traj_rows,time_start+1:time_start+time_cols)',1,(num_cols-pos_cols)*traj_rows ));
+            plot(trial_data(tr_num).([pca_array '_pca'])(:,pca_dims(iDim),:),'k','LineWidth',line_width);
+            axis('tight');
+            set(gca,'Box','off','TickDir','out','YTick',[],'XTickLabels',[],'FontSize',font_size);
+            ylabel([pca_array ' PC' num2str(pca_dims(iDim))],'FontSize',font_size)
+            
+            row_tally = row_tally + traj_rows;
         end
     end
     

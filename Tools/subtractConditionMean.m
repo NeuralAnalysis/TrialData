@@ -20,9 +20,7 @@
 function trial_data = subtractConditionMean(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 cond_idx  =  1:length(trial_data);
-if nargin > 1
-    eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
-end
+if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 fn = getTDfields(trial_data,'time');

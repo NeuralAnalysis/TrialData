@@ -4,65 +4,107 @@
 % INPUTS:
 %   cds    : CDS object
 %   params : a struct containing parameters
-%     .meta         : a struct with a field for each meta parameter you want attached 
+%     .meta          : a struct with a field for each meta parameter you want attached
 %                       to this file. This can handle any arbitrary information!
-%     .excludeUnits : ID for which units to exclude (Default: [0,255])
-%     .trialResults : which reward codes to use ('R','A','F','I')
-%     .binSize      : default 0.01 sec
-%     .extraTime    : [time before, time after] beginning and end of trial (default [0.5 0.3] sec)
+%     .event_names   : Which cds.trials events to add to struct
+%                       Format: {'CDS_TRIAL_TABLE_NAME','ALIAS'; ... etc ...}
+%                       Can ignore ALIAS and give cell vector if you want
+%     .array_alias   : Aliases for renaming arrays from CDS names
+%                       Format: {'CDS_NAME','NEW_NAME'; ...etc...}
+%     .exclude_units : ID for which units to exclude (Default: [0,255])
+%                       NOTE: this default gets rid of unsorted!
+%     .trial_results : which reward codes to use ('R','A','F','I')
+%     .bin_size      : default 0.01 sec
+%     .extra_time    : [time before, time after] beginning and end of trial (default [0.5 0.3] sec)
+%     .all_points    : flag to include all data points. Thus, disregards extra_time
+%                       and each trial ends at trial_start of the one after
+%     .pos_offset    : offset (in units of cds.pos) to zero position
 %
 % OUTPUTS:
 %   trial_data : the trial_data struct
-% 
+%
 % Written by Matt Perich. Updated Feb 2017.
-% 
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [trial_data,td_params] = parseFileByTrial_cds(cds,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
-trialResults  =  {'R'};
-excludeUnits  =  [0,255];
-binSize       =  0.01;
-extraTime     =  [0.2, 0.2];
-if nargin > 1
-    eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
+event_list     =  {};
+array_alias    =  {};
+trial_results  =  {'R'};
+exclude_units  =  [0,255];
+bin_size       =  0.01;
+extra_time     =  [0.2, 0.2];
+all_points     =  false;
+pos_offset     =  [0,0];
+if ~isfield(params,'meta'), disp('WARNING: no meta information provided.'); end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Some parameters that CAN be overwritten, but are mostly intended to be
+% hard coded and thus aren't documented in the function header
+LPF_cutoff  =  20; % for EMG butterworth filter
+HPF_cutoff  =  10; % for EMG butterworth filter
+n_poles     =  4;  % for EMG butterworth filter
+if nargin > 1 && ~isempty(params)
+    assignParams(who,params); % overwrite parameters
 else
     params = struct();
 end
-if ~isfield(params,'meta'), warning('WARNING: no meta information provided.'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% do some input processing
-if ~iscell(trialResults), trialResults = {trialResults}; end
-
-% see what array data is present
-arrays = strsplit(cds.meta.array,', ');
-
-% get info on neurons
-unit_idx = cell(1,length(arrays));
-for iArray = 1:length(arrays)
-    unit_idx{iArray} = find(~ismember([cds.units.ID],excludeUnits) & strcmpi({cds.units.array},arrays{iArray}));
+% Do some input processing
+if ~iscell(trial_results), trial_results = {trial_results}; end
+switch size(event_list,2)
+    case 0, event_aliases = {};
+    case 1, event_aliases = {};
+    case 2, event_aliases = event_list(:,2); event_list = event_list(:,1);
 end
 
-idx_trials = find(ismember(cds.trials.result,trialResults));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% see what array data is present
+if ~isempty(cds.units)
+    arrays = strsplit(cds.meta.array,', ');
+    % get info on neurons
+    unit_idx = cell(1,length(arrays));
+    for array = 1:length(arrays)
+        unit_idx{array} = find(~ismember([cds.units.ID],exclude_units) & strcmpi({cds.units.array},arrays{array}));
+    end
+end
 
-% loop along trials
+% process some of the trial information
+fn = cds.trials.Properties.VariableNames;
+if ~all(ismember({'startTime','endTime'},fn)), error('Must have start and end times in CDS.'); end
+event_list = union({'startTime','endTime'},event_list);
+if isempty(event_aliases), event_aliases = event_list; end
+if ismember(fn,{'goCueTime'}), event_list = union({'goCueTime'},event_list); end
+if ismember(fn,{'tgtOnTime'}), event_list = union({'tgtOnTime'},event_list); end
+% determine which signals are time-varying and which are parameter values
+%   There was a CDS bug where start/end times didn't have units, but I know
+%   they are supposed to be here so it's hard coded for now
+time_events = union({'startTime','endTime'},fn(strcmpi(cds.trials.Properties.VariableUnits,'s')));
+
+% get trial list and initialize
+if all_points % we want everything
+    idx_trials = 1:length(cds.trials.result);
+else
+    idx_trials = find(ismember(cds.trials.result,trial_results));
+end
 trial_data = repmat(struct(),1,length(idx_trials));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Add basic data and metadata
 for i = 1:length(idx_trials)
     iTrial = idx_trials(i);
     % add some meta data about the trial
     trial_data(i).monkey = cds.meta.monkey;
     trial_data(i).date = datestr(cds.meta.dateTime,'mm-dd-yyyy');
     trial_data(i).task = cds.meta.task;
-    if any(abs(cds.trials.tgtDir) > 2*pi)
+    if any(abs(cds.trials.tgtDir) > 2*pi) % good assumption that it's deg
         trial_data(i).target_direction = minusPi2Pi(pi/180*cds.trials.tgtDir(iTrial));
-    else
+    else % should be rad
         trial_data(i).target_direction = minusPi2Pi(cds.trials.tgtDir(iTrial));
     end
     trial_data(i).trial_id = iTrial;
     trial_data(i).result = cds.trials.result(iTrial);
-    trial_data(i).bin_size = binSize;
+    trial_data(i).bin_size = bin_size;
     
     % loop along all meta fields
     if isfield(params,'meta')
@@ -70,80 +112,200 @@ for i = 1:length(idx_trials)
             trial_data(i).(fn) = params.meta.(fn);
         end
     end
-    
-    % find trial start/end times
-    t_start = cds.trials.startTime(iTrial) - extraTime(1);
-    t_end = cds.trials.endTime(iTrial) + extraTime(2);
-    
-    % get kinematics
-    if ~isempty(cds.kin)
-        dt_kin = cds.kin.t(2)-cds.kin.t(1);
-        t_dec = decimate(cds.kin.t(idx),round(binSize/dt_kin));
-        trial_data(i).pos = [decimate(cds.kin.x(idx),round(binSize/dt_kin)) decimate(cds.kin.y(idx),round(binSize/dt_kin))];
-        trial_data(i).vel = [decimate(cds.kin.vx(idx),round(binSize/dt_kin)) decimate(cds.kin.vy(idx),round(binSize/dt_kin))];
-        trial_data(i).acc = [decimate(cds.kin.ax(idx),round(binSize/dt_kin)) decimate(cds.kin.ay(idx),round(binSize/dt_kin))];
-    end
-    
-    % get force
-    if ~isempty(cds.force)
-        dt_force = cds.force.t(2)-cds.force.t(1);
-        if ~exist('t_dec','var') % we only need one of these
-            t_dec = decimate(cds.force.t(idx),round(binSize/dt_force));
-        end
-        idx = cds.force.t >= t_start & cds.force.t <= t_end;
-        trial_data(i).force = [decimate(cds.force.fx(idx),round(binSize/dt_force)) decimate(cds.force.fy(idx),round(binSize/dt_force))];
-        if size(trial_data(i).force,1) ~= size(trial_data(i).pos,1)
-            error('Decimated force size does not match kinematics.');
-        end
-    end
-    
-    % get EMG
-    if ~isempty(cds.emg)
-        dt_emg = cds.emg.t(2)-cds.emg.t(1);
-        if ~exist('t_dec','var') % we only need one of these
-            t_dec = decimate(cds.emg.t(idx),round(binSize/dt_emg));
-        end
-        idx = cds.emg.t >= t_start & cds.emg.t <= t_end;
-        
-        fn = cds.emg.Properties.VariableNames;
-        trial_data(i).emg = decimate(table2array(cds.emg(idx,~strcmpi(fn,'t'))),round(binSize/dt_emg));
-        trial_data(i).emg_names = fn(~strcmpi(fn,'t'));
-        
-         if size(trial_data(i).emg,1) ~= size(trial_data(i).pos,1)
-            error('Decimated force size does not match kinematics.');
-        end
-    end
-    
-    % get time vector for binned spikes and events
-    t_bins = [t_dec', t_dec(end)+binSize];
-    
-    % put trial markers (target on etc) in bins for each spikes
-    trial_data(i).idx_trial_start = find(histcounts(cds.trials.startTime(iTrial),t_bins));
-    trial_data(i).idx_target_on = find(histcounts(cds.trials.tgtOnTime(iTrial),t_bins));
-    trial_data(i).idx_go_cue = find(histcounts(cds.trials.goCueTime(iTrial),t_bins));
-    trial_data(i).idx_trial_end = find(histcounts(cds.trials.endTime(iTrial),t_bins));
-    
-    for iArray = 1:length(arrays)
-        binned_spikes = zeros(size(unit_idx{iArray},1),length(t_bins)-1);
-        sg = zeros(length(unit_idx{iArray}),2);
-        for unit = 1:length(unit_idx{iArray})
-            % get the spikes for that cell in the current time window
-            ts = cds.units(unit_idx{iArray}(unit)).spikes.ts;
-            ts = ts(ts >= t_start & ts <= t_end);
-            
-            binned_spikes(unit,:) = histcounts(ts,t_bins);
-            sg(unit,:) = [cds.units(unit_idx{iArray}(unit)).chan, cds.units(unit_idx{iArray}(unit)).ID];
-        end
-        
-        % check to make sure all is well
-        if size(binned_spikes,2) ~= size(trial_data(i).pos,1)
-            error('Binned spike size does not match decimated kinematics size')
-        end
-        %   transpose binned_spikes to be consistent with kin
-        trial_data(i).([arrays{iArray} '_spikes']) = binned_spikes';
-        trial_data(i).([arrays{iArray} '_unit_guide']) = sg;
-    end
-    clear binned_spikes;
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Bin CDS <- Can add support for any signal in this section
+%   1) Check for kinematics and bin those
+%   2) Check for force and bin that
+%   3) Check for EMG and process/bin those
+%   4) Turn the trial table into a binned version
+kin_list = {'t','x','y','vx','vy','ax','ay'};
+force_list = {'t','fx','fy'};
+cds_bin = struct();
+cds_bin.kin = decimate_signals(cds.kin,kin_list,bin_size);
+cds_bin.force = decimate_signals(cds.force,force_list,bin_size);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Process EMG (high pass, rectify, low pass)
+%   default: high pass at 10 Hz, rectify, low pass at 20 Hz
+if ~isempty(cds.emg)
+    emg_list = cds.emg.Properties.VariableNames;
+    
+    emg=cds.emg;
+    % find sampling rate
+    samprate = 1/mode(diff(emg.t));
+    [blow,alow] = butter(n_poles,LPF_cutoff/samprate);
+    [bhigh,ahigh] = butter(n_poles,HPF_cutoff/samprate,'high');
+    idx_emg = contains(emg.Properties.VariableNames,'EMG');
+    emg{:,idx_emg} = filtfilt(blow,alow,abs(filtfilt(bhigh,ahigh,emg{:,idx_emg})));
+    
+    cds_bin.emg = decimate_signals(emg,emg_list,bin_size);
+    clear emg;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Check the time vectors for these signals to make a master one
+fn = fieldnames(cds_bin);
+cds_bin.t = roundTime(cds_bin.(fn{1}).t);
+% check the time vector lengths just to be sure
+for i = 2:length(fn),if size(cds_bin.(fn{i}).t,1) ~= size(cds_bin.t,1), error('Time is different!'); end, end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Neural data now
+for array = 1:length(arrays)
+    [bs,sg] = bin_spikes(cds.units,unit_idx{array},cds_bin.t);
+    cds_bin.([arrays{array} '_spikes']) = bs; clear bs;
+    cds_bin.([arrays{array} '_unit_guide']) = sg; clear sg;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% convert events in trial table into bin indices
+cds_bin.trials = bin_events(cds.trials,intersect(event_list,time_events),cds_bin.t);
+param_events = setxor(event_list,time_events);
+% add in the non-time events
+for var = 1:length(param_events)
+    cds_bin.trials.(param_events{var}) = cds.trials.(param_events{var});
+end
+
+% This is a little "hack" in case all data is desired
+if all_points % here we want to include all data
+    cds_bin.trials.endTime = [0, cds_bin.trials.startTime];
+else
+    extra_time = round(extra_time/bin_size); % convert to number of bins
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Loop along trials and break into struct entries
+for i = 1:length(idx_trials)
+    iTrial = idx_trials(i);
+    
+    % find trial start/end times
+    if all_points % I've added an entry so it's weird
+        t_start = cds_bin.trials.endTime(iTrial)+1;
+        t_end = cds_bin.trials.endTime(iTrial+1);
+    else
+        t_start = cds_bin.trials.startTime(iTrial) - extra_time(1);
+        t_end = cds_bin.trials.endTime(iTrial) + extra_time(2);
+    end
+    idx = t_start:t_end-1;
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Add trial index markers
+    for e = 1:length(event_list)
+        temp = cds_bin.trials.(event_list{e});
+        temp = temp(iTrial);
+        if ismember(event_list{e},time_events) % adjust to be relative to first bin
+            trial_data(i).(['idx_' event_aliases{e}]) = temp - idx(1);
+        else % take parameter value
+            trial_data(i).(['idx_' event_aliases{e}]) = temp;
+        end
+    end
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % ADD kinematics
+    if ~isempty(cds_bin.kin)
+        trial_data(i).pos = [cds_bin.kin.x(idx)-pos_offset(1),cds_bin.kin.y(idx)-pos_offset(2)];
+        trial_data(i).vel = [cds_bin.kin.vx(idx),cds_bin.kin.vy(idx)];
+        trial_data(i).acc = [cds_bin.kin.ax(idx),cds_bin.kin.ay(idx)];
+    end
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Add force
+    if ~isempty(cds_bin.force)
+        trial_data(i).force = [cds_bin.force.fx(idx),cds_bin.force.fy(idx)];
+    end
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Add emg
+    if ~isempty(cds_bin.emg)
+        fn = cds.emg.Properties.VariableNames;
+        fn = fn(~strcmpi(fn,'t'));
+        
+        trial_data(i).emg = zeros(length(idx),length(fn));
+        % loop along the muscles to decimate
+        for muscle = 1:length(fn)
+            temp = cds_bin.emg.(fn{muscle});
+            trial_data(i).emg(:,muscle) = temp(idx);
+        end
+        % add emg names
+        trial_data(i).emg_names = fn;
+    end
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Add array data
+    for array = 1:length(arrays)
+        use_array_name = arrays{array};
+        if ~isempty(array_alias)
+            temp_idx = ismember(arrays,array_alias(:,1));
+            if sum(temp_idx) == 0
+                warning([arrays{array} ': not found in alias list. Using original name instead.']);
+            else
+                use_array_name = array_alias{temp_idx,2};
+            end
+        end
+        binned_spikes = cds_bin.([arrays{array} '_spikes']);
+        trial_data(i).([use_array_name '_spikes']) = binned_spikes(idx,:);
+        trial_data(i).([use_array_name '_unit_guide']) = cds_bin.([arrays{array} '_unit_guide']);
+    end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Package up parameter output
+td_params = struct( ...
+    'event_list',{event_list}, ...
+    'array_alias',{array_alias}, ...
+    'trial_results',{trial_results}, ...
+    'exclude_units',exclude_units, ...
+    'bin_size',bin_size, ...
+    'extra_time',extra_time, ...
+    'all_points',all_points);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% BUNCHA SUB FUNCS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function out = decimate_signals(data,var_list,bin_size)
+% decimates continuous data from CDS
+% assumes data is cds field, e.g. cds.kin
+if ~isempty(data)
+    out = struct();
+    
+    dt = mode(diff(data.t));
+    for var = 1:length(var_list)
+        out.(var_list{var}) = decimate(data.(var_list{var}),round(bin_size/dt));
+    end
+else
+    out = [];
+end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function out = bin_events(trials,event_list,t_bin)
+% bins events from CDS
+out = struct();
+for e = 1:length(event_list)
+    out.(event_list{e}) = find(histcounts(trials.(event_list{e}),t_bin));
+end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [binned_spikes,sg] = bin_spikes(units,unit_idx,t_bin)
+
+% note that histcounts outputs rows
+binned_spikes = zeros(size(unit_idx,1),length(t_bin));
+
+% histcounts works weirdly and needs an extra bin
+t_bin = [t_bin; t_bin(end)+mode(diff(t_bin))];
+
+sg = zeros(length(unit_idx),2);
+for unit = 1:length(unit_idx)
+    % get the spikes for that cell in the current time window
+    ts = units(unit_idx(unit)).spikes.ts;
+    binned_spikes(unit,:) = histcounts(ts,t_bin);
+    sg(unit,:) = [units(unit_idx(unit)).chan, units(unit_idx(unit)).ID];
+end
+% must transform to have same dimensions as kinematics etc
+binned_spikes = binned_spikes';
 end

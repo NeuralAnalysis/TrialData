@@ -2,29 +2,21 @@
 clear;
 clc;
 
-
-% Pat's computer
-% data_folder = 'C:\Users\pnlawlor\Box Sync\PatAndMattData';
-
-% Matt's computer
-data_folder = '/Users/mattperich/Data/TrialDataFiles';
-
-data_fname = 'Chewie_CO_FF_2016-10-07.mat';
+filename = '/Users/mattperich/Data/TrialDataFiles/Chewie_CO_FF_2016-10-07.mat';
 % Load data
-load([data_folder '/' data_fname])
+load(filename);
+[~,td] = getTDidx(trial_data,'epoch','BL');
+td = truncateAndBin(td,1,{'idx_movement_on',-20},{'idx_movement_on',50});
 
-%% Load scripts
-
-% addpath(genpath('C:\Users\pnlawlor\GoogleDrive\Research\Projects\PatAndMatt\Scripts_PatAndMatt'))
-
-%% Choose visualization parameters
-
-param_struct.trials = 10;
-param_struct.plot_signals = {'pos','vel','force'};
-param_struct.pos_location = 'left';
+%% Process
+td = getPCA(td,struct('array','M1','do_smoothing',true,'sqrt_transform',true,'trial_avg',true,'trial_avg_cond','target_direction'));
 
 
 %% Visualize
 
-vis_data(trial_data,param_struct)
+params = struct( ...
+    'trials',       1, ...
+    'plot_signals', {{'vel','force'}}, ...
+    'plot_pca',true);
+vis_data(td,params)
 

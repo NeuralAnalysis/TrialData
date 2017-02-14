@@ -8,9 +8,9 @@
 %
 % INPUTS:
 %   trial_data : the struct
-%   conditions : (string or cell array) the field name(s) in trial_data
-%                   avg_data will have an entry for each unique combo
 %   params     : struct with parameters
+%     .conditions : (string or cell array) the field name(s) in trial_data
+%                       avg_data will have an entry for each unique combo
 %     .do_stretch : (bool) whether to stretch/shrink trials to uniform length
 %                       if false, all trials must have same number of points
 %     .num_samp   : (int) how many time points to use for interpolation
@@ -30,9 +30,7 @@ function [avg_data,cond_idx] = trialAverage(trial_data, conditions, params)
 % DEFAULT PARAMETER VALUES
 do_stretch  =  false;
 num_samp    =  1000;
-if nargin > 2
-    eval(structvars(length(fieldnames(params)),params)); %overwrite parameters
-end
+if nargin > 2, assignParams(who,params); end % overwrite parameters
 if ~iscell(conditions), conditions = {conditions}; end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get list of time-varying signals that we will average over
@@ -95,4 +93,5 @@ for i = 1:num_conds
     
 end
 
-
+% restore logical order
+avg_data = reorderTDfields(avg_data);
