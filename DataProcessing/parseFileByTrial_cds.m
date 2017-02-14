@@ -8,14 +8,16 @@
 %                       to this file. This can handle any arbitrary information!
 %     .event_names   : Which cds.trials events to add to struct
 %                       Format: {'CDS_TRIAL_TABLE_NAME','ALIAS'; ... etc ...}
-%                       Can ignore ALIAS and give cell vector if you want
+%                       Can ignore ALIAS and give 1xN cell vector if you want
+%                       By default, assumes startTime and endTime exist,
+%                       and attempts to add tgtOnTime and goCueTime if possible
 %     .array_alias   : Aliases for renaming arrays from CDS names
 %                       Format: {'CDS_NAME','NEW_NAME'; ...etc...}
 %     .exclude_units : ID for which units to exclude (Default: [0,255])
 %                       NOTE: this default gets rid of unsorted!
-%     .trial_results : which reward codes to use ('R','A','F','I')
+%     .trial_results : which reward codes to use ('R','A','F','I') (Default: {'R'})
 %     .bin_size      : default 0.01 sec
-%     .extra_time    : [time before, time after] beginning and end of trial (default [0.5 0.3] sec)
+%     .extra_time    : [time before, time after] beginning and end of trial (default [0.2 0.2] sec)
 %     .all_points    : flag to include all data points. Thus, disregards extra_time
 %                       and each trial ends at trial_start of the one after
 %     .pos_offset    : offset (in units of cds.pos) to zero position

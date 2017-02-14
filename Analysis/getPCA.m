@@ -31,17 +31,20 @@
 %     .do_plot        : flag to make scree plot (default: false)
 %
 % OUTPUTS:
-%   w          : weight matrix for PCA projections
-%   scores     : scores for the PCs
-%   eigen      : eigenvalues for PC ranking
-%   mu         : mean for each input (for de-meaning later)
-%                  NOTE: if you use w later, you MUST demean using mu!!!
 %   trial_data : old struct with added field for scores for each trial
 %                   NOTE: if passing in old w and mu, only returns this
+%   pca_info   : struct of PCA information
+%     .w          : weight matrix for PCA projections
+%     .scores     : scores for the PCs
+%     .eigen      : eigenvalues for PC ranking
+%     .mu         : mean for each input (for de-meaning later)
+%                     NOTE: if you use w later, you MUST demean using mu!!!
+%     .params     : the parameters used for this analysis
 %
 % EXAMPLES:
 %   e.g. to compute covariance matrix
-%       [w,mu,~,~,params] = getPCA(trial_data, struct('array','M1','bin_size',0.01));
+%       [~,pca_info] = getPCA(trial_data, struct('array','M1','bin_size',0.01));
+%       w = pca_info.w;
 %   e.g. to add scores to trial_data later using the above output
 %       trial_data = getPCA(trial_data, w, mu, params);
 %
@@ -141,6 +144,14 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Package up outputs
 if new_pca && nargout == 2
-    pca_params = struct('array',array,'sqrt_transform',sqrt_transform,'do_smoothing',do_smoothing,'bin_size',bin_size,'kernel_SD',kernel_SD);
+    pca_params = struct( ...
+        'array',array, ...
+        'trial_idx',trial_idx, ...
+        'neurons',{neurons}, ...
+        'sqrt_transform',sqrt_transform, ...
+        'do_smoothing',do_smoothing, ...
+        'kernel_SD',kernel_SD, ...
+        'trial_avg', trial_avg, ...
+        'trial_avg_cond',trial_avg_cond);
     pca_info = struct('w',w,'mu',mu,'scores',scores,'eigen',eigen,'params',pca_params);
 end

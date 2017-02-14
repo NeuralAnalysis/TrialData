@@ -34,7 +34,7 @@ if isa(data,'commonDataStructure')
 else
     error('BDF not currently supported.');
     % when someone is ready to implement this, can write the following func
-    %   trial_data = parseFileByTrial_bdf(data,inputArgs);
+    %   trial_data = parseFileByTrial_bdf(data,params);
 end
 
 % ensure standard field order
