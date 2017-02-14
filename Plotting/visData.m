@@ -1,52 +1,48 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function [ ] = vis_data( trial_data, params )
+% function [ ] = visData( trial_data, params )
 %
 %   Function to visualize data. Plots in two-column format, where one column
-% is a 2-D position plot (and, optionally, a 3-D GPFA trajectory plot), and
+% is a 2-D position plot (and, optionally, a 3-D PCA trajectory plot), and
 % the second column is a stack of time-varying signals (e.g. continuous
-% data, spike rasters, GPFA dimensions, etc).
+% data, spike rasters, PCA dimensions, etc).
 %
 % NOTE: needs some tweaking to fix the positions etc
 %
 % INPUTS:
-% Trial_data is a struct array where each element is a trial.
-%   target_direction : the angular direction of the target on that trial
-%   idx_EVENT        : bin index of trial events. There can be many of these.
+%   Trial_data : struct array where each element is a trial.
+%
+%   params     : parameter struct
+%     .trials      : (vector) trial indices to plot. MUST BE SPECIFIED.
+%     .signals     : (cell array) fieldnames of continuous signals to plot (Default to {'vel,'acc'})
+%     .target_direction : the angular direction of the target on that trial
+%     .idx_EVENT        : bin index of trial events. There can be many of these.
 %                       Common ones include: target_on, go_cue, movement_on, peak_speed, reward
-%   continuous-data  : any number of binned continuous signals (e.g. 'pos','vel','acc','force')
-%   ARRAY_spikes     : contains an array [# neurons, # time bins]
+%     .continuous-data  : any number of binned continuous signals (e.g. 'pos','vel','acc','force')
+%     .ARRAY_spikes     : contains an array [# neurons, # time bins]
 %                       Each element is a count of binned spikes. ARRAY is currently 'M1' and/or 'PMd'
-%   ARRAY_gpfa       : (if needed) contains an array [# dimensions, # gpfa time bins]
+%     .ARRAY_pca       : (if needed) contains an array [# dimensions, # pca time bins]
 %
-% PARAM_STRUCT OPTIONS:
-% Plotting parameters
-%   trials      : (vector) trial indices to plot. MUST BE SPECIFIED.
-%   signals     : (cell array) fieldnames of continuous signals to plot (Default to {'vel,'acc'})
-%
-% GPFA-specific Parameters
-%   plot_gpfa   : (bool) whether to add GPFA data to figure (Default to false, requires GPFA field in trial_data)
-%                    NOTE: adds gpfa_dims dimensions to time plots, and adds first 3 dimensions as trajectory plot
-%                       To plot only trajectory, pass in empty gpfa_dims parameter
-%   gpfa_dims   : (vector) list of GPFA factors to plot
-%   gpfa_array  : (string) name of array to plot for GPFA ('M1','PMd', or 'Both')
-%   gpfa_params : struct of parameters from run_gpfa (Default to empty)
-%
+% PCA-specific Parameters (should generalize this functionality more later)
+%     .plot_pca   : (bool) whether to add PCA data to figure (Default to false, requires _pca field in trial_data)
+%                    NOTE: adds pca_dims dimensions to time plots, and adds first 3 dimensions as trajectory plot
+%                       To plot only trajectory, pass in empty pca_dims parameter
+%     .pca_dims   : (vector) list of PCA dims to plot
+%     .pca_array  : (string) name of array to plot for PCA ('M1','PMd', or 'Both')
 % NOTE: There are a lot more parameters hard-coded at the top of the function
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [ ] = vis_data( trial_data, params )
+function [ ] = visData( trial_data, params )
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
 if isfield(params,'trials'), trials_to_plot = params.trials; else, error('No trials specified.'); end
 plot_signals      =   {'vel'};
 plot_pca          =   false;
 pca_dims          =   1:3;
-pca_array         =   'M1';
-pca_params        =   [];
+pca_array         =   '';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   These are parameters that are less likely to change but can still be
 %   overwritten as an input parameter (not documented in help call though)
-pos_offset        =   [0, -30]; % offset to zero position
+pos_offset        =   [0, 0]; % offset to zero position
 target_size       =   2; % target size in cm
 target_distance   =   8; % distance of outer targets in cm
 event_db          =   { ...
@@ -72,27 +68,25 @@ event_rows         =   1;        % how many rows for event markers
 traj_rows          =   3;        % how many rows for time-varying trajectory plots
 spike_rows         =   4;        % how many rows for spike markers
 pos_location       =   'right'; % if position plot is on 'left' or 'right'
-trial_event_colors =   [0    0.4470    0.7410; ... % using default Matlab r2014b color order for trial events
-    0.8500    0.3250    0.0980; ...
-    0.9290    0.6940    0.1250; ...
-    0.4940    0.1840    0.5560; ...
-    0.4660    0.6740    0.1880; ...
-    0.3010    0.7450    0.9330; ...
-    0.6350    0.0780    0.1840];
+trial_event_colors =   parula(size(event_db,1)); % use default matlab colors
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-bin_size     =   trial_data(1).bin_size; %bin size of data in s
+% bin_size     =   trial_data(1).bin_size; %bin size of data in s
 
 % check for foolish inputs
 if max(trials_to_plot) > length(trial_data)
     error('Requested too many trials.');
 end
 
+if isempty(pca_array)
+    disp('WARNING: No PCA array provided. Skipping PCA plots.');
+    plot_pca = false;
+end
 
 num_trials_to_plot = length(trials_to_plot);
 
-% If GPFA plotting is desired, checks that data exists and params provided
+% If PCA plotting is desired, checks that data exists and params provided
 if plot_pca && ~isfield(trial_data,[pca_array '_pca'])
     error('PCA data not present in trial_data.');
 end
@@ -123,7 +117,7 @@ switch lower(pos_location)
         pos_start = time_cols;
 end
 
-% add 2D or 3D GPFA trajectory plot below position plot
+% add 2D or 3D PCA trajectory plot below position plot
 if plot_pca
     pos_rows_max = floor(num_rows/2);
 else
@@ -134,6 +128,15 @@ end
 % Loop through trials and plot
 for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're skipping trials
     tr_num = trials_to_plot(tr_idx); % Use tr_num from here down
+    
+    % check to make sure events aren't empty
+    idx = true(1,length(events));
+    for iEvent = 1:length(events)
+        if isempty(trial_data(tr_num).(events{iEvent}))
+            idx(iEvent) = false;
+        end
+    end
+    events = events(idx); clear idx;
     
     % Make new figure
     figure('units','normalized','outerposition',[0.1 0 .85 1]);
@@ -171,7 +174,7 @@ for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Plot GPFA trajectory path
+    % Plot PCA trajectory path
     if plot_pca
         subplot(num_rows,num_cols, ...
             reshape(subplot_grid(pos_rows_max+1:num_rows,pos_start+1:pos_start+pos_cols)',1,pos_cols*(num_rows-pos_rows_max)));
@@ -183,7 +186,7 @@ for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're
         
         % now plot event markers
         for iEvent = 1:length(events)
-            % scale bin index to fit gpfa bins
+            % get indices
             idx = trial_data(tr_num).(events{iEvent});
             
             plot3(trial_data(tr_num).([pca_array '_pca'])(idx,1), ...
