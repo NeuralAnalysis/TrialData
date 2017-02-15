@@ -54,12 +54,11 @@ switch lower(which_type)
         fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_spikes')));
         fn = strrep(fn,'_spikes','')';
     case 'neural' % anything that is neural derived (e.g. M1_spikes and M1_pca)
-        fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_spikes')));
-        arrays = strrep(fn,'_spikes','')';
+        arrays = getTDfields(trial_data,'arrays');
         fn = fieldnames(trial_data);
         neural_idx = zeros(length(fn),1);
         for array = 1:length(arrays)
-            neural_idx = neural_idx | cellfun(@(x) strcmpi(x(1:length(arrays{array})),arrays{array}),fn);
+            neural_idx = neural_idx | cellfun(@(x) ~isempty(regexp(x,'_spikes','ONCE')),fn);
         end
         fn = fn(neural_idx);
     case 'idx' % any idx_ field

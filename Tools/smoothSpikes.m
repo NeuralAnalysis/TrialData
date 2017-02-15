@@ -24,7 +24,7 @@ sqrt_transform  =  true;
 do_smoothing    =  true;
 kernel_SD       =  0.05;
 calc_fr         =  false;
-if nargin > 1, assignParams(who,params); end % overwrite parameters
+if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 bin_size = trial_data(1).bin_size;

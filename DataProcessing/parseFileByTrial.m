@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function trial_data = parseFileByTrial(data, params)
+% function [trial_data,td_params] = parseFileByTrial(data, params)
 %
 %   Wrapper function to create trial_data structs. Currently only supports
 % CDS.
@@ -25,12 +25,12 @@
 % Written by Matt Perich. Updated Feb 2017.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function trial_data = parseFileByTrial(data,params,varargin)
+function [trial_data,td_params] = parseFileByTrial(data,params,varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin == 1, params = []; end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isa(data,'commonDataStructure')
-    trial_data = parseFileByTrial_cds(data,params);
+    [trial_data,td_params] = parseFileByTrial_cds(data,params);
 else
     error('BDF not currently supported.');
     % when someone is ready to implement this, can write the following func

@@ -26,9 +26,8 @@
 function assignParams(opts,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if ~isstruct(params)
-    error('Not a params struct.');
-end
+if ~isstruct(params), error('Params is not a struct.'); end
+if length(params) > 1, error('Params has multiple entries.'); end
 
 % get all parameters
 vars = fieldnames(params);

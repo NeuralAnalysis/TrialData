@@ -24,7 +24,7 @@
 function [trial_data,bad_trials] = pruneBadTrials(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ranges = [];
-if nargin > 1, assignParams(who,params); end % overwrite parameters
+if nargin > 1, assignParams(who,params); end % overwrite defaults
 
 bad_idx = false(1,length(trial_data));
 for iTrial = 1:length(trial_data)
@@ -42,6 +42,13 @@ for iTrial = 1:length(trial_data)
     if ~isempty(ranges)
         if size(ranges,2) ~= 3, error('Ranges input not properly formatted.'); end
         for i = 1:size(ranges,1)
+            % define index values so I can check to make sure it's okay
+            
+            % If your requested values don't exist...
+            if isempty(td.(ranges{i,1})) || isempty(td.(ranges{i,2}))
+                error('idx references are outside trial range.');
+            end
+                
             if td.(ranges{i,2}) - td.(ranges{i,1}) < ranges{i,3}(1) || ...
                     td.(ranges{i,2}) - td.(ranges{i,1}) > ranges{i,3}(2)
                 err = true;

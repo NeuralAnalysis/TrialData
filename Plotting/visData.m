@@ -70,6 +70,7 @@ spike_rows         =   4;        % how many rows for spike markers
 pos_location       =   'right'; % if position plot is on 'left' or 'right'
 trial_event_colors =   parula(size(event_db,1)); % use default matlab colors
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if length(params) > 1, error('Params has multiple entries.'); end
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % bin_size     =   trial_data(1).bin_size; %bin size of data in s

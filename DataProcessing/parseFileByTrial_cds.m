@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function trial_data = parseFileByTrial_cds(cds,inputArgs)
+% function [trial_data,td_params] = parseFileByTrial_cds(cds,inputArgs)
 %
 % INPUTS:
 %   cds    : CDS object

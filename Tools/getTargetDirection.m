@@ -25,7 +25,7 @@ function trial_data = getTargetDirection(trial_data, params)
 reach_distance  =  8; % cm
 hold_time       =  0.5; % s
 dt              =  0.01; % s
-if nargin == 2, assignParams(who,params); end % overwrite parameters
+if nargin > 1, assignParams(who,params); end % overwrite defaults
 
 for i = 1:length(trial_data)
     tgt_pos = repmat([reach_distance*cos(trial_data(i).target_direction), reach_distance*sin(trial_data(i).target_direction)],size(trial_data(i).pos,1),1);

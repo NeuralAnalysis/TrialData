@@ -27,7 +27,7 @@ s_thresh   =  7;
 % change but you can overwrite them if you need to.
 start_idx  =  'idx_go_cue';
 end_idx    =  'idx_trial_end';
-if nargin > 1, assignParams(who,params); end % overwrite parameters
+if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 for trial = 1:length(trial_data)

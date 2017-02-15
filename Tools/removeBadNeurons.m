@@ -31,7 +31,7 @@ prctile_cutoff  =  99.5;
 do_fr_check     =  true;
 min_fr          =  0;
 fr_window       =  {};
-if nargin > 1, assignParams(who,params); end % overwrite parameters
+if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 bin_size        =  trial_data(1).bin_size;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
