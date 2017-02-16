@@ -8,6 +8,9 @@
 % rows of w will be as if you concatenated the two arrays together in the
 % order they were provided.
 %
+% TO DO:
+%   - make more generalizable (any input e.g. EMG instead of arrays only)
+%
 % trial_data = getPCA(trial_data, w, mu, params);
 %   Uses an old w and mu from previous getPCA call to add scores to
 % trial_data as ARRAY_pca. Params is still needed to specify the array or
