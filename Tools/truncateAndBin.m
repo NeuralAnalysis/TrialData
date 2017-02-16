@@ -38,6 +38,7 @@ elseif nargin == 4
     idx_start = varargin{temp(1)};
     idx_end = varargin{temp(2)};
     
+    if length(idx_start)~=2 || length(idx_end)~=2, error('Give alignment inputs as {''idx_ETC'',BINS}'); end
     num_bins = varargin{cellfun(@(x) ~iscell(x),varargin)};
 else
     error('Inputs not recognized.');
@@ -101,8 +102,10 @@ for trial = 1:length(trial_data)
     
     % process idx fields
     for iIdx = 1:length(fn_idx)
-        temp = t(trial_data(trial).(fn_idx{iIdx}));
-        if temp < t_bin(1) || temp > t_bin(end)
+        temp = trial_data(trial).(fn_idx{iIdx});
+        if temp > length(t), temp = length(t); end
+        temp = t(temp);
+        if isempty(temp) || (temp < t_bin(1) || temp > t_bin(end))
             trial_data(trial).(fn_idx{iIdx}) = [];
         else
             trial_data(trial).(fn_idx{iIdx}) = find(t_bin <= temp,1,'last');

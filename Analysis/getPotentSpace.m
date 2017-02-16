@@ -39,23 +39,27 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [td,pca_info] = getPotentSpace(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~isfield(params,'in_array'), error('Need to specify input array name'); end
-if ~isfield(params,'out_array'), error('Need to specify output array name'); end
-if ~isfield(params,'in_dims'), error('Need to specify input dimensionality'); end
-if ~isfield(params,'out_dims'), error('Need to specify output dimensionality'); end
 % DEFAULT PARAMETERS
+in_array     =  [];
+out_array    =  [];
+in_dims      =  [];
+out_dims     =  [];
 in_neurons   =  [];
 out_neurons  =  [];
 use_trials   =  1:length(trial_data);
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if isempty(in_array), error('Need to specify input array name'); end
+if isempty(out_array), error('Need to specify output array name'); end
+if isempty(in_dims), error('Need to specify input dimensionality'); end
+if isempty(out_dims), error('Need to specify output dimensionality'); end
 if isempty(in_neurons), in_neurons = 1:size(trial_data(1).([in_array '_spikes']),2); end
 if isempty(out_neurons), out_neurons = 1:size(trial_data(1).([out_array '_spikes']),2); end
 
 pca_params = params;
 
 % get output PC space
-pca_params.array = out_array;
+pca_params.arrays = out_array;
 pca_params.neurons = out_neurons;
 [~,pca_info] = getPCA(trial_data(use_trials),pca_params);
 w_out = pca_info.w;
@@ -63,7 +67,7 @@ mu_out = pca_info.mu;
 score_out = pca_info.scores;
 
 % get input PC space
-pca_params.array = in_array;
+pca_params.arrays = in_array;
 pca_params.neurons = in_neurons;
 [td,pca_info] = getPCA(trial_data(use_trials),pca_params);
 w_in = pca_info.w;

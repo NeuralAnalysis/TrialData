@@ -86,7 +86,7 @@ if length(filenames) > 1
     end
 else
     disp('Only one filename provided. Returning one file.');
-    load(varargin{1});
+    load(filenames{1});
     master_td = trial_data;
 end
 end

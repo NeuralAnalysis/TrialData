@@ -19,12 +19,13 @@
 % INPUTS:
 %   trial_data : the struct
 %   params     : struct containing parameters
-%     .array          : which units (can be cell array with multiple)
+%     .arrays         : which arrays (can be cell with multiple)
+%                           NOTE: Defaults to using all the _spikes fields
 %     .trial_idx      : which trials to use (default: all)
 %     .neurons        : which neurons to use (default: all) Note: for multiple arrays,
 %                       neurons should be cell array with indices for each array
-%     .sqrt_transform : flag to square root transform spikes (default: true)
-%     .do_smoothing   : flag to convolve spikes with gaussian (default: true)
+%     .sqrt_transform : flag to square root transform spikes (default: false)
+%     .do_smoothing   : flag to convolve spikes with gaussian (default: false)
 %     .kernel_SD      : kernel s.d. in s for smoothing (default: 0.05)
 %     .trial_avg_cond : (string/cell) which conditions to average over
 %                          NOTE: if empty or not passed in, won't trial average
@@ -43,7 +44,7 @@
 %
 % EXAMPLES:
 %   e.g. to compute covariance matrix
-%       [~,pca_info] = getPCA(trial_data, struct('array','M1','bin_size',0.01));
+%       [~,pca_info] = getPCA(trial_data, struct('arrays','M1'));
 %       w = pca_info.w;
 %   e.g. to add scores to trial_data later using the above output
 %       trial_data = getPCA(trial_data, w, mu, params);
@@ -71,23 +72,23 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get defaults or process parameters
 if ~exist('params','var'), params = struct(); end
-if isfield(params,'array'),array = params.array; else, error('Need to specify array'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETER VALUES
 trial_idx       =  1:length(trial_data);
+arrays          =  getTDfields(trial_data,'arrays');
 neurons         =  [];
-sqrt_transform  =  true;
-do_smoothing    =  true;
+sqrt_transform  =  false;
+do_smoothing    =  false;
 kernel_SD       =  0.05;
 trial_avg_cond  =  {};
 do_plot         =  false;
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % process and prepare inputs
-if isempty(trial_avg_cond), trial_avg = false; end
-if ~iscell(array), array = {array}; end
+if isempty(trial_avg_cond), trial_avg = false; else, trial_avg = true; end
+if ~iscell(arrays), arrays = {arrays}; end
 if isempty(neurons)
-    for i = 1:length(array), neurons{i} = 1:size(trial_data(1).([array{i} '_spikes']),2); end
+    for i = 1:length(arrays), neurons{i} = 1:size(trial_data(1).([arrays{i} '_spikes']),2); end
 end
 if ~iscell(neurons), neurons = {neurons}; end
 
@@ -103,8 +104,8 @@ if trial_avg, td = trialAverage(td,trial_avg_cond); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % concatenate specified trials
 fr = [];
-for i = 1:length(array)
-    temp_fr = cat(1,td.([array{i} '_spikes']));
+for i = 1:length(arrays)
+    temp_fr = cat(1,td.([arrays{i} '_spikes']));
     fr = [fr, temp_fr(:,neurons{i})];
 end
 % get the time points that separate each trial later
@@ -140,14 +141,14 @@ end
 if trial_avg, trial_data = td; end % THIS IS A HACK FOR NOW
 for trial = 1:length(trial_data)
     idx = trial_markers(trial):trial_markers(trial+1)-1;
-    trial_data(trial).([[array{:}] '_pca']) = (fr(idx,:)-repmat(mu,length(idx),1))*w;
+    trial_data(trial).([[arrays{:}] '_pca']) = (fr(idx,:)-repmat(mu,length(idx),1))*w;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Package up outputs
 if new_pca && nargout == 2
     pca_params = struct( ...
-        'array',array, ...
+        'arrays',arrays, ...
         'trial_idx',trial_idx, ...
         'neurons',{neurons}, ...
         'sqrt_transform',sqrt_transform, ...
