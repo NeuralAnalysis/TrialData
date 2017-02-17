@@ -8,7 +8,7 @@
 %                       to this file. This can handle any arbitrary information!
 %     .event_names   : Which cds.trials events to add to struct
 %                       Format: {'CDS_TRIAL_TABLE_NAME','ALIAS'; ... etc ...}
-%                       Can ignore ALIAS and give 1xN cell vector if you want
+%                       Can ignore ALIAS and give Nx1 cell vector if you want
 %                       By default, assumes startTime and endTime exist,
 %                       and attempts to add tgtOnTime and goCueTime if possible
 %     .array_alias   : Aliases for renaming arrays from CDS names
@@ -100,7 +100,7 @@ for i = 1:length(idx_trials)
     trial_data(i).date = datestr(cds.meta.dateTime,'mm-dd-yyyy');
     trial_data(i).task = cds.meta.task;
     if any(abs(cds.trials.tgtDir) > 2*pi) % good assumption that it's deg
-        trial_data(i).target_direction = minusPi2Pi(pi/180*cds.trials.tgtDir(iTrial));
+        trial_data(i).target_direction = (pi/180*cds.trials.tgtDir(iTrial));
     else % should be rad
         trial_data(i).target_direction = minusPi2Pi(cds.trials.tgtDir(iTrial));
     end
@@ -200,7 +200,7 @@ for i = 1:length(idx_trials)
         if ismember(event_list{e},time_events) % adjust to be relative to first bin
             trial_data(i).(['idx_' event_aliases{e}]) = temp - idx(1);
         else % take parameter value
-            trial_data(i).(['idx_' event_aliases{e}]) = temp;
+            trial_data(i).(event_aliases{e}) = temp;
         end
     end
     
@@ -288,7 +288,12 @@ function out = bin_events(trials,event_list,t_bin)
 % bins events from CDS
 out = struct();
 for e = 1:length(event_list)
-    out.(event_list{e}) = find(histcounts(trials.(event_list{e}),t_bin));
+    all_events = trials.(event_list{e});
+    nan_bins = NaN(1,length(all_events));
+    temp = find(histcounts(all_events,t_bin));
+    nan_bins(~isnan(all_events)) = temp;
+    
+    out.(event_list{e}) = nan_bins;
 end
 end
 

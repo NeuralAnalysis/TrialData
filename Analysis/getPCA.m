@@ -61,6 +61,9 @@ function [trial_data,pca_info] = getPCA(trial_data, varargin)
 if length(varargin) == 1 % only params is provided
     new_pca = true;
     params = varargin{1};
+elseif  isempty(varargin)
+    new_pca = true;
+    params = struct();
 else
     new_pca = false;
     if nargout > 1, error('When using old PCA, will only output trial_data'); end
