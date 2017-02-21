@@ -54,7 +54,7 @@ else
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Do some input processing
-if ~iscell(trial_results), trial_results = {trial_results}; end  
+if ~iscell(trial_results), trial_results = {trial_results}; end
 switch size(event_list,2)
     case 0, event_alias = {};
     case 1, event_alias = {};
@@ -202,11 +202,12 @@ for i = 1:length(idx_trials)
         temp = temp(iTrial);
         
         % check to see if there's an alias and use it
-        alias_idx = find(strcmpi(event_alias(:,1),event_list{e}));
-        if isempty(alias_idx)
-            temp_name = event_list{e};
-        else
-            temp_name = event_alias{alias_idx,2};
+        temp_name = event_list{e};
+        if ~isempty(event_alias)
+            alias_idx = find(strcmpi(event_alias(:,1),event_list{e}));
+            if ~isempty(alias_idx)
+                temp_name = event_alias{alias_idx,2};
+            end
         end
         
         if ismember(event_list{e},time_events) % adjust to be relative to first bin

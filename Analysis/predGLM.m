@@ -22,7 +22,7 @@ if do_single_trial%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     for i = 1:size(out_signals,1)
         % if second entry is 'all', use all
         if ischar(out_signals{i,2})
-            idx{i} = 1:size(td(1).(out_signals{i,1}),2);
+            idx{i} = 1:size(trial_data(1).(out_signals{i,1}),2);
         else
             idx{i} = out_signals{i,2};
         end

@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function [trial_data, bad_trials] = pruneBadTrials(trial_data, params);
+% function [trial_data, bad_trials] = removeBadTrials(trial_data, params);
 %
 %   This function will identify and remove bad trials. Not much supported
 % at the moment, but functionality can be expanded.
@@ -21,7 +21,7 @@
 % Written by Matt Perich. Updated Feb 2017.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [trial_data,bad_trials] = pruneBadTrials(trial_data,params)
+function [trial_data,bad_trials] = removeBadTrials(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ranges = [];
 if nargin > 1, assignParams(who,params); end % overwrite defaults

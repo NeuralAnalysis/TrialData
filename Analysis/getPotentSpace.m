@@ -37,7 +37,7 @@
 % Written by Matt Perich. Updated Feb 2017.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [td,pca_info] = getPotentSpace(trial_data,params)
+function [trial_data,pca_info] = getPotentSpace(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
 in_array     =  [];
@@ -69,7 +69,7 @@ score_out = pca_info.scores;
 % get input PC space
 pca_params.arrays = in_array;
 pca_params.neurons = in_neurons;
-[td,pca_info] = getPCA(trial_data(use_trials),pca_params);
+[~,pca_info] = getPCA(trial_data(use_trials),pca_params);
 w_in = pca_info.w;
 mu_in = pca_info.mu;
 score_in = pca_info.scores;
@@ -103,11 +103,17 @@ pca_info = struct(        ...
     'mu_out',   mu_out,   ...
     'params',   pca_params);
 
-for trial = 1:length(td)
-    temp = td(trial).([in_array '_pca']);
+for trial = 1:length(trial_data)
+    temp = trial_data(trial).([out_array '_spikes']);
+    trial_data(trial).([out_array '_pca']) = temp*w_out;
+    
+    temp = trial_data(trial).([in_array '_spikes']);
+    trial_data(trial).([in_array '_pca']) = temp*w_in;
+    
+    temp = trial_data(trial).([in_array '_pca']);
     temp = temp(:,1:in_dims);
-    td(trial).potent = temp*V_potent;
-    td(trial).null = temp*V_null;
+    trial_data(trial).([in_array out_array '_potent']) = temp*V_potent;
+    trial_data(trial).([in_array out_array '_null']) = temp*V_null;
 end
 
 
