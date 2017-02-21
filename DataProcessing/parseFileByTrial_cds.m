@@ -46,6 +46,7 @@ if ~isfield(params,'meta'), disp('WARNING: no meta information provided.'); end
 LPF_cutoff  =  20; % for EMG butterworth filter
 HPF_cutoff  =  10; % for EMG butterworth filter
 n_poles     =  4;  % for EMG butterworth filter
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1 && ~isempty(params)
     assignParams(who,params); % overwrite parameters
 else
@@ -53,11 +54,12 @@ else
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Do some input processing
-if ~iscell(trial_results), trial_results = {trial_results}; end
+if ~iscell(trial_results), trial_results = {trial_results}; end  
 switch size(event_list,2)
-    case 0, event_aliases = {};
-    case 1, event_aliases = {};
-    case 2, event_aliases = event_list(:,2); event_list = event_list(:,1);
+    case 0, event_alias = {};
+    case 1, event_alias = {};
+    case 2, event_alias = event_list; event_list = event_list(:,1);
+    otherwise, error('event_list should have two columns {name, alias (if desired)}');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -75,7 +77,6 @@ end
 fn = cds.trials.Properties.VariableNames;
 if ~all(ismember({'startTime','endTime'},fn)), error('Must have start and end times in CDS.'); end
 event_list = union({'startTime','endTime'},event_list);
-if isempty(event_aliases), event_aliases = event_list; end
 if ismember(fn,{'goCueTime'}), event_list = union({'goCueTime'},event_list); end
 if ismember(fn,{'tgtOnTime'}), event_list = union({'tgtOnTime'},event_list); end
 % determine which signals are time-varying and which are parameter values
@@ -137,6 +138,7 @@ if ~isempty(cds.emg)
     emg=cds.emg;
     % find sampling rate
     samprate = 1/mode(diff(emg.t));
+    % filter
     [blow,alow] = butter(n_poles,LPF_cutoff/samprate);
     [bhigh,ahigh] = butter(n_poles,HPF_cutoff/samprate,'high');
     idx_emg = contains(emg.Properties.VariableNames,'EMG');
@@ -197,10 +199,19 @@ for i = 1:length(idx_trials)
     for e = 1:length(event_list)
         temp = cds_bin.trials.(event_list{e});
         temp = temp(iTrial);
+        
+        % check to see if there's an alias and use it
+        alias_idx = find(strcmpi(event_alias(:,1),event_list{e}));
+        if isempty(alias_idx)
+            temp_name = event_list{e};
+        else
+            temp_name = event_alias{alias_idx,2};
+        end
+        
         if ismember(event_list{e},time_events) % adjust to be relative to first bin
-            trial_data(i).(['idx_' event_aliases{e}]) = temp - idx(1);
+            trial_data(i).(['idx_' temp_name]) = temp - idx(1);
         else % take parameter value
-            trial_data(i).(event_aliases{e}) = temp;
+            trial_data(i).(temp_name) = temp;
         end
     end
     
@@ -257,6 +268,7 @@ end
 td_params = struct( ...
     'event_list',{event_list}, ...
     'array_alias',{array_alias}, ...
+    'event_alias',{event_alias}, ...
     'trial_results',{trial_results}, ...
     'exclude_units',exclude_units, ...
     'bin_size',bin_size, ...

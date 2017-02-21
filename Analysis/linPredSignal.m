@@ -1,14 +1,41 @@
-function [orig,pred,c,b] = linPredSignal(td,in_var,out_var,num_dims,varargin)
-% linear predictions of a signal
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% function 
+% 	Compute linear predictions of a signal. For example. predict X/Y
+% position using M1 firing rates.
 %
 % WORK IN PROGRESS
+%
+% INPUTS:
+%   trial_data : the struct
+%   in_var     : (string) name of input variable field
+%   out_var    : (string) name out predicted variable field
+%   params     : parameter struct
+%     .fit_metric : which metric for evaluating fit ('corr','r2','vaf')
+%     .num_dims   : how many dimensinos of in_var to use
+%     .b          : weights from a previous call
+%                       Used to use old model on new data
+% OUTPUTS:
+%   orig : time-varying original signal
+%   pred : tim-varying predicted signal
+%   c    : output of fit_metric
+%   b    : weights computed for model
+%
+% Written by Matt Perich. Updated Feb 2017.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [orig,pred,c,b] = linPredSignal(td,in_var,out_var,params)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+fit_metric  =  'vaf';
+num_dims    =  [];
+b           =  [];
+assignParams(who,params);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-fit_metric = 'vaf';
+if isempty(num_dims)
+    num_dims = size(trial_data.(in_var),2);
+end
 
-if nargin > 4
-    b = varargin{1};
-    new_model = false;
-else
+if isempty(b)
     new_model = true;
 end
 

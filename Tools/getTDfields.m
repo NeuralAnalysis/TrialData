@@ -50,6 +50,8 @@ switch lower(which_type)
         fn = fn(idx & ~ismember(fn,fn_neural));
     case 'spikes' % just the _spikes fields
         fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_spikes')));
+    case 'unit_guides'
+        fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_unit_guide')));
     case 'arrays' % same as spikes but I only return the array name
         fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_spikes')));
         fn = strrep(fn,'_spikes','')';
@@ -58,7 +60,9 @@ switch lower(which_type)
         fn = fieldnames(trial_data);
         neural_idx = zeros(length(fn),1);
         for array = 1:length(arrays)
-            neural_idx = neural_idx | cellfun(@(x) ~isempty(regexp(x,'_spikes','ONCE')),fn);
+            neural_idx = neural_idx | ...
+                (cellfun(@(x) ~isempty(regexp(x,[arrays{array} '_'],'ONCE')),fn) & ...
+                ~cellfun(@(x) ~isempty(regexp(x,[arrays{array} '_unit_guide'],'ONCE')),fn));
         end
         fn = fn(neural_idx);
     case 'idx' % any idx_ field
