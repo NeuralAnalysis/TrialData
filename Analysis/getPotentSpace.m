@@ -75,23 +75,28 @@ mu_in = pca_info.mu;
 score_in = pca_info.scores;
 pca_params = pca_info.params;
 
-y = score_out(:,1:out_dims);
-x = score_in(:,1:in_dims);
-% find the model
-W = zeros( size(y,2), size(x,2) );
-for i = 1:size(y,2)
-    %[b_pc, ~, ~, ~, stats_this] = regress(y(:,i),x);
-    b_pc = x\y(:,i);
-    % fill MIMO matrix W
-    W(i,:) = b_pc';
+if ~strcmpi(in_array,out_array)
+    y = score_out(:,1:out_dims);
+    x = score_in(:,1:in_dims);
+    % find the model
+    W = zeros( size(y,2), size(x,2) );
+    for i = 1:size(y,2)
+        %[b_pc, ~, ~, ~, stats_this] = regress(y(:,i),x);
+        b_pc = x\y(:,i);
+        % fill MIMO matrix W
+        W(i,:) = b_pc';
+    end
+    
+    % do SVD of weights to get potent/null spaces
+    [U, S, V]                   = svd( W );
+    % The output potent spaces is defined by the first m columns of V', where m
+    % is the number of dimensions of the output
+    V_potent                    = V(1:size(y,2),:)';
+    V_null                      = V(size(y,2)+1:end,:)';
+else
+    disp('Input and output arrays are the same. Skipping null/potent.');
+    [V_potent,V_null] = deal([]);
 end
-
-% do SVD of weights to get potent/null spaces
-[U, S, V]                   = svd( W );
-% The output potent spaces is defined by the first m columns of V', where m
-% is the number of dimensions of the output
-V_potent                    = V(1:size(y,2),:)';
-V_null                      = V(size(y,2)+1:end,:)';
 
 % package up PCA weights, etc.
 pca_info = struct(        ...
@@ -103,17 +108,21 @@ pca_info = struct(        ...
     'mu_out',   mu_out,   ...
     'params',   pca_params);
 
+% populate trial_data struct with PCA scores and null/potent projections
 for trial = 1:length(trial_data)
     temp = trial_data(trial).([out_array '_spikes']);
     trial_data(trial).([out_array '_pca']) = temp*w_out;
     
-    temp = trial_data(trial).([in_array '_spikes']);
-    trial_data(trial).([in_array '_pca']) = temp*w_in;
-    
-    temp = trial_data(trial).([in_array '_pca']);
-    temp = temp(:,1:in_dims);
-    trial_data(trial).([in_array out_array '_potent']) = temp*V_potent;
-    trial_data(trial).([in_array out_array '_null']) = temp*V_null;
+    if ~strcmpi(in_array,out_array)
+        temp = trial_data(trial).([in_array '_spikes']);
+        trial_data(trial).([in_array '_pca']) = temp*w_in;
+        
+        temp = trial_data(trial).([in_array '_pca']);
+        
+        temp = temp(:,1:in_dims);
+        trial_data(trial).([in_array out_array '_potent']) = temp*V_potent;
+        trial_data(trial).([in_array out_array '_null']) = temp*V_null;
+    end
 end
 
 
