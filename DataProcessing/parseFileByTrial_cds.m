@@ -111,8 +111,9 @@ for i = 1:length(idx_trials)
     
     % loop along all meta fields
     if isfield(params,'meta')
-        for fn = fieldnames(params.meta)
-            trial_data(i).(fn) = params.meta.(fn);
+        fields = fieldnames(params.meta);
+        for fn = 1:numel(fields)
+            trial_data(i).(fields{fn}) = params.meta.(fields{fn});
         end
     end
 end
