@@ -15,7 +15,7 @@ function trial_data = reorderTDfields(trial_data)
 % Get names for the different types
 fn        = fieldnames(trial_data);
 fn_idx    = getTDfields(trial_data,'idx');
-fn_neural = getTDfields(trial_data,'neural');
+fn_neural = [getTDfields(trial_data,'neural'); getTDfields(trial_data,'unit_guides')];
 fn_cont   = getTDfields(trial_data,'cont');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -28,10 +28,22 @@ neural_idx = find(ismember(fn,fn_neural));
 % sort idx indices by increasing bin count
 idx_idx = find(ismember(fn,fn_idx));
 % DO SORT
+v = zeros(1,length(idx_idx));
+for i = 1:length(idx_idx)
+    v(i) = trial_data(1).(fn{idx_idx(i)});
+end
+[~,I] = sort(v);
+idx_idx = idx_idx(I);
+
 
 % put EMG at end of continuous
 %   Because, aesthetically, I like having emg_names after the rest
 cont_idx = find(ismember(fn,fn_cont));
+if isfield(trial_data,'emg')
+    emg_idx = cellfun(@(x) ~isempty(x),strfind(fn_cont,'emg'));
+    cont_idx = [cont_idx; cont_idx(emg_idx)];
+    cont_idx(emg_idx) = [];
+end
 
 % do reordering
 master_idx = [meta_idx; idx_idx; cont_idx; neural_idx];
