@@ -3,7 +3,8 @@
 % 	Compute linear predictions of a signal. For example. predict X/Y
 % position using M1 firing rates.
 %
-% WORK IN PROGRESS
+% WORK IN PROGRESS. To do:
+%   1) allow for multiple inputs at once (e.g. M1_spikes and M1_spikes_shift)
 %
 % INPUTS:
 %   trial_data : the struct

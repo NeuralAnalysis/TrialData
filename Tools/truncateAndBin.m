@@ -48,15 +48,6 @@ fn_spikes = getTDfields(trial_data,'spikes');
 fn_kin = getTDfields(trial_data,'cont');
 fn_idx = getTDfields(trial_data,'idx');
 
-%%%%
-% THIS IS A HACK FOR NOW BECAUSE MATT IS TOO LAZY TO REMAKE HIS SAVED
-% STRUCTS FROM SCRATCH. CAN BE DELETED ONCE IT GOES PUBLIC.
-if ~isfield(trial_data,'bin_size')
-    disp('Bin size not found in struct. Defaulting to 10 ms.');
-    [trial_data.bin_size] = deal(0.01);
-end
-%%%%
-
 for trial = 1:length(trial_data)
     % assumes there will always be a pos
     t = 1:size(trial_data(trial).pos,1);

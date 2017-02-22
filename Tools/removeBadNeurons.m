@@ -17,7 +17,7 @@
 %
 % OUTPUTS:
 %   trial_data : the struct with bad_units removed
-%   bad_units  : list of cell indices in the original struct that are bad
+%   bad_units  : list of indices in the original struct that are bad
 %
 % Written by Matt Perich. Updated Feb 2017.
 %

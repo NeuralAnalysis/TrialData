@@ -126,7 +126,7 @@ trial_markers = [1,1+cumsum(cellfun(@(x) size(x,1),{td.(fn_time{1})}))];
 % build PCA model for M1
 if new_pca
     % compute PCA
-    [w, scores, eigen,~,~,mu] = pca(data,'Algorithm',pca_algorithm,'Centered',pca_centered);
+   [w, scores, eigen,~,~,mu] = pca(data,'Algorithm',pca_algorithm,'Centered',pca_centered);
     
     if do_plot
         figure,

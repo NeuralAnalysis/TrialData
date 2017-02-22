@@ -237,7 +237,11 @@ for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're
         idx = trial_data(tr_num).(events{iEvent});
         plot([idx idx],[0 1],'LineWidth',line_width,'Color',trial_event_colors(iEvent,:));
         % get the shorthand name from the event_db
-        text(idx,.5,event_db{strcmpi(event_db(:,1),events{iEvent}),2},'FontSize',font_size);
+        if any(strcmpi(event_db(:,1),events{iEvent}))
+            text(idx,.5,event_db{strcmpi(event_db(:,1),events{iEvent}),2},'FontSize',font_size);
+        else
+            text(idx,.5,strrep(events{iEvent},'idx_',''),'FontSize',font_size);
+        end
     end
     
     axis([1 size(trial_data(tr_num).pos,1) 0 1]);
