@@ -7,12 +7,14 @@
 % INPUTS:
 %   trial_data : the struct
 %   which_type : (string) the type of field. Options:
-%                   1) 'cont'   : continuous (pos, vel, force, etc)
-%                   2) 'spikes' : neural data fields
-%                   3) 'arrays' : similar to spikes but returns array names
-%                   4) 'time'   : names of all time varying fields
-%                   5) 'idx'    : name of all time index fields
-%                   6) 'neural'  : any neural signals (e.g. M1_WHATEVER)
+%                   1) 'cont'        : continuous (pos, vel, force, etc)
+%                   2) 'spikes'      : neural data fields
+%                   3) 'arrays'      : similar to spikes but returns array names
+%                   4) 'time'        : names of all time varying fields
+%                   5) 'idx'         : name of all time index fields
+%                   6) 'neural'      : any neural signals (e.g. M1_WHATEVER)
+%                   7) 'unit_guides' : all unit_guides
+%                   8) 'meta'        : all fields that are not time-varying or idx_
 %
 % OUTPUTS:
 %   fn : the fieldnames of which_type
@@ -39,6 +41,20 @@ switch lower(which_type)
             idx(ifn) = size(trial_data(1).(fn{ifn}),1)==t;
         end
         fn = fn(idx);
+    case 'meta'% all fields that are NOT time-varying or idx_
+        % find any signal that is KNOWN to be time-varying (defined above)
+        % then find all signals that have the same number of rows
+        % kinda hack-y but it works
+        %   note: assumes rows are time and columns are variables
+        cont_vars = fn(ismember(fn,cont_vars));
+        t = size(trial_data(1).(cont_vars{1}),1);
+        idx = false(1,length(fn));
+        for ifn = 1:length(fn)
+            idx(ifn) = size(trial_data(1).(fn{ifn}),1)==t;
+        end
+        idx = idx | cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'idx_'))';
+        fn = fn(~idx);
+        
     case 'cont' % same as 'time' but I exclude neural
         cont_vars = fn(ismember(fn,cont_vars));
         t = size(trial_data(1).(cont_vars{1}),1);
