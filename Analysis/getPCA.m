@@ -114,8 +114,8 @@ if trial_avg, td = trialAverage(td,trial_avg_cond); end
 % concatenate specified trials
 data = [];
 for i = 1:length(signals)
-    temp_fr = cat(1,td.(signals{i}));
-    data = [data, temp_fr(:,signal_idx{i})];
+    temp_data = cat(1,td.(signals{i}));
+    data = [data, temp_data(:,signal_idx{i})];
 end
 % get the time points that separate each trial later
 fn_time = getTDfields(td,'time');
@@ -147,23 +147,24 @@ if new_pca
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Add scores to trial_data
-if trial_avg, trial_data = td; end % THIS IS A HACK FOR NOW
-for trial = 1:length(trial_data)
-    idx = trial_markers(trial):trial_markers(trial+1)-1;
-    trial_data(trial).([[signals{:}] '_pca']) = (data(idx,:)-repmat(mu,length(idx),1))*w;
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Package up outputs
 if new_pca
     pca_params = struct( ...
-        'arrays',signals, ...
+        'signals',signals, ...
         'trial_idx',trial_idx, ...
-        'neurons',{signal_idx}, ...
+        'signal_idx',{signal_idx}, ...
         'sqrt_transform',sqrt_transform, ...
         'do_smoothing',do_smoothing, ...
         'kernel_SD',kernel_SD, ...
         'trial_avg_cond',trial_avg_cond);
     pca_info = struct('w',w,'mu',mu,'scores',scores,'eigen',eigen,'params',pca_params);
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Add scores to trial_data
+signals = cellfun(@(x) strrep(x,'_spikes',''),signals,'uni',0);
+for trial = 1:length(trial_data)
+    idx = trial_markers(trial):trial_markers(trial+1)-1;
+    trial_data(trial).([[signals{:}] '_pca']) = (data(idx,:)-repmat(mu,length(idx),1))*w;
+end
+
