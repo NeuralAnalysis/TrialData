@@ -13,8 +13,8 @@
 % trial_data as SIGNAL_pca. Params is still needed to specify the array or
 % if you want smoothing, etc.
 %
-%   NOTE: always centers! Theoretically this could be modified to take a
-% parameter to skip the centering.
+%   NOTE: centers data by default! Thus to reconstruct scores you need the
+%   means of each signal (mu)
 %
 % INPUTS:
 %   trial_data : the struct
@@ -95,6 +95,7 @@ assignParams(who,params); % overwrite parameters
 if isempty(trial_avg_cond), trial_avg = false; else, trial_avg = true; end
 if ~iscell(signals), signals = {signals}; end
 if isempty(signal_idx)
+    signal_idx = cell(1,length(signals));
     for i = 1:length(signals), signal_idx{i} = 1:size(trial_data(1).(signals{i}),2); end
 end
 if ~iscell(signal_idx), signal_idx = {signal_idx}; end
@@ -133,13 +134,13 @@ if new_pca
         bar(eigen/sum(eigen));
         axis('tight');
         xlabel('eigenvalue nbr.','FontSize',14),ylabel('explained variance','FontSize',14)
-        set(gca,'TickDir','out'),set(gca,'FontSize',14);
+        set(gca,'Box','off','TickDir','out','FontSize',14);
         xlim([0 size(data,2)+1])
         
         subplot(2,1,2);
         plot(cumsum(eigen/sum(eigen)),'linewidth',3,'marker','d'),
         xlabel('eigenvalue nbr.','FontSize',14),ylabel('explained variance','FontSize',14)
-        set(gca,'TickDir','out'),set(gca,'FontSize',14);
+        set(gca,'Box','off','TickDir','out','FontSize',14);
         xlim([0 size(data,2)+1])
         ylim([0 1])
     end

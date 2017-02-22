@@ -59,7 +59,7 @@ if isempty(out_neurons), out_neurons = 1:size(trial_data(1).([out_array '_spikes
 pca_params = params;
 
 % get output PC space
-pca_params.arrays = out_array;
+pca_params.arrays = [out_array '_spikes'];
 pca_params.neurons = out_neurons;
 [~,pca_info] = getPCA(trial_data(use_trials),pca_params);
 w_out = pca_info.w;
@@ -67,7 +67,7 @@ mu_out = pca_info.mu;
 score_out = pca_info.scores;
 
 % get input PC space
-pca_params.arrays = in_array;
+pca_params.signals = [in_array '_spikes'];
 pca_params.neurons = in_neurons;
 [~,pca_info] = getPCA(trial_data(use_trials),pca_params);
 w_in = pca_info.w;
