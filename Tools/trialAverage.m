@@ -6,6 +6,11 @@
 % to stretch/shrink all trials to the same number of points, but it does
 % not trim data. This can be easily done with truncateAndBin.
 %
+% Note: returns all fields, but for meta parameters, etc, you can average
+% across trials with different values. If they all are the same, fills in
+% field for that condition with that value. Otherwise, adds cell array that
+% contains all unique values, largely for later reference.
+%
 % INPUTS:
 %   trial_data : the struct
 %   params     : struct with parameters
@@ -70,14 +75,11 @@ num_conds = size(all_conds,1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get indices for trials meeting each unique combination
 %   and make struct with trial-averaged entries
+fn_meta = getTDfields(trial_data,'meta');
+
 cond_idx = cell(1,num_conds);
 avg_data = repmat(struct(),1,num_conds);
 for i = 1:num_conds
-    avg_data(i).monkey = trial_data(1).monkey;
-    avg_data(i).date = trial_data(1).date;
-    avg_data(i).task = trial_data(1).task;
-    avg_data(i).bin_size = trial_data(1).bin_size;
-    
     func_in = cell(1,2*size(all_conds,2));
     for iCond = 1:size(all_conds,2)
         func_in{2*(iCond-1)+1}   = conditions{iCond};
@@ -85,6 +87,27 @@ for i = 1:num_conds
         avg_data(i).(conditions{iCond}) = cond_vals{iCond}{all_conds(i,iCond)};
     end
     cond_idx{i}=getTDidx(trial_data,func_in);
+    
+    % populate meta fields
+    for f = 1:length(fn_meta)
+        if ischar(trial_data(1).(fn_meta{f}))
+            u = unique({trial_data(cond_idx{i}).(fn_meta{f})});
+            if length(u) == 1
+                avg_data(i).(fn_meta{f}) = u{1};
+            else
+                avg_data(i).(fn_meta{f}) = u;
+            end
+        elseif iscell(trial_data(1).(fn_meta{f}))
+            avg_data(i).(fn_meta{f}) = unique([trial_data(cond_idx{i}).(fn_meta{f})]);
+        else
+            if size(trial_data(1).(fn_meta{f}),2) > 1
+                u = unique(cat(1,trial_data(cond_idx{i}).(fn_meta{f})),'rows');
+            else
+                u = unique([trial_data(cond_idx{i}).(fn_meta{f})]);
+            end
+            avg_data(i).(fn_meta{f}) = u;
+        end
+    end
     
     % now loop along time signals to average
     for v = 1:length(time_vars)
