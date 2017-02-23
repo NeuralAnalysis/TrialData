@@ -1,24 +1,47 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   Evaluates quality of GLM fit
 % INPUTS:
 %   trial_data : the struct
-%   glm_name   : string name of glm to evaluate
-%                   OR {'GLM1','GLM2'} to do relative pR2 of 1 rel to 2
-function varargout = evalGLM(trial_data,glm_name,params)
+%   params     : parameter struct
+%       .out_signals : which output signal is predicted by glm_name
+%       .glm_name    : string name of glm to evaluate
+%                         OR {'GLM1','GLM2'} to do relative pR2 of 2 rel to 1
+%                         Default is to find the _glm field (error if more than one)
+%       .trial_idx   : trials to evaluate. Ways to use:
+%                     1) 1:10 treats each trial separately
+%                     2) 1:2:10 predicts in bins of size 2 trials
+%                     3) [1,10] returns a value for all 10 trials
+%                         DEFAULT: [1,length(trial_data]
+%       .num_bootstraps : how many bootstraps to use (if <2, doesn't do it)
+%
+function pr2 = evalGLM(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
+out_signals      =  [];
+glm_name         =  [];
+trial_idx        =  [1,length(trial_data)];
 num_bootstraps   =  1000;
-if nargin > 2, assignParams(who,params); end % overwrite parameters
+if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Process inputs
+if isempty(out_signals), error('Need to provide output signal'); end
+if ~iscell(out_signals), out_signals = {out_signals}; end
 if iscell(glm_name) % we are doing relative pr2
-    if size(trial_data(1).([glm_name{1} '_glm']),2) ~= size(trial_data(1).([glm_name{2} '_glm']),2)
+    if size(trial_data(1).(['glm_' glm_name{1}]),2) ~= size(trial_data(1).(['glm_' glm_name{2}]),2)
         error('Different numbers of variables for rpr2');
     end
     if length(glm_name) ~= 2
         error('For relative pR2, give glm_name as {''GLM1'',''GLM2''}');
     end
 end
+if isempty(glm_name)
+    fn = fieldnames(trial_data);
+    idx = ~cellfun(@isempty,strfind(fn,'glm_'));
+    if sum(idx) > 1, error('Multiple GLM models found. Please specify which to use.'); end
+    glm_name = fn(idx);
+end
+if ~iscell(glm_name), glm_name = {glm_name}; end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % figure out how many signals there will be
@@ -31,75 +54,55 @@ for i = 1:size(out_signals,1)
     end
 end
 
-% Get performance by trial and add predictions to trial_data
-pr2 = NaN(length(trial_data),sum(cellfun(@(x) length(x),idx)),2);
-if ~isempty(rpr2_glm)
-    rpr2 = NaN(length(trial_data),sum(cellfun(@(x) length(x),idx)),2);
-end
-
-for trial = 1:length(trial_data)
-    x  = get_vars(trial_data(trial),in_signals);
-    y = get_vars(trial_data(trial),out_signals);
-    if ~isempty(rpr2_glm)
-        yfit_rpr2 = get_vars(trial_data,{['glm_' rpr2_glm],'all'});
-        [yfit,pr2(trial,:,:),rpr2(trial,:,:)] = eval_glm(b,x,y,yfit_rpr2,num_bootstraps);
-    else
-        [yfit,pr2(trial,:,:),~] = eval_glm(b,x,y,[],num_bootstraps);
-    end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Calculate pr2
+% quick hack here for when we aren't binning and want single trials
+if unique(diff(trial_idx)) == 1, trial_idx = [trial_idx, trial_idx(end)+1]; end
+pr2 = NaN(length(trial_idx)-1,sum(cellfun(@(x) length(x),idx)),2);
+for i = 1:length(trial_idx)-1
+    trials = trial_idx(i):trial_idx(i+1)-1;
     
-    trial_data(trial).(['glm_' glm_name]) = yfit;
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Package up outputs
-varargout{1} = trial_data;
-varargout{2} = pr2;
-if ~isempty(rpr2_glm)
-    varargout{3} = rpr2;
-end
-
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [yfit,pr2,rpr2] = eval_glm(b,x,y,yfit_rpr2,num_bootstraps)
-yfit = zeros(size(y));
-[pr2,rpr2] = deal(zeros(size(y,2),2));
-
-% loop along output variables and compute
-for iVar = 1:size(y,2)
-    % predict from GLM output
-    yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
-    pr2(iVar,:) = get_pr2(y(:,iVar),yfit(:,iVar),num_bootstraps);
-    
-    if ~isempty(yfit_rpr2)
-        rpr2(iVar,:) = get_rpr2(y(:,iVar),yfit_rpr2(:,iVar),yfit(:,iVar),num_bootstraps);
+    temp = cat(1,trial_data(trials).(out_signals{1}));
+    temp1 = cat(1,trial_data(trials).(['glm_' glm_name{1}]));
+    if length(glm_name) == 1 % pr2
+        for iVar = 1:size(temp,2)
+            pr2(i,iVar,:) = get_pr2(temp(:,iVar),temp1(:,iVar),num_bootstraps);
+        end
+    else % relative pr2
+        temp2 = cat(1,trial_data(trials).(['glm_' glm_name{2}]));
+        for iVar = 1:size(temp,2)
+            pr2(i,iVar,:) = get_pr2(temp(:,iVar),temp1(:,iVar),temp2(:,iVar),num_bootstraps);
+        end
     end
 end
+
+% if we don't need 3-D, ditch the single dim
+pr2 = squeeze(pr2);
+
 end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function pr2 = get_pr2(y_test,y_fit,num_bootstraps)
+function pr2 = get_pr2(varargin)
+y_test = varargin{1};
+num_bootstraps = varargin{end};
+
 % this is a really efficient way to bootstrap but you need temps
 if num_bootstraps > 1
     bs = randi(length(y_test),length(y_test),num_bootstraps);
 else
-    bs = 1:size(y_fit,1);
-end
-pr2 = prctile(compute_pseudo_R2(y_test(bs),y_fit(bs),mean(y_test)),[2.5 97.5]);
+    bs = 1:length(y_test);
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function rpr2 = get_rpr2(y_test,y_fit_basic,y_fit_full,num_bootstraps)
-% this is a really efficient way to bootstrap but you need temps
-if num_bootstraps > 1
-    bs = randi(length(y_test),length(y_test),num_bootstraps);
-else
-    bs = 1:size(y_fit,1);
+if nargin == 3
+    y_fit = varargin{2};
+    pr2 = prctile(compute_pseudo_R2(y_test(bs),y_fit(bs),mean(y_test)),[2.5 97.5]);
+elseif nargin == 4 % relative pseudo_R2
+    y_fit1 = varargin{2};
+    y_fit2 = varargin{3};
+    pr2 = prctile(compute_rel_pseudo_R2(y_test(bs),y_fit1(bs),y_fit2(bs)),[2.5 97.5]);
+    
 end
-rpr2 = prctile(compute_rel_pseudo_R2(y_test(bs),y_fit_basic(bs),y_fit_full(bs)),[2.5 97.5]);
 end
+

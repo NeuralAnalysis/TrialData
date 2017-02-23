@@ -1,25 +1,25 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function glm_info = getGLM(trial_data,params)
+function [trial_data,glm_info] = getGLM(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
-glm_name      =  '';
+glm_name      =  'default';
 in_signals    =  {};%{'name',idx; 'name',idx};
 out_signals   =  {};%{'name',idx};
 do_lasso      =  false;
 lasso_lambda  =  0;
 lasso_alpha   =  0;
+train_idx     =  1:length(trial_data);
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Process inputs
 if ~iscell(in_signals) || ~iscell(out_signals), error('input/output info must be in cells'); end
-if isempty(glm_name), glm_name = 'default'; end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % build inputs and outputs for training
-x = get_vars(trial_data,in_signals);
-y = get_vars(trial_data,out_signals);
+x = get_vars(trial_data(train_idx),in_signals);
+y = get_vars(trial_data(train_idx),out_signals);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Fit GLMs
@@ -33,8 +33,20 @@ for iVar = 1:size(y,2) % loop along outputs to predict
     end
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Add predictions to trial_data
+for trial = 1:length(trial_data)
+    x  = get_vars(trial_data(trial),in_signals);
+    yfit = zeros(size(x,1),size(b,2));
+    for iVar = 1:size(b,2)
+        yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
+    end
+    trial_data(trial).(['glm_' glm_name]) = yfit;
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Package up outputs
+s = rmfield(s,{'resid','residp','residd','resida','wts'});
 glm_info = struct( ...
     'glm_name',     glm_name, ...
     'in_signals',   {in_signals}, ...
@@ -52,7 +64,6 @@ end
 function x = get_vars(td,signals)
 idx = cell(1,size(signals,1));
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % figure out how many signals there will be
 for i = 1:size(signals,1)
     % if second entry is 'all', use all
@@ -63,7 +74,6 @@ for i = 1:size(signals,1)
     end
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get datapoints
 x = zeros(size(cat(1,td.pos),1),sum(cellfun(@(x) length(x),idx)));
 count = 0;
