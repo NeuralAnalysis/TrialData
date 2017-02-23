@@ -19,12 +19,12 @@
 %
 % INPUTS:
 %   trial_data : the struct
-%   model_type : (string) which model to use
-%       1) 'linmodel' : a simple linear filter
-%       2) 'glm'    : a generalized linear model
 %   in_struct  : a struct of inputs. Can be one of two things:
 %       1) glm_info   : struct of model fit info from getGLM call (for predicting)
 %       2) params     : parameter struct (NOTE: must NOT have 'b' or 's' fields)
+%            .model_type   : (string) which model to use (REQUIRED)
+%                               'linmodel' : a simple linear filter
+%                               'glm'      : a generalized linear model
 %            .model_name   : (string) unique name for this model fit
 %            .in_signals   : (cell) GLM inputs in form {'name',idx; 'name',idx};
 %            .out_signals  : (cell) GLM outputs in form {'name',idx}
@@ -49,9 +49,10 @@
 % Written by Matt Perich. Updated Feb 2017.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [trial_data,model_info] = getModel(trial_data,model_type,params)
+function [trial_data,model_info] = getModel(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
+model_type    =  '';
 model_name    =  'default';
 in_signals    =  {};%{'name',idx; 'name',idx};
 out_signals   =  {};%{'name',idx};
@@ -64,15 +65,18 @@ lasso_alpha   =  0;
 % Here are some parameters that you can overwrite that aren't documented
 add_pred_to_td       =  true;        % whether to add predictions to trial_data
 glm_distribution     =  'poisson';   % which distribution to assume for GLM
-td_fieldname_prefix  =  model_type;  % name prefix for trial_data field
-b                    =  [];          % b identifies if model_info was provided as a params input
+td_fn_prefix         =  '';  % name prefix for trial_data field
+b                    =  [];          % b and s identify if model_info was
+s                    =  [];          %    provided as a params input
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Process inputs
+if isempty(model_type), error('Must specify what type of model to fit'); end
 if isempty(in_signals) || isempty(out_signals) || ~iscell(in_signals) || ~iscell(out_signals)
     error('input/output info must be provided in cells');
 end
+if isempty(td_fn_prefix), td_fn_prefix = model_type; end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isempty(b)  % fit a new model
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -120,7 +124,7 @@ if add_pred_to_td
                     yfit(:,iVar) = [ones(size(in_data,1),1), in_data]*b(:,iVar);
             end
         end
-        trial_data(trial).([td_fieldname_prefix '_' model_name]) = yfit;
+        trial_data(trial).([td_fn_prefix '_' model_name]) = yfit;
     end
 end
 
@@ -130,6 +134,7 @@ switch lower(model_type)
     case 'glm'
         s = rmfield(s,{'resid','residp','residd','resida','wts'});
         model_info = struct( ...
+            'model_type',   model_type, ...
             'model_name',   model_name, ...
             'in_signals',   {in_signals}, ...
             'out_signals',  {out_signals}, ...
@@ -142,6 +147,7 @@ switch lower(model_type)
         
     case 'linmodel'
         model_info = struct( ...
+            'model_type',   model_type, ...
             'model_name',   model_name, ...
             'in_signals',   {in_signals}, ...
             'out_signals',  {out_signals}, ...

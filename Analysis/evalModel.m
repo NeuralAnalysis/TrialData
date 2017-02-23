@@ -2,8 +2,9 @@
 % function metric = evalModel(trial_data,params)
 %
 %   Evaluates quality of model fit. Input trial_data must have
-% 'model_name' field added to use for the predictions. Params input must
-% contain an out_signals so that the code knows what to compare the fit to.
+% recognizable field added to use for the predictions. You need to have the
+% model_type, model_name, and out_signals parameters defined at input, as
+% well as the eval_metric input.
 %
 % INPUTS:
 %   trial_data : the struct
@@ -33,21 +34,27 @@
 function metric = evalModel(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
+model_type       =  '';
 out_signals      =  [];
 model_name       =  [];
 trial_idx        =  [1,length(trial_data)];
 eval_metric      =  '';
 num_boots        =  1000;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Some undocumented parameters
+td_fn_prefix     =  ''; % prefix for fieldname
 if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 possible_metrics = {'pr2','vaf','r2','r'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Process inputs
+if isempty(td_fn_prefix), td_fn_prefix = model_type; end
+if isempty(model_type), error('Unknown model type.'); end
 if isempty(out_signals), error('Need to provide output signal'); end
 if isempty(model_name), error('No model_name provided'); end
 if isempty(eval_metric), error('Must provide evaluation metric.'); end
 if iscell(model_name) % we are doing relative metric
-    if size(trial_data(1).(model_name{1}),2) ~= size(trial_data(1).(model_name{2}),2)
+    if size(trial_data(1).([td_fn_prefix '_' model_name{1}]),2) ~= size(trial_data(1).([td_fn_prefix '_' model_name{2}]),2)
         error('Different numbers of variables for relative metric calc');
     end
     if length(model_name) ~= 2
@@ -76,13 +83,13 @@ for i = 1:length(trial_idx)-1
     trials = trial_idx(i):trial_idx(i+1)-1;
     
     temp = get_vars(trial_data(trials),out_signals);
-    temp1 = cat(1,trial_data(trials).(model_name{1}));
-    if length(model_name) == 1 % pr2
+    temp1 = cat(1,trial_data(trials).([td_fn_prefix '_' model_name{1}]));
+    if length(model_name) == 1
         for iVar = 1:size(temp,2)
             metric(i,iVar,:) = get_pr2(temp(:,iVar),temp1(:,iVar),eval_metric,num_boots);
         end
-    else % relative pr2
-        temp2 = cat(1,trial_data(trials).(model_name{2}));
+    else % relative metric
+        temp2 = cat(1,trial_data(trials).([td_fn_prefix '_' model_name{2}]));
         for iVar = 1:size(temp,2)
             metric(i,iVar,:) = get_pr2(temp(:,iVar),temp1(:,iVar),temp2(:,iVar),eval_metric,num_boots);
         end
