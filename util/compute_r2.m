@@ -11,7 +11,7 @@ numSigs = size(sig1,2);
 r2 = zeros(numSigs,1);
 
 switch lower(which_method)
-    case 'r'
+    case 'corr'
         for i = 1:numSigs
             %Calculate R2
             R=corrcoef(sig1(:,i),sig2(:,i));

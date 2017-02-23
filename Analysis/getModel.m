@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function [trial_data,glm_info] = getGLM(trial_data,model_type,params)
+% function [trial_data,glm_info] = getModel(trial_data,params)
 %
 %   This function will fit a linear model to take any combination of inputs
 % and predict some outputs. Supports GLM or normal linear models. Doesn't
@@ -121,7 +121,7 @@ if add_pred_to_td
                 case 'glm'
                     yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
                 case 'linmodel'
-                    yfit(:,iVar) = [ones(size(in_data,1),1), in_data]*b(:,iVar);
+                    yfit(:,iVar) = [ones(size(x,1),1), x]*b(:,iVar);
             end
         end
         trial_data(trial).([td_fn_prefix '_' model_name]) = yfit;

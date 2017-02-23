@@ -13,8 +13,10 @@
 % trial_data as SIGNAL_pca. Params is still needed to specify the array or
 % if you want smoothing, etc.
 %
-%   NOTE: centers data by default! Thus to reconstruct scores you need the
-%   means of each signal
+% NOTE: centers data by default! Thus to reconstruct scores you need the
+%       means of each signal.
+% NOTE: smoothing, etc only applies to finding PC space, not for
+%       projections. To project smoothed data, do it ahead of time.
 %
 % INPUTS:
 %   trial_data : the struct
@@ -86,6 +88,7 @@ do_plot         =  false;
 % Some extra parameters you can change that aren't described in header
 pca_algorithm   = 'svd'; % algorithm for PCA
 pca_centered    = true;  % whether to center data
+add_pca_to_td   = true;  % whether to add PCA projections
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % process and prepare inputs
@@ -117,7 +120,6 @@ end
 % get the time points that separate each trial later
 fn_time = getTDfields(td,'time');
 trial_markers = [1,1+cumsum(cellfun(@(x) size(x,1),{td.(fn_time{1})}))];
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % build PCA model for M1
@@ -160,9 +162,14 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Add scores to trial_data
 if pca_centered, mu = mean(data,1); else mu = zeros(1,size(data,2)); end
-signals = cellfun(@(x) strrep(x,'_spikes',''),signals,'uni',0);
+temp_name = cellfun(@(x) strrep(x,'_spikes',''),signals,'uni',0);
 for trial = 1:length(trial_data)
-    idx = trial_markers(trial):trial_markers(trial+1)-1;
-    trial_data(trial).([[signals{:}] '_pca']) = (data(idx,:)-repmat(mu,length(idx),1))*w;
+    data = [];
+    for i = 1:length(signals)
+        temp_data = cat(1,trial_data(trial).(signals{i}));
+        data = [data, temp_data(:,signal_idx{i})];
+    end
+    
+    trial_data(trial).([[temp_name{:}] '_pca']) = (data-repmat(mu,size(data,1),1))*w;
 end
 

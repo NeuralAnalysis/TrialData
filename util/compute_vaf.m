@@ -4,17 +4,18 @@ function VAF = compute_vaf(Y,Yhat)
     %               datapoint, each column a dimension)
     %         Yhat - Model-predicted output variable(s)
     % Output: VAF - variance-accounted-for, between 0 and 1 (same as R^2)
-    % WARNING: NOT TESTED FOR MULTI-DIMENSIONAL Y
+    % 
+    % for multi-dimensional data, rows are observations, columns are variables
     
     %calculate sum of square errors    
-    SSE = (Y-Yhat)'*(Y-Yhat);
+    SSE = sum((Y-Yhat).^2,1);
     
     %calculate mean of actual output
-    meanY = mean(Y);
+    meanY = mean(Y,1);
     
     %find sum of squared deviations from mean
-    SS = (Y-repmat(meanY,length(Y),1))'*(Y-repmat(meanY,length(Y),1));
+    SS = sum((Y-repmat(meanY,size(Y,1),1)).^2);
     
     %find VAF
-    VAF = 1-SSE/SS;
+    VAF = 1-SSE./SS;
 end

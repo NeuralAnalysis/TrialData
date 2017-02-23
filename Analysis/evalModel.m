@@ -86,12 +86,12 @@ for i = 1:length(trial_idx)-1
     temp1 = cat(1,trial_data(trials).([td_fn_prefix '_' model_name{1}]));
     if length(model_name) == 1
         for iVar = 1:size(temp,2)
-            metric(i,iVar,:) = get_pr2(temp(:,iVar),temp1(:,iVar),eval_metric,num_boots);
+            metric(i,iVar,:) = get_metric(temp(:,iVar),temp1(:,iVar),eval_metric,num_boots);
         end
     else % relative metric
         temp2 = cat(1,trial_data(trials).([td_fn_prefix '_' model_name{2}]));
         for iVar = 1:size(temp,2)
-            metric(i,iVar,:) = get_pr2(temp(:,iVar),temp1(:,iVar),temp2(:,iVar),eval_metric,num_boots);
+            metric(i,iVar,:) = get_metric(temp(:,iVar),temp1(:,iVar),temp2(:,iVar),eval_metric,num_boots);
         end
     end
 end
@@ -104,7 +104,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function metric = get_pr2(varargin)
+function metric = get_metric(varargin)
 y_test         = varargin{1};
 eval_metric    = varargin{end-1};
 num_bootstraps = varargin{end};
@@ -122,11 +122,11 @@ if nargin == 4 % normal metric
         case 'pr2'
             metric = prctile(compute_pseudo_R2(y_test(bs),y_fit(bs),mean(y_test)),[2.5 97.5]);
         case 'vaf'
-            metric = prctile(compute_vaf(y_test(bs),y_fit(bs),mean(y_test)),[2.5 97.5]);
+            metric = prctile(compute_vaf(y_test(bs),y_fit(bs)),[2.5 97.5]);
         case 'r2'
-            metric = prctile(compute_r2(y_test(bs),y_fit(bs),mean(y_test)),[2.5 97.5]);
+            metric = prctile(compute_r2(y_test(bs),y_fit(bs)),[2.5 97.5]);
         case 'r'
-            metric = sqrt(prctile(compute_r2(y_test(bs),y_fit(bs),mean(y_test)),[2.5 97.5]));
+            metric = sqrt(prctile(compute_r2(y_test(bs),y_fit(bs)),[2.5 97.5]));
     end
 elseif nargin == 5 % relative metric
     y_fit2 = varargin{3};
