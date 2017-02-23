@@ -48,12 +48,13 @@ train_idx     =  1:length(trial_data);
 do_lasso      =  false;
 lasso_lambda  =  0;
 lasso_alpha   =  0;
-b             =  []; % b and s are to identify if glm_info
-s             =  []; %  was provided as a params input
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Here are some parameters that you can overwrite that aren't documented
-glm_distribution = 'poisson';
-add_pred_to_td   = true;
+glm_distribution     =  'poisson'; % which distribution to assume for GLM
+add_pred_to_td       =  true;      % whether to add predictions to trial_data
+td_fieldname_prefix  =  'glm';     % name prefix for trial_data field
+b                    =  [];        % b and s are to identify if glm_info
+s                    =  [];        %    was provided as a params input
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -73,17 +74,19 @@ if isempty(b) && isempty(s) % fit a new GLM
     b = zeros(size(x,2)+1,size(y,2));
     for iVar = 1:size(y,2) % loop along outputs to predict
         if do_lasso % not quite implemented yet
-            [b,s] = lassoglm(x,y(:,iVar),glm_distribution,'lambda',lasso_lambda,'alpha',lasso_alpha);
-            b = [s.Intercept; b];
+            [b,temp] = lassoglm(x,y(:,iVar),glm_distribution,'lambda',lasso_lambda,'alpha',lasso_alpha);
+            b = [temp.Intercept; b];
         else
-            [b(:,iVar),~,s(iVar)] = glmfit(x,y(:,iVar),glm_distribution);
+            [b(:,iVar),~,temp] = glmfit(x,y(:,iVar),glm_distribution);
         end
+        if isempty(s), s = temp; end
+        s(iVar) = temp;
     end
 else % use an old GLM
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    fn = fieldnames(glm_info);
+    fn = fieldnames(params);
     for i = 1:length(fn)
-        assignin('caller',fn{i},glm_info.(fn{i}));
+        assignin('caller',fn{i},params.(fn{i}));
     end
 end
 
@@ -96,7 +99,7 @@ if add_pred_to_td
         for iVar = 1:size(b,2)
             yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
         end
-        trial_data(trial).(['glm_' glm_name]) = yfit;
+        trial_data(trial).([td_fieldname_prefix '_' glm_name]) = yfit;
     end
 end
 
