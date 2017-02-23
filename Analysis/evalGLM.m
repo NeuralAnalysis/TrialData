@@ -1,6 +1,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   Evaluates quality of GLM fit
+% function pr2 = evalGLM(trial_data,params)
+%
+%   Evaluates quality of GLM fit with pseudo-R2. Input trial_data must have
+% 'glm_GLM_NAME' field added to use for the predictions. Params input must
+% contain an out_signals so that the code knows what to compare the fit to.
+%
 % INPUTS:
 %   trial_data : the struct
 %   params     : parameter struct
@@ -9,19 +13,31 @@
 %                         OR {'GLM1','GLM2'} to do relative pR2 of 2 rel to 1
 %                         Default is to find the _glm field (error if more than one)
 %       .trial_idx   : trials to evaluate. Ways to use:
-%                     1) 1:10 treats each trial separately
-%                     2) 1:2:10 predicts in bins of size 2 trials
-%                     3) [1,10] returns a value for all 10 trials
+%                     1) 1:end treats each trial separately
+%                     2) 1:N:end predicts in bins of size N trials
+%                     3) [1,end] returns a single value for predicting all trials
 %                         DEFAULT: [1,length(trial_data]
-%       .num_bootstraps : how many bootstraps to use (if <2, doesn't do it)
+%       .eval_metric : (string) name of metric for evaluation
+%                           'pr2' : pseudo-R2 (Default)
+%                           'vaf' : VAF
+%                           'r2'  : R2 (good thing I have these descriptions)
+%       .num_boots   : # bootstrap iterations to use (if <2, doesn't bootstrap)
 %
+% OUTPUTS:
+%   pr2 : calculated evaluation metric (only psuedo-R2 for now)
+%           Note: will return relative metric if glm_name is 1x2 cell of names
+%
+% Written by Matt Perich. Updated Feb 2017.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function pr2 = evalGLM(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
 out_signals      =  [];
 glm_name         =  [];
 trial_idx        =  [1,length(trial_data)];
-num_bootstraps   =  1000;
+eval_metric      =  'pr2';
+num_boots        =  1000;
 if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Process inputs
@@ -42,7 +58,6 @@ if isempty(glm_name)
     glm_name = fn(idx);
 end
 if ~iscell(glm_name), glm_name = {glm_name}; end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % figure out how many signals there will be
 for i = 1:size(out_signals,1)
@@ -53,7 +68,6 @@ for i = 1:size(out_signals,1)
         idx{i} = out_signals{i,2};
     end
 end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Calculate pr2
 % quick hack here for when we aren't binning and want single trials
@@ -66,12 +80,12 @@ for i = 1:length(trial_idx)-1
     temp1 = cat(1,trial_data(trials).(['glm_' glm_name{1}]));
     if length(glm_name) == 1 % pr2
         for iVar = 1:size(temp,2)
-            pr2(i,iVar,:) = get_pr2(temp(:,iVar),temp1(:,iVar),num_bootstraps);
+            pr2(i,iVar,:) = get_pr2(temp(:,iVar),temp1(:,iVar),eval_metric,num_boots);
         end
     else % relative pr2
         temp2 = cat(1,trial_data(trials).(['glm_' glm_name{2}]));
         for iVar = 1:size(temp,2)
-            pr2(i,iVar,:) = get_pr2(temp(:,iVar),temp1(:,iVar),temp2(:,iVar),num_bootstraps);
+            pr2(i,iVar,:) = get_pr2(temp(:,iVar),temp1(:,iVar),temp2(:,iVar),eval_metric,num_boots);
         end
     end
 end
@@ -85,7 +99,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function pr2 = get_pr2(varargin)
-y_test = varargin{1};
+y_test         = varargin{1};
+eval_metric    = varargin{end-1};
 num_bootstraps = varargin{end};
 
 % this is a really efficient way to bootstrap but you need temps
@@ -95,14 +110,28 @@ else
     bs = 1:length(y_test);
 end
 
-if nargin == 3
-    y_fit = varargin{2};
-    pr2 = prctile(compute_pseudo_R2(y_test(bs),y_fit(bs),mean(y_test)),[2.5 97.5]);
-elseif nargin == 4 % relative pseudo_R2
-    y_fit1 = varargin{2};
+y_fit = varargin{2};
+if nargin == 4 % normal metric
+    switch lower(eval_metric)
+        case 'pr2'
+            pr2 = prctile(compute_pseudo_R2(y_test(bs),y_fit(bs),mean(y_test)),[2.5 97.5]);
+        case 'vaf'
+            pr2 = prctile(compute_vaf(y_test(bs),y_fit(bs),mean(y_test)),[2.5 97.5]);
+        case 'r2'
+            pr2 = prctile(compute_r2(y_test(bs),y_fit(bs),mean(y_test)),[2.5 97.5]);
+        otherwise, error('eval_metric not recognized.');
+    end
+elseif nargin == 5 % relative metric
     y_fit2 = varargin{3};
-    pr2 = prctile(compute_rel_pseudo_R2(y_test(bs),y_fit1(bs),y_fit2(bs)),[2.5 97.5]);
-    
+    switch lower(eval_metric)
+        case 'pr2'
+            pr2 = prctile(compute_rel_pseudo_R2(y_test(bs),y_fit(bs),y_fit2(bs)),[2.5 97.5]);
+        case 'vaf'
+            error('VAF not yet implemented for relative metrics');
+        case 'r2'
+            error('R2 not yet implemented for relative metrics');
+        otherwise, error('eval_metric not recognized.');
+    end
 end
 end
 
