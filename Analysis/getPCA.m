@@ -62,7 +62,7 @@ elseif  isempty(varargin)
 else
     new_pca = false;
     if nargout > 1, error('When using old PCA, will only output trial_data'); end
-    if length(varargin) == 3 % provided cov matrix
+    if length(varargin) == 2 % provided cov matrix
         w = varargin{1};
         params = varargin{2};
     else
