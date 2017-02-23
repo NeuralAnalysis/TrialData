@@ -15,9 +15,8 @@
 %   .save_dir    : directory to save GPFA results in Byron's code. Pass in [] to skip (default)
 %   .method      : gpfa, pca, etc. See Byron's code
 %   .xdim        : assumed number of latent dimensions (default to 8, find optimal using CV)
-%   .kernsd      : kernal width (default to 30, find optimal using CV)
-%   .bin_w       : bin size desired for GPFA in msec (default to 30)
-%   .data_bin_w  : bin size of input data in msec (default to 10)
+%   .kernsd      : kernal width in s (default to 0.03, find optimal using CV)
+%   .bin_w       : bin size desired for GPFA in s (default to 0.03)
 %
 % OUTPUTS:
 % Field for gpfa_out output struct:
@@ -28,7 +27,6 @@
 %   gpfa_out.params.xdim           : how many assumed latent dimensions (copy of input)
 %   gpfa_out.params.kernsd         : kernel width (copy of input)
 %   gpfa_out.params.bin_width      : GPFA bin width (copy of input)
-%   gpfa_out.params.data_bin_width : data bin width (copy of input)
 %
 % Based on the GPFA Matlab codepack by Byron Yu. http://users.ece.cmu.edu/~byronyu/software.shtml
 %   Note that I made some modifications to their code to make it work better with our data
@@ -43,9 +41,8 @@ if isfield(params,'arrays'), arrays = params.arrays; else, error('Arrays not spe
 save_dir    =  [];
 method      =  'gpfa';
 xDim        =  8;
-kernSD      =  30;
-bin_w       =  20;
-data_bin_w  =  10;
+kernSD      =  0.03;
+bin_w       =  0.02;
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -66,7 +63,7 @@ runIdx = ['-' [arrays{:}]];
 
 % Extract neural trajectories
 result = neuralTraj_td(runIdx, dat, save_dir, 'method', method, 'xDim', xDim,...
-    'kernSDList', kernSD,'binWidth',bin_w,'dataBinWidth',data_bin_w);
+    'kernSDList', 1000*kernSD,'binWidth',bin_w,'dataBinWidth',1000*trial_data(1).bin_size);
 
 % Orthonormalize neural trajectories
 [estParams, seqTrain] = postprocess(result, 'kernSD', kernSD);
@@ -89,7 +86,6 @@ gpfa_out.params.arrays = arrays;
 gpfa_out.params.xdim = xDim;
 gpfa_out.params.kernsd = kernSD;
 gpfa_out.params.bin_width = bin_w;
-gpfa_out.params.data_bin_width = data_bin_w;
 
 % add trajectory information to trial_data struct
 for iTrial = 1:length(trial_data)

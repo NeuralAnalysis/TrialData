@@ -40,7 +40,7 @@ nbr_trials = cellfun(@(x) length(getTDidx(trial_data,condition,x)),num2cell(uniq
 tgt_idx = cellfun(@(x) getTDidx(trial_data,condition,x),num2cell(unique([trial_data.(condition)])),'uni',0);
 
 % get PCA of smoothed, trial-averaged data
-trial_data = smoothSignal(trial_data,struct('signals',signal,'do_smoothing',do_smoothing,'kernel_SD',kernel_SD,'sqrt_transform',sqrt_transform));
+trial_data = smoothSignals(trial_data,struct('signals',signal,'do_smoothing',do_smoothing,'kernel_SD',kernel_SD,'sqrt_transform',sqrt_transform));
 td = trialAverage(trial_data,condition);
 [~,pca_info] = getPCA(td,struct('signals',signal));
 

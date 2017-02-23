@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function trial_data = smoothSignal(trial_data,params)
+% function trial_data = smoothSignals(trial_data,params)
 %
 % This function will smooth and/or square root transform spikes
 %
@@ -21,7 +21,7 @@
 % Written by Matt Perich. Updated Feb 2017.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function trial_data = smoothSignal(trial_data,params)
+function trial_data = smoothSignals(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETER VALUES
 signals         =  getTDfields(trial_data,'time'); % default to all signals
