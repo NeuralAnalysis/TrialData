@@ -29,9 +29,6 @@
 %       .V_null   : null space basis vectors
 %       .w_in     : weights for PC space of input signals
 %       .w_out    : weights for PC space of output signals
-%       .mu_in    : means of input signals
-%       .mu_out   : means of output signals
-%                NOTE: as with PCA, the mu are essential for V/w later
 %       .params   : parameter struct
 %
 % Written by Matt Perich. Updated Feb 2017.
@@ -47,6 +44,10 @@ out_dims     =  [];
 in_idx       =  [];
 out_idx      =  [];
 use_trials   =  1:length(trial_data);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% other undocumented PCA parameters
+pca_centered   =  true;
+pca_algorithm  =  'svd';
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isempty(in_signals), error('Need to specify input signals name'); end
@@ -68,13 +69,14 @@ if ~iscell(in_idx), in_idx = {in_idx}; end
 if ~iscell(out_idx), out_idx = {out_idx}; end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 pca_params = params;
+pca_params.pca_centered = pca_centered;
+pca_params.pca_algorithm = pca_algorithm;
 
 % get output PC space
 pca_params.signals = out_signals;
 pca_params.signal_idx = out_idx;
 [~,pca_info] = getPCA(trial_data(use_trials),pca_params);
 w_out = pca_info.w;
-mu_out = pca_info.mu;
 score_out = pca_info.scores;
 
 % get input PC space
@@ -82,7 +84,6 @@ pca_params.signals = in_signals;
 pca_params.signal_idx = in_idx;
 [~,pca_info] = getPCA(trial_data(use_trials),pca_params);
 w_in = pca_info.w;
-mu_in = pca_info.mu;
 score_in = pca_info.scores;
 pca_params = pca_info.params;
 
@@ -116,23 +117,24 @@ pca_info = struct(        ...
     'V_null',   V_null,   ...
     'w_in',     w_in,     ...
     'w_out',    w_out,    ...
-    'mu_in',    mu_in,    ...
-    'mu_out',   mu_out,   ...
     'params',   pca_params);
 
 % populate trial_data struct with PCA scores and null/potent projections
 for trial = 1:length(trial_data)
     % get signals to recreate PCA
     temp = get_data(trial_data(trial),out_signals,out_idx);
+    if pca_centered, mu = mean(temp,1); else mu = zeros(1,size(temp,2)); end
     temp_sig_out = cellfun(@(x) strrep(x,'_spikes',''),out_signals,'uni',0);
-    trial_data(trial).([temp_sig_out{:} '_pca']) = temp*w_out;
+    trial_data(trial).([temp_sig_out{:} '_pca']) = (temp-repmat(mu,size(temp,1),1))*w_out;
     
     if ~strcmpi(in_signals,out_signals)
         temp = get_data(trial_data(trial),in_signals,in_idx);
+        if pca_centered, mu = mean(temp,1); else mu = zeros(1,size(temp,2)); end
         temp_sig_in = cellfun(@(x) strrep(x,'_spikes',''),in_signals,'uni',0);
-        trial_data(trial).([temp_sig_in{:} '_pca']) = temp*w_in;
+        trial_data(trial).([temp_sig_in{:} '_pca']) = (temp-repmat(mu,size(temp,1),1))*w_in;
         
         temp = trial_data(trial).([temp_sig_in{:} '_pca']);
+        if pca_centered, mu = mean(temp,1); else mu = zeros(1,size(temp,2)); end
         temp = temp(:,1:in_dims);
         trial_data(trial).([temp_sig_in{:} temp_sig_out{:} '_potent']) = temp*V_potent;
         trial_data(trial).([temp_sig_in{:} temp_sig_out{:} '_null']) = temp*V_null;

@@ -8,13 +8,13 @@
 % rows of w will be as if you concatenated the columns of signals together in the
 % order they were provided.
 %
-% trial_data = getPCA(trial_data, w, mu, params);
-%   Uses an old w and mu from previous getPCA call to add scores to
+% trial_data = getPCA(trial_data, w, params);
+%   Uses an old w from previous getPCA call to add scores to
 % trial_data as SIGNAL_pca. Params is still needed to specify the array or
 % if you want smoothing, etc.
 %
 %   NOTE: centers data by default! Thus to reconstruct scores you need the
-%   means of each signal (mu)
+%   means of each signal
 %
 % INPUTS:
 %   trial_data : the struct
@@ -33,13 +33,11 @@
 %
 % OUTPUTS:
 %   trial_data : old struct with added field for scores for each trial
-%                   NOTE: if passing in old w and mu, only returns this
+%                   NOTE: if passing in old w, only returns this
 %   pca_info   : struct of PCA information
 %     .w          : weight matrix for PCA projections
 %     .scores     : scores for the PCs
 %     .eigen      : eigenvalues for PC ranking
-%     .mu         : mean for each input (for centering later)
-%                     NOTE: if you use w later, you MUST demean using mu!!!
 %     .params     : the parameters used for this analysis
 %
 % EXAMPLES:
@@ -47,7 +45,7 @@
 %       [~,pca_info] = getPCA(trial_data, struct('signals','M1_spikes'));
 %       w = pca_info.w;
 %   e.g. to add scores to trial_data later using the above output
-%       trial_data = getPCA(trial_data, w, mu, params);
+%       trial_data = getPCA(trial_data, w, params);
 %
 % Written by Matt Perich. Updated Feb 2017.
 %
@@ -64,10 +62,9 @@ elseif  isempty(varargin)
 else
     new_pca = false;
     if nargout > 1, error('When using old PCA, will only output trial_data'); end
-    if length(varargin) == 3 % provided cov matrix and mu
+    if length(varargin) == 3 % provided cov matrix
         w = varargin{1};
-        mu = varargin{2};
-        params = varargin{3};
+        params = varargin{2};
     else
         error('Incorrect number of inputs');
     end
@@ -126,7 +123,7 @@ trial_markers = [1,1+cumsum(cellfun(@(x) size(x,1),{td.(fn_time{1})}))];
 % build PCA model for M1
 if new_pca
     % compute PCA
-   [w, scores, eigen,~,~,mu] = pca(data,'Algorithm',pca_algorithm,'Centered',pca_centered);
+   [w, scores, eigen] = pca(data,'Algorithm',pca_algorithm,'Centered',pca_centered);
     
     if do_plot
         figure,
@@ -157,11 +154,12 @@ if new_pca
         'do_smoothing',do_smoothing, ...
         'kernel_SD',kernel_SD, ...
         'trial_avg_cond',trial_avg_cond);
-    pca_info = struct('w',w,'mu',mu,'scores',scores,'eigen',eigen,'params',pca_params);
+    pca_info = struct('w',w,'scores',scores,'eigen',eigen,'params',pca_params);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Add scores to trial_data
+if pca_centered, mu = mean(data,1); else mu = zeros(1,size(data,2)); end
 signals = cellfun(@(x) strrep(x,'_spikes',''),signals,'uni',0);
 for trial = 1:length(trial_data)
     idx = trial_markers(trial):trial_markers(trial+1)-1;
