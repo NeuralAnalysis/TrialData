@@ -63,7 +63,8 @@ switch lower(which_type)
             idx(ifn) = size(trial_data(1).(fn{ifn}),1)==t;
         end
         fn_neural = getTDfields(trial_data,'neural');
-        fn = fn(idx & ~ismember(fn,fn_neural));
+        fn_unit_guides = getTDfields(trial_data,'unit_guides');
+        fn = fn(idx & ~ismember(fn,fn_neural) & ~ismember(fn,fn_unit_guides));
     case 'spikes' % just the _spikes fields
         fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_spikes')));
     case 'unit_guides'

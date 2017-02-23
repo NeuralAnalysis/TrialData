@@ -27,9 +27,6 @@ pca_params = struct( ...
     'do_smoothing',true, ...
     'kernel_SD',0.05, ...
     'trial_avg_cond','target_direction');
-% we want the means for each neurons when we project the data later
-[~,temp] = getPCA(td,pca_params);
-mu = temp.mu; clear temp;
 % get covariance matrices and means
 [~,temp] = getPCA(td_prep,pca_params);
 w_prep = temp.w;
@@ -37,8 +34,8 @@ w_prep = temp.w;
 w_move = temp.w;
 
 %% Project activity into different subspaces
-td_td_prep   = getPCA(td,w_prep,mu,pca_params);
-td_td_move   = getPCA(td,w_move,mu,pca_params);
+td_td_prep   = getPCA(td,w_prep,pca_params);
+td_td_move   = getPCA(td,w_move,pca_params);
 
 %%
 figure;

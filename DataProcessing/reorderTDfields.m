@@ -30,7 +30,11 @@ idx_idx = find(ismember(fn,fn_idx));
 % DO SORT
 v = zeros(1,length(idx_idx));
 for i = 1:length(idx_idx)
-    v(i) = trial_data(1).(fn{idx_idx(i)});
+    if isempty(trial_data(1).(fn{idx_idx(i)}))
+        v(i) = Inf;
+    else
+        v(i) = trial_data(1).(fn{idx_idx(i)});
+    end
 end
 [~,I] = sort(v);
 idx_idx = idx_idx(I);

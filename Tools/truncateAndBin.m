@@ -45,7 +45,7 @@ else
 end
 
 fn_spikes = getTDfields(trial_data,'spikes');
-fn_kin = getTDfields(trial_data,'cont');
+fn_time = getTDfields(trial_data,'time');
 fn_idx = getTDfields(trial_data,'idx');
 
 for trial = 1:length(trial_data)
@@ -80,15 +80,18 @@ for trial = 1:length(trial_data)
         trial_data(trial).(fn_spikes{iArray}) = fr;
     end
     
-    % process kinematic fields
-    for iKin = 1:length(fn_kin)
-        temp = trial_data(trial).(fn_kin{iKin});
-        % fr is size bins x neurons
-        kin = zeros(length(t_bin)-1,size(temp,2));
-        for iBin = 1:length(t_bin)-1
-            kin(iBin,:) = mean(temp(t_bin(iBin):t_bin(iBin+1)-1,:),1);
+    % process other time fields
+    for iSig = 1:length(fn_time)
+        % make sure it's not spikes because I already did that
+        if isempty(strfind(fn_time{iSig},'_spikes'))
+            temp = trial_data(trial).(fn_time{iSig});
+            % fr is size bins x neurons
+            kin = zeros(length(t_bin)-1,size(temp,2));
+            for iBin = 1:length(t_bin)-1
+                kin(iBin,:) = mean(temp(t_bin(iBin):t_bin(iBin+1)-1,:),1);
+            end
+            trial_data(trial).(fn_time{iSig}) = kin;
         end
-        trial_data(trial).(fn_kin{iKin}) = kin;
     end
     
     % process idx fields
