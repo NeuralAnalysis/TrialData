@@ -18,7 +18,7 @@
 %   in_struct  : a struct of inputs. Can be one of two things:
 %       1) glm_info   : struct of model fit info from getGLM call (for predicting)
 %       2) params     : parameter struct (NOTE: must NOT have 'b' or 's' fields)
-%            .glm_name     : (string) unique name for this model fit
+%            .model_name   : (string) unique name for this model fit
 %            .in_signals   : (cell) GLM inputs in form {'name',idx; 'name',idx};
 %            .out_signals  : (cell) GLM outputs in form {'name',idx}
 %            .train_idx    : trial indices for training (will predict for all)
@@ -41,7 +41,7 @@
 function [trial_data,glm_info] = getGLM(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
-glm_name      =  'default';
+model_name    =  'default';
 in_signals    =  {};%{'name',idx; 'name',idx};
 out_signals   =  {};%{'name',idx};
 train_idx     =  1:length(trial_data);
@@ -99,7 +99,7 @@ if add_pred_to_td
         for iVar = 1:size(b,2)
             yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
         end
-        trial_data(trial).([td_fieldname_prefix '_' glm_name]) = yfit;
+        trial_data(trial).([td_fieldname_prefix '_' model_name]) = yfit;
     end
 end
 
@@ -107,7 +107,7 @@ end
 % Package up outputs
 s = rmfield(s,{'resid','residp','residd','resida','wts'});
 glm_info = struct( ...
-    'glm_name',     glm_name, ...
+    'model_name',   model_name, ...
     'in_signals',   {in_signals}, ...
     'out_signals',  {out_signals}, ...
     'train_idx',    train_idx, ...
