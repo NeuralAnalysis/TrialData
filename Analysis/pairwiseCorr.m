@@ -9,10 +9,8 @@ function [rho,sort_idx] = pairwiseCorr(trial_data,params)
 % INPUTS:
 %   trial_data : the struct
 %   params     : parameter struct
-%     .arrays         : which units (can be cell array with multiple)
+%     .signals        : which signals (format as in getPCA or getModel)
 %     .trial_idx      : which trials to use (default: all)
-%     .neurons        : which neurons to use (default: all) Note: for multiple arrays,
-%                       neurons should be cell array with indices for each array
 %     .cluster_order  : flag to reorder cells to show structure (default: false)
 %     .cluster_arrays : flag treat arrays differently when clustering
 %     .do_norm        : normalize each row/col to go from -1 to 1
@@ -25,45 +23,38 @@ function [rho,sort_idx] = pairwiseCorr(trial_data,params)
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PARAMETER DEFAULTS
-arrays          =  [];
-trial_idx       =  1:length(trial_data);
-neurons         =  [];
-cluster_order   =  false;
-cluster_arrays  =  false;
-do_norm         =  false;
+signals          =  [];
+trial_idx        =  1:length(trial_data);
+cluster_order    =  false;
+cluster_signals  =  false;
+do_norm          =  false;
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Process inputs
-if ~iscell(arrays), arrays = {arrays}; end
-if isempty(neurons)
-    neurons = cell(1,length(arrays));
-    for i = 1:length(arrays), neurons{i} = 1:size(trial_data(1).([arrays{i} '_spikes']),2); end
-end
-if ~iscell(neurons), neurons = {neurons}; end
-if isempty(arrays), error('Must give array'); end
+signals = check_signals(trial_data(1),signals);
 trial_data = trial_data(trial_idx);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % build master matrix of spiking
-fr = [];
-for array = 1:length(arrays)
-    temp = cat(1,trial_data.([arrays{array} '_spikes']));
-    fr = [fr, temp(:,neurons{array})];
+data = [];
+for i = 1:size(signals,1)
+    temp = cat(1,trial_data.(signals{i,1}));
+    data = [data, temp(:,signals{i,2})];
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get pairwise correlations, and replace diagonal with zeros
-rho = corr(fr).*(-1*eye(size(fr,2))+ones(size(fr,2)));
+rho = corr(data).*(-1*eye(size(data,2))+ones(size(data,2)));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % reorder to highlight structure
 if cluster_order
-    if cluster_arrays
-        temp = cell(1,length(arrays));
+    if cluster_signals
+        temp = cell(1,size(signals,1));
         start_idx = [0 cellfun(@length,neurons)];
         
-        for array = 1:length(arrays)
-            idx = start_idx(array)+(1:neurons{array}(end));
-            temp{array} = start_idx(array)+cluster_rho(rho(idx,idx));
+        for i = 1:size(signals,1)
+            idx = start_idx(i)+(1:neurons{i}(end));
+            temp{i} = start_idx(i)+cluster_rho(rho(idx,idx));
         end
         sort_idx = cat(1,temp{:});
     else
