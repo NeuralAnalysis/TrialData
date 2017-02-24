@@ -32,14 +32,6 @@
 %   - figure out naming parameters and plotting parameters, make them
 %   writeable
 %
-% EXAMPLE:
-%   Do dPCA over a few blocks of learning, with target direction as the
-%   other factor
-% blocks{1} = getTDidx(td,'epoch','BL');
-% blocks{2} = getTDidx(td,'epoch','AD','range',[0 0.5]);
-% blocks{3} = getTDidx(td,'epoch','AD','range',[0.5 1]);
-% getDPCA(td,'target_direction',blocks,struct('signals',{signals}));
-% 
 % Written by Matt Perich. Adapted from Juan's code. Updated Feb 2017.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -53,7 +45,7 @@ num_dims       =  15;
 do_plot        =  true;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra functions
-dpca_plot_fcn  =  @dpca_plot_default;
+dpca_plot_fcn  =  @dpca_plot_td;
 assignParams(who,params);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 signals        = check_signals(trial_data(1),signals);
@@ -81,7 +73,7 @@ for i = 1:length(varargin)-1
         error('Condition input should be string fieldname or cell array of trial indices.');
     end
 end
-if length(conditions) > 2, error('Only two conditions supported at this time.'); end
+if length(conditions) > 2, error('Only two conditions supported right now.'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % THESE SHOULD ALL BECOME INPUT-BASED IN SOME INTUITIVE WAY
 % ------------------------------------------------------------------------
@@ -93,8 +85,10 @@ if length(conditions) > 2, error('Only two conditions supported at this time.');
 % [2 3] - decision_var/time interaction
 % [1 2] - condition/decision_var interaction
 % [1 2 3] - rest
-combined_params = { {1,[1 3]}, {2,[2,3]}, {3}, {[1 2],[1 2 3]} };
-marg_names      = {'target','learning','time','target/learning interaction'};
+% combined_params = { {1,[1 3]}, {2,[2,3]}, {3}, {[1 2],[1 2 3]} };
+% marg_names      = {'target','learning','time','target/learning interaction'};
+combined_params = { {1}, {2,[1 2]}, {3,[1,3]}, {[2 3],[1 2 3]} };
+marg_names      = {'time','target','learning','target/learning interaction'};
 marg_colors     = [23 100 171; 187 20 25; 150 150 150; 114 97 171]/256; % blue, red, grey, purple
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -112,23 +106,14 @@ T = size(trial_data(1).(signals{1,1}),1);
 % max number of repetitions
 max_trial_num = max(loops_all_the_way_down(0,conditions{:}));
 
-firing_rates        = nan([N,C,T,max_trial_num]);
-% Get firing rates
-for s = 1:C(1)
-    for d = 1:C(2)
-        temp = [];
-        for n = 1:size(signals,1)
-            temp = cat(2,temp,cat(3,trial_data(intersect(conditions{1}{s},conditions{2}{d})).(signals{n,1})));
-        end
-        for n = 1:size(temp,2)
-            firing_rates(n,s,d,:,1:size(temp,3)) = squeeze(temp(:,n,:));
-        end
-    end
-end
-% firing_rates_average: N x S x D x T -- these are PSTHs
-%   average over the last dimension
+% firing_rates: N x T x max_trial_num x cond1 x cond2 x ... etc
+firing_rates = loops_all_the_way_down2([],[],{},trial_data,signals,max_trial_num,conditions{:});
+% The order will always be neurons first, time second, trials third, then
+% the other conditions in the OPPOSITE order of conditions. So I flip those
+firing_rates = permute(firing_rates,[1:3,3+fliplr(1:length(conditions))]);
+% get the average across trials
+firing_rates_avg    = squeeze(nanmean(firing_rates, 3));
 
-firing_rates_avg    = nanmean(firing_rates, 5);
 
 % ------------------------------------------------------------------------
 % 2. Do dPCA without regularization
@@ -148,7 +133,7 @@ if do_plot
         'whichMarg', which_marg,                 ...
         'time', time,                        ...
         'timeEvents', time_events,               ...
-        'timeMarginalization', 3, ...
+        'timeMarginalization', 1, ...
         'legendSubplot', num_dims);
 end
 
@@ -227,12 +212,15 @@ if all(cellfun(@isnumeric,varargin))
     % condition variable)
     fr = [];
     % concatenate together all data for all of the requested signals
-    all_trials = 1:length(trial_data);
-    for i = 1:length(varargin)-1
-        all_trials = intersect(all_trials,varargin{i});
-    end
+%     all_trials = 1:length(trial_data);
+%     for i = 1:length(varargin)-1
+%         all_trials = intersect(all_trials,varargin{i});
+%     end
+%     for n = 1:size(signals,1)
+%         fr = cat(2,fr,cat(3,trial_data(all_trials).(signals{n,1})));
+%     end
     for n = 1:size(signals,1)
-        fr = cat(2,fr,cat(3,trial_data(all_trials).(signals{n,1})));
+        fr = cat(2,fr,cat(3,trial_data(intersect(varargin{:})).(signals{n,1})));
     end
     fr = permute(fr,[2,1,3]);
     temp = NaN(sum(cellfun(@length,signals(:,2))),size(trial_data(1).(signals{1,1}),1),max_trial_num);
@@ -254,7 +242,7 @@ end
 if all(cellfun(@iscell,varargin)) && length(val) == prod(cellfun(@(x) length(cellfun(@numel,x)),varargin))
     % now process everything and concatenate together
     num_conds = size(valIdx,1);
-    idx = cell(1,num_conds);
+    idx_vals = cell(1,num_conds);
     for i = 1:num_conds
         idx_vals{i} = unique(valIdx(i,:));
     end
