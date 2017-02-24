@@ -62,23 +62,13 @@ if iscell(model_name) % we are doing relative metric
     end
 end
 if ~iscell(model_name), model_name = {model_name}; end
-if ~iscell(out_signals), out_signals = {out_signals}; end
 if ~any(ismember(eval_metric,possible_metrics)), error('Metric not recognized.'); end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% figure out how many signals there will be
-for i = 1:size(out_signals,1)
-    % if second entry is 'all', use all
-    if ischar(out_signals{i,2})
-        idx{i} = 1:size(trial_data(1).(out_signals{i,1}),2);
-    else
-        idx{i} = out_signals{i,2};
-    end
-end
+out_signals = check_signals(trial_data(1),out_signals);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Calculate pr2
 % quick hack here for when we aren't binning and want single trials
 if unique(diff(trial_idx)) == 1, trial_idx = [trial_idx, trial_idx(end)+1]; end
-metric = NaN(length(trial_idx)-1,sum(cellfun(@(x) length(x),idx)),2);
+metric = NaN(length(trial_idx)-1,sum(cellfun(@(x) length(x),out_signals(:,2))),2);
 for i = 1:length(trial_idx)-1
     trials = trial_idx(i):trial_idx(i+1)-1;
     
@@ -99,8 +89,9 @@ end
 % if we don't need 3-D, ditch the single dim
 metric = squeeze(metric);
 
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+end%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -141,32 +132,4 @@ elseif nargin == 5 % relative metric
             error('R2 not yet implemented for relative metrics');
     end
 end
-end
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function x = get_vars(td,signals)
-idx = cell(1,size(signals,1));
-
-% figure out how many signals there will be
-for i = 1:size(signals,1)
-    % if second entry is 'all', use all
-    if ischar(signals{i,2})
-        idx{i} = 1:size(td(1).(signals{i,1}),2);
-    else
-        idx{i} = signals{i,2};
-    end
-end
-
-% get datapoints
-x = zeros(size(cat(1,td.pos),1),sum(cellfun(@(x) length(x),idx)));
-count = 0;
-for i = 1:size(signals,1)
-    
-    temp = cat(1,td.(signals{i,1}));
-    x(:,count+(1:length(idx{i}))) = temp(:,idx{i});
-    count = count + length(idx{i});
-end
-
 end

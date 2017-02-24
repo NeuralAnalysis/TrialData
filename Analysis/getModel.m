@@ -73,10 +73,12 @@ assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Process inputs
 if isempty(model_type), error('Must specify what type of model to fit'); end
-if isempty(in_signals) || isempty(out_signals) || ~iscell(in_signals) || ~iscell(out_signals)
-    error('input/output info must be provided in cells');
+if isempty(in_signals) || isempty(out_signals)
+    error('input/output info must be provided');
 end
 if isempty(td_fn_prefix), td_fn_prefix = model_type; end
+in_signals = check_signals(trial_data(1),in_signals);
+out_signals = check_signals(trial_data(1),out_signals);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isempty(b)  % fit a new model
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -153,32 +155,4 @@ switch lower(model_type)
             'out_signals',  {out_signals}, ...
             'train_idx',    train_idx, ...
             'b',            b);
-end
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function x = get_vars(td,signals)
-idx = cell(1,size(signals,1));
-
-% figure out how many signals there will be
-for i = 1:size(signals,1)
-    % if second entry is 'all', use all
-    if ischar(signals{i,2})
-        idx{i} = 1:size(td(1).(signals{i,1}),2);
-    else
-        idx{i} = signals{i,2};
-    end
-end
-
-% get datapoints
-x = zeros(size(cat(1,td.pos),1),sum(cellfun(@(x) length(x),idx)));
-count = 0;
-for i = 1:size(signals,1)
-    
-    temp = cat(1,td.(signals{i,1}));
-    x(:,count+(1:length(idx{i}))) = temp(:,idx{i});
-    count = count + length(idx{i});
-end
-
 end
