@@ -24,7 +24,7 @@
 function trial_data = smoothSignals(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETER VALUES
-signals         =  []; % default to all signals
+signals         =  []; 
 sqrt_transform  =  false;
 do_smoothing    =  true;
 kernel_SD       =  0.05;
@@ -34,6 +34,9 @@ if nargin > 1, assignParams(who,params); end % overwrite defaults
 if isempty(signals), error('Must provide one or more signals to smooth.'); end
 if ~iscell(signals), signals = {signals}; end
 bin_size = trial_data(1).bin_size;
+% make sure the signal input formatting is good
+signals = check_signals(trial_data(1),signals);
+signals = signals(:,1); % don't need the idx if they exist
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if do_smoothing || sqrt_transform % if you don't want to do either just passes back trial_data
