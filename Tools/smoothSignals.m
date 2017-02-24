@@ -7,7 +7,7 @@
 %   trial_data : the struct
 %   params     :
 %     .signals        : field names to smooth (single string or cell array)
-%                          Note: defaults to all signals
+%                          Note: must be passed in
 %     .do_smoothing   : flag to convolve spikes with gaussian (default: true)
 %     .kernel_SD      : kernel s.d. for smoothing (default: 0.05)
 %     .sqrt_transform : flag to square root transform (default: false)
@@ -24,13 +24,14 @@
 function trial_data = smoothSignals(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETER VALUES
-signals         =  getTDfields(trial_data,'time'); % default to all signals
+signals         =  []; % default to all signals
 sqrt_transform  =  false;
 do_smoothing    =  true;
 kernel_SD       =  0.05;
 calc_rate       =  false;
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if isempty(signals), error('Must provide one or more signals to smooth.'); end
 if ~iscell(signals), signals = {signals}; end
 bin_size = trial_data(1).bin_size;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -39,7 +40,10 @@ if do_smoothing || sqrt_transform % if you don't want to do either just passes b
     for trial = 1:length(trial_data)
         for i = 1:length(signals)
             data = trial_data(trial).(signals{i});
-            if sqrt_transform, data = sqrt(data); end
+            if sqrt_transform
+                if any(data < 0), warning('Negative values in signals. Sqrt_transform will be imaginary.'); end
+                data = sqrt(data);
+            end
             if calc_rate, data = data./bin_size; end
             if do_smoothing
                 data = smooth_data(data,bin_size,kernel_SD);
