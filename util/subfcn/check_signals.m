@@ -16,9 +16,9 @@ if any(size(signals)==1) % it may be 1-D name list
     elseif numel(signals) == 2 && (~ischar(signals{2}) || strcmpi(signals{2},'all')) % second entry is an idx
         signal_idx = signals(2);
         signals = signals(1);
-    elseif numel(signals) > 2 % it's a list of names
+    elseif numel(signals) >= 2 % it's a list of names
         signal_idx = repmat({'all'},length(signals),1);
-        if size(signals,2) == 1, signals = signals'; end
+        if size(signals,1) == 1, signals = signals'; end
     end
     % return in the expected format
     signals = [signals, signal_idx];
