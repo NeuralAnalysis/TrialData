@@ -107,7 +107,7 @@ T = size(trial_data(1).(signals{1,1}),1);
 max_trial_num = max(loops_all_the_way_down(0,conditions{:}));
 
 % firing_rates: N x T x max_trial_num x cond1 x cond2 x ... etc
-firing_rates = loops_all_the_way_down2([],[],{},trial_data,signals,max_trial_num,conditions{:});
+firing_rates = loops_for_fr([],[],{},trial_data,signals,max_trial_num,conditions{:});
 % The order will always be neurons first, time second, trials third, then
 % the other conditions in the OPPOSITE order of conditions. So I flip those
 firing_rates = permute(firing_rates,[1:3,3+fliplr(1:length(conditions))]);
@@ -226,7 +226,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Another crazy recursive function to split trial_data up by trials
-function [val,valIdx] = loops_all_the_way_down2(depthCount,valIdx,val,trial_data,signals,max_trial_num,varargin)
+function [val,valIdx] = loops_for_fr(depthCount,valIdx,val,trial_data,signals,max_trial_num,varargin)
 if all(cellfun(@isnumeric,varargin))
     valIdx = [valIdx, depthCount];
     % we've reached the bottom of the hole. Start computing
@@ -259,7 +259,7 @@ else
     for i = 1:length(iter_data)
         temp = varargin;
         temp{cell_idx} = iter_data{i};
-        [val,valIdx] = loops_all_the_way_down2([depthCount;i],valIdx,val,trial_data,signals,max_trial_num,temp{:});
+        [val,valIdx] = loops_for_fr([depthCount;i],valIdx,val,trial_data,signals,max_trial_num,temp{:});
     end
 end
 

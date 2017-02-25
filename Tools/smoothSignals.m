@@ -8,12 +8,11 @@
 %   params     :
 %     .signals        : field names to smooth (single string or cell array)
 %                          Note: must be passed in
-%     .do_smoothing   : flag to convolve spikes with gaussian (default: true)
 %     .kernel_SD      : kernel s.d. for smoothing (default: 0.05)
-%     .sqrt_transform : flag to square root transform (default: false)
-%                           Mostly meant for spiking data
 %     .calc_rate      : flag to calculate rate (divide by bin size)
 %                           Mostly meant for spiking data (default: false)
+%     .sqrt_transform : flag to square root transform first (default: false)
+%                           Mostly meant for spiking data
 %
 % OUTPUTS:
 %   trial_data : the struct with all (signals{}) fields smoothed
@@ -25,10 +24,12 @@ function trial_data = smoothSignals(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETER VALUES
 signals         =  []; 
-sqrt_transform  =  false;
-do_smoothing    =  true;
 kernel_SD       =  0.05;
 calc_rate       =  false;
+sqrt_transform  =  false;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Some extra parameters that aren't documented in the header
+do_smoothing    =  true; % will just return trial_data if this is false
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isempty(signals), error('Must provide one or more signals to smooth.'); end
@@ -39,7 +40,11 @@ signals = check_signals(trial_data(1),signals);
 signals = signals(:,1); % don't need the idx if they exist
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if do_smoothing || sqrt_transform % if you don't want to do either just passes back trial_data
+if sqrt_transform
+    trial_data = sqrtTransform(trial_data,signals);
+end
+
+if do_smoothing
     for trial = 1:length(trial_data)
         for i = 1:length(signals)
             data = trial_data(trial).(signals{i});
@@ -54,50 +59,4 @@ if do_smoothing || sqrt_transform % if you don't want to do either just passes b
             trial_data(trial).(signals{i}) = data;
         end
     end
-end
-
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function data_smooth = smoothSpikesForPCA(data,dt,kernel_SD)
-%
-%   Convolves spike counts or firing rates with a Guassian kernel to smooth
-% the responses. Made for spikes but works well with other signals as well.
-% Used by getPCA. Based on gaussian_smoothing code from Juan's proc folder.
-%
-% INPUTS:
-%   data      : array of data (rows: time, columns: signals)
-%   dt        : size of time steps in fr in s
-%   kernel_SD : gaussian kernel standard deviation
-%
-% OUTPUTS:
-%   fr_smooth : smoothed data
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function data_smooth = smooth_data(data,dt,kernel_SD)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% now apply smoothing
-% get nbr of channels and nbr of samples
-[nbr_samples, nbr_chs]  = size(data);
-% preallocate return matrix
-data_smooth = zeros(nbr_samples,nbr_chs);
-
-% kernel half length is 3·SD out
-kernel_hl = ceil( 3 * kernel_SD / (dt) );
-% create the kernel --it will have length 2*kernel_hl+1
-kernel = normpdf( -kernel_hl*(dt) : ...
-    dt : kernel_hl*(dt), ...
-    0, kernel_SD );
-% compute normalization factor --this factor depends on the number of taps
-% actually used
-nm = conv(kernel,ones(1,nbr_samples))';
-
-% do the smoothing
-for i = 1:nbr_chs
-    aux_smoothed_FR     = conv(kernel',data(:,i)) ./ nm;
-    % cut off the edges so that the result of conv is same length as the
-    % original data
-    data_smooth(:,i)    = aux_smoothed_FR(kernel_hl+1:end-kernel_hl);
-end
 end
