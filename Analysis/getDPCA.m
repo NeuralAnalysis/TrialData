@@ -26,11 +26,12 @@
 %   - add dPCA projections to trial table
 %       Would be getting geometry from trial averaging and projecting
 %       single trials (add a guide to say what each dPC is)
-%   - support different numbers of decisions for different conditions?
-%   - support an arbitrary number of condition structs, rather than one
-%   plus the decision_var?
 %   - figure out naming parameters and plotting parameters, make them
-%   writeable
+%        writeable
+%   - support different numbers of conditions for different conditions?
+%           e.g. if Condition1 is task and Condition2 is target, can have 6
+%           targets in one task and 8 targets in another. Currently you
+%           need to have the same number of targets for all tasks
 %
 % Written by Matt Perich. Adapted from Juan's code. Updated Feb 2017.
 %
@@ -73,7 +74,7 @@ for i = 1:length(varargin)-1
         error('Condition input should be string fieldname or cell array of trial indices.');
     end
 end
-% if length(conditions) > 2, error('Only two conditions supported right now.'); end
+if length(conditions) > 3, warning('This many conditions takes a while to run...'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % THESE SHOULD ALL BECOME INPUT-BASED IN SOME INTUITIVE WAY
 % ------------------------------------------------------------------------
@@ -85,8 +86,6 @@ end
 % [2 3] - decision_var/time interaction
 % [1 2] - condition/decision_var interaction
 % [1 2 3] - rest
-% combined_params = { {1,[1 3]}, {2,[2,3]}, {3}, {[1 2],[1 2 3]} };
-% marg_names      = {'target','learning','time','target/learning interaction'};
 combined_params = { {1}, {2,[1 2]}, {3,[1,3]}, {[2 3],[1 2 3]} };
 marg_names      = {'time','target','learning','target/learning interaction'};
 marg_colors     = [150 150 150; 23 100 171; 187 20 25; 114 97 171]/256; % blue, red, grey, purple
@@ -108,42 +107,22 @@ max_trial_num = max(loops_all_the_way_down(0,conditions{:}));
 
 % firing_rates: N x T x max_trial_num x cond1 x cond2 x ... etc
 firing_rates = loops_for_fr([],[],{},trial_data,signals,max_trial_num,conditions{:});
-% The order will always be neurons first, time second, trials third, then
-% the other conditions in the OPPOSITE order of conditions. So I flip those
-firing_rates = permute(firing_rates,[1:3,3+fliplr(1:length(conditions))]);
-% get the average across trials
-firing_rates_avg    = squeeze(nanmean(firing_rates, 3));
-
-
-% % % firing_rates        = nan([N,C,T,max_trial_num]);
-% % % % Get firing rates
-% % % for s = 1:C(1)
-% % %     for d = 1:C(2)
-% % %         temp = [];
-% % %         for n = 1:size(signals,1)
-% % %             temp = cat(2,temp,cat(3,trial_data(intersect(conditions{1}{s},conditions{2}{d})).(signals{n,1})));
-% % %         end
-% % %         for n = 1:size(temp,2)
-% % %             firing_rates(n,s,d,:,1:size(temp,3)) = squeeze(temp(:,n,:));
-% % %         end
-% % %     end
-% % % end
-% % % firing_rates_avg    = squeeze(nanmean(firing_rates, 5));
-% % % % % firing_rates_average: N x S x D x T -- these are PSTHs
-% % % % %   average over the last dimension
+% The order will always be neurons first, time second, then the other
+% conditions in the OPPOSITE order of conditions. So I flip those
+firing_rates = permute(firing_rates,[1:2,2+fliplr(1:length(conditions))]);
 
 % ------------------------------------------------------------------------
 % 2. Do dPCA without regularization
 
-[W, V, which_marg]  = dpca( firing_rates_avg, num_dims, 'combinedParams', combined_params );
+[W, V, which_marg]  = dpca( firing_rates, num_dims, 'combinedParams', combined_params );
 
-expl_var            = dpca_explainedVariance(firing_rates_avg, W, V, ...
+expl_var            = dpca_explainedVariance(firing_rates, W, V, ...
     'combinedParams', combined_params);
 
 time_events     = 1;
 time            = (1:T)*trial_data(1).bin_size;
 if do_plot
-    dpca_plot(firing_rates_avg, W, V, dpca_plot_fcn, ...
+    dpca_plot(firing_rates, W, V, dpca_plot_fcn, ...
         'explainedVar', expl_var, ...
         'marginalizationNames', marg_names, ...
         'marginalizationColours', marg_colors, ...
@@ -195,9 +174,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% I'm pretty proud of this one. Will find the largest number of common
-% trials for any arbitrary number of condition inputs, using recursive
-% loops
+%  Will find the largest number of common trials for any arbitrary number
+% of condition inputs, using recursive loops
 function val = loops_all_the_way_down(val,varargin)
 % get all of the trials that are common between the conditions
 if all(cellfun(@isnumeric,varargin))
@@ -221,8 +199,6 @@ else
     end
 end
 end
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Another crazy recursive function to split trial_data up by trials
@@ -231,10 +207,9 @@ if all(cellfun(@isnumeric,varargin))
     valIdx = [valIdx, depthCount];
     % we've reached the bottom of the hole. Start computing
     % NOTE currently hard coded assuming that each condition cell will be a
-    % 3-D array (one D for time, one D for trials, and one D for the
-    % condition variable)
+    % 2-D array (one D for time and one D for the condition variable)
     fr = [];
-    % concatenate together all data for all of the requested signals
+    % find all common trials
     all_trials = varargin{1};
     for i = 2:length(varargin)
         all_trials = intersect(all_trials,varargin{i});
@@ -242,15 +217,9 @@ if all(cellfun(@isnumeric,varargin))
     for n = 1:size(signals,1)
         fr = cat(2,fr,cat(3,trial_data(all_trials).(signals{n,1})));
     end
-    
-    temp = NaN(sum(cellfun(@length,signals(:,2))),size(trial_data(1).(signals{1,1}),1),max_trial_num);
-    
     % if no trial matches, this will crash
-    if ~isempty(fr)
-        fr = permute(fr,[2,1,3]);
-        temp(:,:,1:size(fr,3)) = fr;
-    end
-    val = [val {temp}];
+    if ~isempty(fr), fr = mean(fr,3); end
+    val = [val {fr'}];
 else
     % still need to loop further. Find the next thing that is still a
     % cell and start looping along it
@@ -272,7 +241,7 @@ if all(cellfun(@iscell,varargin)) && length(val) == prod(cellfun(@(x) length(cel
         idx_vals{i} = unique(valIdx(i,:));
     end
     if length(varargin) == 1 % only one input is easy
-        val = cat(4,val{:});
+        val = cat(3,val{:});
     else
         val = loop_me_twice(length(size(val{1})),[],val,valIdx,0,idx_vals{:});
     end
