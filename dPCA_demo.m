@@ -27,4 +27,4 @@ blocks{1} = getTDidx(td,'epoch','BL');
 blocks{2} = getTDidx(td,'epoch','AD','range',[0 0.33]);
 blocks{3} = getTDidx(td,'epoch','AD','range',[0.33 0.66]);
 blocks{4} = getTDidx(td,'epoch','AD','range',[0.66 1]);
-getDPCA_dev(td,'target_direction',blocks,struct('signals',{signals}));
+getDPCA(td,'target_direction',blocks,struct('signals',{signals}));
