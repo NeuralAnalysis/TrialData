@@ -54,6 +54,8 @@ signals         =  getTDfields(trial_data,'spikes');
 do_plot         =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some extra parameters you can change that aren't described in header
+do_smoothing    = false;  % will smooth before PCA  (trial_data projections are unsmoothed)
+kernel_SD       = 0.05;  %   gaussian kernel s.d. for smoothing
 pca_algorithm   = 'svd'; % algorithm for PCA
 pca_centered    = true;  % whether to center data
 add_proj_to_td  = true;  % whether to add PCA projections
@@ -63,16 +65,21 @@ if nargin > 1, assignParams(who,params); end % overwrite parameters
 % process and prepare inputs
 signals = check_signals(trial_data(1),signals);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% concatenate specified trials
-data = [];
-for i = 1:size(signals,1)
-    temp_data = cat(1,trial_data.(signals{i,1}));
-    data = [data, temp_data(:,signals{i,2})];
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % build PCA model for M1
 if isempty(w)
+    td = trial_data;
+    if do_smoothing
+        td = smoothSignals(td,struct('signals',{signals},'kernel_SD',kernel_SD));
+    end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % concatenate specified trials
+    data = [];
+    for i = 1:size(signals,1)
+        temp_data = cat(1,td.(signals{i,1}));
+        data = [data, temp_data(:,signals{i,2})];
+    end
+    clear td;
+    
     % compute PCA
     [w, scores, eigen] = pca(data,'Algorithm',pca_algorithm,'Centered',pca_centered);
     
