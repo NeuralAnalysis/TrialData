@@ -39,7 +39,7 @@ for trial = 1:length(trial_data)
     ds = [0; diff(s)];
     dds = [0; diff(ds)];
     peaks = [dds(1:end-1)>0 & dds(2:end)<0; 0];
-    mvt_peak = find(peaks & (1:length(peaks))' > trial_data(trial).idx_go_cue & ds > min_ds, 1, 'first');
+    mvt_peak = find(peaks & (1:length(peaks))' > trial_data(trial).(start_idx) & ds > min_ds, 1, 'first');
     
     if ~isempty(mvt_peak)
         thresh = ds(mvt_peak)/2;                             % Threshold is half max of acceleration peak
@@ -49,7 +49,7 @@ for trial = 1:length(trial_data)
         [~, peak_idx] = max(s);
         
         % check to make sure the numbers make sense
-        if on_idx <= trial_data(trial).idx_go_cue
+        if on_idx <= trial_data(trial).(start_idx)
             % something is fishy. Fall back on threshold method
             on_idx = find(s > s_thresh,1,'first');
         end

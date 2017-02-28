@@ -115,8 +115,8 @@ end
 fn = cds.trials.Properties.VariableNames;
 if ~all(ismember({'startTime','endTime'},fn)), error('Must have start and end times in CDS.'); end
 event_list = union({'startTime','endTime'},event_list);
-if ismember(fn,{'goCueTime'}), event_list = union({'goCueTime'},event_list); end
-if ismember(fn,{'tgtOnTime'}), event_list = union({'tgtOnTime'},event_list); end
+if any(ismember(fn,{'goCueTime'})), event_list = union({'goCueTime'},event_list); end
+if any(ismember(fn,{'tgtOnTime'})), event_list = union({'tgtOnTime'},event_list); end
 % determine which signals are time-varying and which are parameter values
 %   There was a CDS bug where start/end times didn't have units, but I know
 %   they are supposed to be here so it's hard coded for now

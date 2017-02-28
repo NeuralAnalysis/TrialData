@@ -98,12 +98,17 @@ for trial = 1:length(trial_data)
     for iIdx = 1:length(fn_idx)
         temp = trial_data(trial).(fn_idx{iIdx});
         if temp > length(t), temp = length(t); end
-        temp = t(temp);
-        if isempty(temp) || (temp < t_bin(1) || temp > t_bin(end))
-            trial_data(trial).(fn_idx{iIdx}) = [];
+        if ~isnan(temp)
+            temp = t(temp);
+            if isempty(temp) || (temp < t_bin(1) || temp > t_bin(end))
+                trial_data(trial).(fn_idx{iIdx}) = [];
+            else
+                trial_data(trial).(fn_idx{iIdx}) = find(t_bin <= temp,1,'last');
+            end
         else
-            trial_data(trial).(fn_idx{iIdx}) = find(t_bin <= temp,1,'last');
+            trial_data(trial).(fn_idx{iIdx}) = []; % Should this be NaN or []?
         end
+        
     end
 end
 
