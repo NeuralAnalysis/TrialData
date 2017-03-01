@@ -11,16 +11,20 @@
 %
 % INPUTS:
 %   params : parameter struct
-%     .signals        : (cell) which signals. Two options:
+%     .signals         : (cell) which signals. Two options:
 %                           1) {'NAME1','NAME2',etc}
 %                           2) {'NAME1',idx; 'NAME2',idx; etc}
 %                                   Here idx is which columns to use
 %                                   Note: can use 'all' as idx for all
-%     .num_dims       : how many dPCA dimensions
-%     .do_plot        : flag to make dPCA plot
+%     .num_dims        : how many dPCA dimensions
+%     .do_plot         : flag to make dPCA plot
+%     .combined_params : see dPCA code or example below
+%     .marg_names      : name of each marginalization
+%     .marg_colors     : color for each marginalization
 %
 % OUTPUTS:
-%
+%   trial_data : data struct with dPCA projections added
+%   dPCA_info  : struct with info about dPCA analysis
 %
 % TO DO:
 %   - add dPCA projections to trial table
@@ -45,8 +49,21 @@ signals        =  [];
 num_dims       =  15;
 do_plot        =  true;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% These are some more complicated inputs for the dPCA code
+% 1 - condition
+% 2 - decision_var
+% 3 - time
+% [1 3] - condition/time interaction
+% [2 3] - decision_var/time interaction
+% [1 2] - condition/decision_var interaction
+% [1 2 3] - rest
+combined_params = { {1}, {2,[1 2]}, {3,[1,3]}, {[2 3],[1 2 3]} };
+marg_names      = {'time','target','learning','target/learning interaction'};
+marg_colors     = [150 150 150; 23 100 171; 187 20 25; 114 97 171]/256; % blue, red, grey, purple
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra functions
 dpca_plot_fcn  =  @dpca_plot_td;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 assignParams(who,params);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 signals        = check_signals(trial_data(1),signals);
@@ -75,22 +92,6 @@ for i = 1:length(varargin)-1
     end
 end
 if length(conditions) > 3, warning('This many conditions takes a while to run...'); end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% THESE SHOULD ALL BECOME INPUT-BASED IN SOME INTUITIVE WAY
-% ------------------------------------------------------------------------
-% 2. Define parameters
-% 1 - condition
-% 2 - decision_var
-% 3 - time
-% [1 3] - condition/time interaction
-% [2 3] - decision_var/time interaction
-% [1 2] - condition/decision_var interaction
-% [1 2 3] - rest
-combined_params = { {1}, {2,[1 2]}, {3,[1,3]}, {[2 3],[1 2 3]} };
-marg_names      = {'time','target','learning','target/learning interaction'};
-marg_colors     = [150 150 150; 23 100 171; 187 20 25; 114 97 171]/256; % blue, red, grey, purple
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Get the size of the massive input matrix
 %   N is the number of signals (e.g. neurons)
