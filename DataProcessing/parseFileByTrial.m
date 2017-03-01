@@ -22,7 +22,7 @@
 %     .bin_size      : default 0.01 sec
 %     .extra_time    : [time before, time after] beginning and end of trial (default [0.2 0.2] sec)
 %     .all_points    : flag to include all data points. Thus, disregards extra_time
-%                       and results. Each trial ends at trial_start of the one after
+%                       and trial_results. Each trial ends at trial_start of the one after
 %     .pos_offset    : offset (in units of cds.pos) to zero position (default [0,0])
 %
 % OUTPUTS:
