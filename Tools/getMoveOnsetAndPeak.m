@@ -39,28 +39,31 @@ if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % some pre-processing
-trial_data = getSpeed(trial_data);
-trial_data = truncateAndBin(trial_data,{start_idx,0},{end_idx,0});
+td = getSpeed(trial_data);
 
 for trial = 1:length(trial_data)
     % use velocity to find bin corresponding to movement onset, movement offset, and peak speed
-    s = trial_data(trial).speed;
+    s = td(trial).speed;
+    
+    % find the time bins where the monkey may be moving
+    move_inds = false(size(s));
+    move_inds(td(trial).(start_idx):td(trial).(end_idx)) = true;
     
     [on_idx,peak_idx] = deal(NaN);
     if strcmpi(which_method,'peak')
         ds = [0; diff(s)];
         dds = [0; diff(ds)];
         peaks = [dds(1:end-1)>0 & dds(2:end)<0; 0];
-        mvt_peak = find(peaks & (1:length(peaks))' > trial_data(trial).(start_idx) & ds > min_ds, 1, 'first');
+        mvt_peak = find(peaks & (1:length(peaks))' > td(trial).(start_idx) & ds > min_ds & move_inds, 1, 'first');
         if ~isempty(mvt_peak)
             thresh = ds(mvt_peak)/2;                             % Threshold is half max of acceleration peak
-            on_idx = find(ds<thresh & (1:length(ds))'<mvt_peak,1,'last');
+            on_idx = find(ds<thresh & (1:length(ds))'<mvt_peak & move_inds,1,'last');
             % find movement peak as maximum velocity
             s(1:on_idx) = 0;
             [~, peak_idx] = max(s);
             
             % check to make sure the numbers make sense
-            if on_idx <= trial_data(trial).(start_idx)
+            if on_idx <= td(trial).(start_idx)
                 % something is fishy. Fall back on threshold method
                 on_idx = NaN;
             end
@@ -68,7 +71,7 @@ for trial = 1:length(trial_data)
     end
     
     if isnan(on_idx)
-        on_idx = find(s > s_thresh,1,'first');
+        on_idx = find(s > s_thresh & move_inds,1,'first');
     end
     
     trial_data(trial).(['idx_' onset_name]) = on_idx;

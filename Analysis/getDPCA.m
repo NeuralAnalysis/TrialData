@@ -93,13 +93,7 @@ for i = 1:length(varargin)-1
 end
 if length(conditions) > 3, warning('This many conditions takes a while to run...'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Get the size of the massive input matrix
-%   N is the number of signals (e.g. neurons)
-%   S is the number of conditions --> tasks in our case
-%   D is the number of decisions --> targets in our case
-%   T is the number of time points --each trial should have the same duration in time !!!
-N = sum(cellfun(@(x) length(x),signals(:,2)));
-C = cellfun(@length,conditions);
+% Get the number of time points
 T = size(trial_data(1).(signals{1,1}),1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
