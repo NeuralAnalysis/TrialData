@@ -22,9 +22,9 @@ function [dims,noise_eigen_prctile] = estimateDimensionality(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
 signal        =  [];
-sqrt_transform = true;
-do_smoothing  =  true;
-kernel_SD     =  0.1;
+sqrt_transform = false;
+do_smoothing  =  false;
+kernel_SD     =  0.05;
 condition     =  'target_direction';
 num_iter      =  1000;
 alpha         =  0.95; % what fraction of non-noise variance

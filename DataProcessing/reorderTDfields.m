@@ -30,10 +30,11 @@ idx_idx = find(ismember(fn,fn_idx));
 % DO SORT
 v = zeros(1,length(idx_idx));
 for i = 1:length(idx_idx)
-    if isempty(trial_data(1).(fn{idx_idx(i)}))
+    temp = trial_data(1).(fn{idx_idx(i)});
+    if isempty(temp) || any(isnan(temp))
         v(i) = Inf;
     else
-        v(i) = trial_data(1).(fn{idx_idx(i)});
+        v(i) = temp(1); % in case there are multiple
     end
 end
 [~,I] = sort(v);

@@ -15,7 +15,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = sqrtTransform(trial_data,signals)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if nargin < 2, error('Must provide one or more signals to transform.'); end
+if nargin < 2
+    disp('No signals provided, square root transforming spikes');
+    signals = getTDfields(trial_data,'spikes');
+end
 if ~iscell(signals), signals = {signals}; end
 % make sure the signal input formatting is good
 signals = check_signals(trial_data(1),signals);
