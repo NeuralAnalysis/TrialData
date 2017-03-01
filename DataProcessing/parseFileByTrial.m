@@ -138,11 +138,19 @@ for i = 1:length(idx_trials)
     trial_data(i).monkey = cds.meta.monkey;
     trial_data(i).date = datestr(cds.meta.dateTime,'mm-dd-yyyy');
     trial_data(i).task = cds.meta.task;
-    if any(abs(cds.trials.tgtDir) > 2*pi) % good assumption that it's deg
-        trial_data(i).target_direction = (pi/180*cds.trials.tgtDir(iTrial));
-    else % should be rad
-        trial_data(i).target_direction = minusPi2Pi(cds.trials.tgtDir(iTrial));
+    
+    % In random walk, target_direction doesn't make sense
+    switch lower(cds.meta.task)
+        case 'rw'
+            trial_data(i).target_center = reshape(cds.trials.tgtCtr(iTrial,:),size(cds.trials.tgtCtr(iTrial,:),2)/2,2);
+        otherwise
+            if any(abs(cds.trials.tgtDir) > 2*pi) % good assumption that it's deg
+                trial_data(i).target_direction = (pi/180*cds.trials.tgtDir(iTrial));
+            else % should be rad
+                trial_data(i).target_direction = minusPi2Pi(cds.trials.tgtDir(iTrial));
+            end
     end
+    
     trial_data(i).trial_id = iTrial;
     trial_data(i).result = cds.trials.result(iTrial);
     trial_data(i).bin_size = bin_size;
@@ -208,8 +216,15 @@ cds_bin.trials = bin_events(cds.trials,intersect(event_list,time_events),cds_bin
 param_events = setxor(event_list,time_events);
 % add in the non-time events
 for var = 1:length(param_events)
-    cds_bin.trials.(param_events{var}) = cds.trials.(param_events{var});
+    if ismember(param_events{var},cds.trials.Properties.VariableNames)
+        cds_bin.trials.(param_events{var}) = cds.trials.(param_events{var});
+    else
+        warning(['Requested event ' param_events{var} ' not found in CDS.']);
+    end
 end
+% get a new master event list in case any weren't found
+event_list = fieldnames(cds_bin.trials);
+
 
 % This is a little "hack" in case all data is desired
 if all_points % here we want to include all data
@@ -238,7 +253,7 @@ for i = 1:length(idx_trials)
         % Add trial index markers
         for e = 1:length(event_list)
             temp = cds_bin.trials.(event_list{e});
-            temp = temp(iTrial);
+            temp = temp(iTrial,:);
             
             % check to see if there's an alias and use it
             temp_name = event_list{e};
@@ -347,13 +362,16 @@ function out = bin_events(trials,event_list,t_bin)
 out = struct();
 for e = 1:length(event_list)
     all_events = trials.(event_list{e});
-    nan_bins = NaN(1,length(all_events));
-    temp = find(histcounts(all_events,t_bin));
-    nan_bins(~isnan(all_events)) = temp;
+    nan_bins = NaN(size(all_events));
+    for i = 1:size(all_events,2) % e.g. in RW there can be multiple go cues
+        temp = find(histcounts(all_events(:,i),t_bin));
+        nan_bins(~isnan(all_events(:,i)),i) = temp;
+    end
     
     out.(event_list{e}) = nan_bins;
 end
 end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [binned_spikes,sg] = bin_spikes(units,unit_idx,t_bin)
