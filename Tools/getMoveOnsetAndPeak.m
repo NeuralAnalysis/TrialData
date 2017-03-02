@@ -73,7 +73,6 @@ for trial = 1:length(trial_data)
     if isempty(on_idx) || isnan(on_idx)
         on_idx = find(s > s_thresh & move_inds,1,'first');
     end
-    if isempty(on_idx),keyboard;end
     trial_data(trial).(['idx_' onset_name]) = on_idx;
     if strcmpi(which_method,'peak')
         trial_data(trial).(['idx_' peak_name]) = peak_idx;
