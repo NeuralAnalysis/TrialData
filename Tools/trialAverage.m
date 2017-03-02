@@ -35,7 +35,12 @@ function [avg_data,cond_idx] = trialAverage(trial_data, conditions, params)
 % DEFAULT PARAMETER VALUES
 do_stretch  =  false;
 num_samp    =  1000;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Some undocumented extra parameters
+record_flag = true; % will add a flag field saying it's trial-averaged
 if nargin > 2, assignParams(who,params); end % overwrite parameters
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if nargin == 1, error('Conditions not provided as input.'); end
 if ~iscell(conditions), conditions = {conditions}; end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get list of time-varying signals that we will average over
@@ -113,7 +118,9 @@ for i = 1:num_conds
     for v = 1:length(time_vars)
         avg_data(i).(time_vars{v}) = mean(cat(3,trial_data(cond_idx{i}).(time_vars{v})),3);
     end
-    
+    if record_flag
+        avg_data(i).is_average = true;
+    end
 end
 
 % restore logical order
