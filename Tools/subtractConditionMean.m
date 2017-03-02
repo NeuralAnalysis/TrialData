@@ -15,11 +15,14 @@
 %
 % OUTPUTS:
 %   trial_data : the struct, with mean subtracted for each signal
-% 
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = subtractConditionMean(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 cond_idx  =  1:length(trial_data);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Some undocumented extra parameters
+record_flag = true; % will add a flag field
 if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -29,7 +32,14 @@ td = trial_data(cond_idx);
 
 for i = 1:length(fn)
     m = mean(cat(3,td.(fn{i})),3);
-    for j = 1:length(trial_data)
-        trial_data(j).(fn{i}) = trial_data(j).(fn{i}) - m;
+    for trial = 1:length(trial_data)
+        trial_data(trial).(fn{i}) = trial_data(trial).(fn{i}) - m;
+    end
+end
+
+% let it be known that on this day a mean was subtracted!
+if record_flag
+    for trial = 1:length(trial_data)
+        trial_data(trial).cond_mean_subtracted = true;
     end
 end
