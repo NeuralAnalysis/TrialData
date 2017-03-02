@@ -36,8 +36,8 @@ switch lower(which_type)
         % then find all signals that have the same number of rows
         % kinda hack-y but it works
         %   note: assumes rows are time and columns are variables
-        cont_vars = fn(ismember(fn,cont_vars));
-        t = size(trial_data(1).(cont_vars{1}),1);
+        cont_vars_here = fn(ismember(fn,cont_vars));
+        t = size(trial_data(1).(cont_vars_here{1}),1);
         if t == 0
             error('Time variables have zero bins.');
         elseif t > 1
