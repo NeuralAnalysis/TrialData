@@ -200,7 +200,11 @@ end
 fn = fieldnames(cds_bin);
 cds_bin.t = roundTime(cds_bin.(fn{1}).t);
 % check the time vector lengths just to be sure
-for i = 2:length(fn),if size(cds_bin.(fn{i}).t,1) ~= size(cds_bin.t,1), error('Time is different!'); end, end
+for i = 2:length(fn)
+    if ~isempty(cds_bin.(fn{i})) && (size(cds_bin.(fn{i}).t,1) ~= size(cds_bin.t,1))
+        error('Time is different!');
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Neural data now
