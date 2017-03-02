@@ -217,7 +217,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % convert events in trial table into bin indices
 cds_bin.trials = bin_events(cds.trials,intersect(event_list,time_events),cds_bin.t);
-param_events = setxor(event_list,time_events);
+param_events = setdiff(event_list,time_events);
 % add in the non-time events
 for var = 1:length(param_events)
     if ismember(param_events{var},cds.trials.Properties.VariableNames)
