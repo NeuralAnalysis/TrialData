@@ -75,13 +75,18 @@ for trial = 1:length(trial_data)
             
             idx_start = go_cues(cue)-extra_bins(1);
             if cue < length(go_cues)
-                idx_end = go_cues(cue+1)+extra_bins(2);
+                if isnan(go_cues(cue+1))
+                    idx_end = td.(end_name)+extra_bins(2);
+                else
+                    idx_end = go_cues(cue+1)+extra_bins(2);
+                end
             else
                 idx_end = td.(end_name)+extra_bins(2);
             end
             
             % now add the new idx
             rw_td(count).(start_name) = extra_bins(1)+1;
+            rw_td(count).(go_cue_name) = extra_bins(1)+1;
             rw_td(count).(end_name)   = idx_end - extra_bins(2) - go_cues(cue)+1;
             
             % check that the index won't crash
