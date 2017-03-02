@@ -58,9 +58,6 @@ for trial = 1:length(trial_data)
         if ~isempty(mvt_peak)
             thresh = ds(mvt_peak)/2;                             % Threshold is half max of acceleration peak
             on_idx = find(ds<thresh & (1:length(ds))'<mvt_peak & move_inds,1,'last');
-            % find movement peak as maximum velocity
-            s(~move_inds) = 0;
-            [~, peak_idx] = max(s);
             
             % check to make sure the numbers make sense
             if on_idx <= td(trial).(start_idx)
@@ -68,10 +65,17 @@ for trial = 1:length(trial_data)
                 on_idx = NaN;
             end
         end
+        % peak is max velocity during movement
+        temp = s; temp(~move_inds) = 0;
+        [~,peak_idx] = max(temp);
     end
     
     if isempty(on_idx) || isnan(on_idx)
         on_idx = find(s > s_thresh & move_inds,1,'first');
+        if isempty(on_idx) % usually means it never crosses threshold
+            warning('Could not identify movement onset');
+            on_idx = NaN;
+        end
     end
     trial_data(trial).(['idx_' onset_name]) = on_idx;
     if strcmpi(which_method,'peak')
