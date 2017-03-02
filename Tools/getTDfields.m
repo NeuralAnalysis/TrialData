@@ -43,10 +43,13 @@ switch lower(which_type)
         if t == 0
             error('Time variables have zero bins.');
         elseif t > 1
-            idx = false(1,length(fn));
+            idx = false(length(fn),1);
             for ifn = 1:length(fn)
                 idx(ifn) = size(trial_data(trial_idx).(fn{ifn}),1)==t;
             end
+            % in RW, the target center field has rows equal to the number
+            % of targets, so hard code in an exclusion here
+            idx = idx & ~ismember(fn,'target_center');
             fn = fn(idx);
         elseif t == 1
             % there is an edge case where if there is only one time bin it
