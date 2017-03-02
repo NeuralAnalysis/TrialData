@@ -37,13 +37,15 @@ switch lower(which_type)
         % kinda hack-y but it works
         %   note: assumes rows are time and columns are variables
         cont_vars_here = fn(ismember(fn,cont_vars));
-        t = size(trial_data(1).(cont_vars_here{1}),1);
+        % use the max over all trials so we have the lowest chance of
+        % getting zero or one
+        [t,trial_idx] = max(cellfun(@(x) size(x,1),{trial_data.(cont_vars_here{1})}));
         if t == 0
             error('Time variables have zero bins.');
         elseif t > 1
             idx = false(1,length(fn));
             for ifn = 1:length(fn)
-                idx(ifn) = size(trial_data(1).(fn{ifn}),1)==t;
+                idx(ifn) = size(trial_data(trial_idx).(fn{ifn}),1)==t;
             end
             fn = fn(idx);
         elseif t == 1
