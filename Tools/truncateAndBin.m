@@ -100,13 +100,19 @@ for trial = 1:length(trial_data)
         if temp > length(t), temp = length(t); end
         if ~isnan(temp)
             temp = t(temp);
-            if isempty(temp) || (temp < t_bin(1) || temp > t_bin(end))
-                trial_data(trial).(fn_idx{iIdx}) = [];
-            else
-                trial_data(trial).(fn_idx{iIdx}) = find(t_bin <= temp,1,'last');
+            % in cases like the RW go cues, there can be multiple idx_, so
+            % loop along them
+            temp_adjust = zeros(size(temp));
+            for i = 1:size(temp,2)
+                if isempty(temp(i)) || (temp(i) < t_bin(1) || temp(i) > t_bin(end))
+                    temp_adjust(i) = NaN;
+                else
+                    temp_adjust(i) = find(t_bin <= temp(i),1,'last');
+                end
             end
+            trial_data(trial).(fn_idx{iIdx}) = temp_adjust;
         else
-            trial_data(trial).(fn_idx{iIdx}) = []; % Should this be NaN or []?
+            trial_data(trial).(fn_idx{iIdx}) = NaN; % Should this be NaN or []?
         end
         
     end
