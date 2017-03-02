@@ -27,10 +27,10 @@ ranges = [];
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 
 bad_idx = false(1,length(trial_data));
-for iTrial = 1:length(trial_data)
+for trial = 1:length(trial_data)
     err = false;
     
-    td = trial_data(iTrial);
+    td = trial_data(trial);
     
     % loop along all indices and make sure they aren't NaN
     fn = getTDfields(td,'idx');
@@ -56,7 +56,7 @@ for iTrial = 1:length(trial_data)
         end
     end
     
-    if err, bad_idx(iTrial) = true; end
+    if err, bad_idx(trial) = true; end
 end
 disp(['Pruning ' num2str(sum(bad_idx)) ' trials.']);
 bad_trials = trial_data(bad_idx);
