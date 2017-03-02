@@ -5,8 +5,6 @@
 %   trial_data : the struct
 %   params     : parameter struct
 %       .signal       : which signal to work on
-%       .do_smoothing : flag to smooth data
-%       .kernel_SD    : SD for smoothing kernel
 %       .condition    : (string) which condition to average over
 %                           Default is 'target_direction'
 %       .num_iter     : number of iterations (default 1000)
@@ -22,9 +20,6 @@ function [dims,noise_eigen_prctile] = estimateDimensionality(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
 signal        =  [];
-sqrt_transform = false;
-do_smoothing  =  false;
-kernel_SD     =  0.05;
 condition     =  'target_direction';
 num_iter      =  1000;
 alpha         =  0.95; % what fraction of non-noise variance
@@ -32,6 +27,9 @@ assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isempty(signal), error('Must provide desired signal'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if isfield(trial_data,'is_average')
+    error('Provided average input. Must provide single trial data.');
+end
 
 nbr_chs = size(trial_data(1).(signal),2);
 
@@ -39,8 +37,11 @@ nbr_chs = size(trial_data(1).(signal),2);
 nbr_trials = cellfun(@(x) length(getTDidx(trial_data,condition,x)),num2cell(unique([trial_data.(condition)])));
 tgt_idx = cellfun(@(x) getTDidx(trial_data,condition,x),num2cell(unique([trial_data.(condition)])),'uni',0);
 
+if any(nbr_trials < 2)
+    error('Too few trials for one or more conditions.');
+end
+
 % get PCA of smoothed, trial-averaged data
-trial_data = smoothSignals(trial_data,struct('signals',signal,'do_smoothing',do_smoothing,'kernel_SD',kernel_SD,'sqrt_transform',sqrt_transform));
 td = trialAverage(trial_data,condition);
 [~,pca_info] = getPCA(td,struct('signals',signal));
 
