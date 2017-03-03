@@ -121,6 +121,15 @@ for i = 1:num_conds
     if record_flag
         avg_data(i).is_average = true;
     end
+    % add idx fields if it wasn't time stretched
+    if ~do_stretch
+        fn_idx = getTDfields(trial_data,'idx');
+        for f = 1:length(fn_idx)
+            if length(unique([trial_data(cond_idx{i}).(fn_idx{f})])) == 1
+                avg_data(i).(fn_idx{f}) = trial_data(cond_idx{i}(1)).(fn_idx{f});
+            end
+        end
+    end
 end
 
 % restore logical order
