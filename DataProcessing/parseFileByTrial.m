@@ -232,7 +232,8 @@ event_list = fieldnames(cds_bin.trials);
 
 % This is a little "hack" in case all data is desired
 if all_points % here we want to include all data
-    cds_bin.trials.endTime = [0, cds_bin.trials.startTime];
+    cds_bin.trials.endTime = [cds_bin.trials.startTime(2:end)-1; length(cds_bin.t)];
+    extra_time = [0 0];
 else
     extra_time = round(extra_time/bin_size); % convert to number of bins
 end
@@ -243,14 +244,13 @@ for i = 1:length(idx_trials)
     iTrial = idx_trials(i);
     
     % find trial start/end times
-    if all_points % I've added an entry so it's weird
-        t_start = cds_bin.trials.endTime(iTrial)+1;
-        t_end = cds_bin.trials.endTime(iTrial+1);
-    else
         t_start = cds_bin.trials.startTime(iTrial) - extra_time(1);
         t_end = cds_bin.trials.endTime(iTrial) + extra_time(2);
-    end
+
     idx = t_start:t_end-1;
+    
+    % adjust start time for use next
+    cds_bin.trials.startTime(iTrial) = cds_bin.trials.startTime(iTrial)+1;
     
     if ~isempty(idx)
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
