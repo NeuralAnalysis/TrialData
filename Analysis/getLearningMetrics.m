@@ -46,7 +46,7 @@ switch lower(which_metric)
         bl_metric = zeros(length(utheta),1);
         if use_bl_ref
             for iDir = 1:length(utheta)
-                bl_idx = find(getTDidx(trial_data,'epoch','bl','target_direction',utheta(iDir)));
+                bl_idx = getTDidx(trial_data,'epoch','bl','target_direction',utheta(iDir));
                 if isempty(bl_idx)
                     error('No BL ref found for all targets');
                 end
@@ -106,7 +106,7 @@ switch lower(which_metric)
         % get baseline trace to each target
         bl_metric = zeros(length(utheta),corr_samples,2);
         for iDir = 1:length(utheta)
-            bl_idx = find(getTDidx(trial_data,'epoch','bl','target_direction',utheta(iDir)));
+            bl_idx = getTDidx(trial_data,'epoch','bl','target_direction',utheta(iDir));
             bl_temp = zeros(length(bl_idx),2,corr_samples);
             if isempty(bl_idx)
                 error('Corr needs a BL reference for each target');
