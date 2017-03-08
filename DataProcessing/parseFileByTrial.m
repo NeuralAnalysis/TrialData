@@ -3,6 +3,10 @@
 %
 %   Wrapper function to create trial_data structs. Currently only supports
 % CDS.
+% 
+% NOTE: Discretizes everything to the dt of the CDS kinematics (by default
+% should be 10 ms bins, I believe). Can rebin later if desired using
+% truncateAndBin.
 %
 % INPUTS:
 %   data     : a CDS file or BDF file (not yet supported)
@@ -19,7 +23,6 @@
 %     .exclude_units : ID for which units to exclude (Default: [0,255])
 %                       NOTE: this default gets rid of unsorted!
 %     .trial_results : which reward codes to use ('R','A','F','I') (Default: {'R'})
-%     .bin_size      : default 0.01 sec
 %     .extra_time    : [time before, time after] beginning and end of trial (default [0.2 0.2] sec)
 %     .all_points    : flag to include all data points. Thus, disregards extra_time
 %                       and trial_results. Each trial ends at trial_start of the one after
@@ -73,7 +76,6 @@ event_list     =  {};
 array_alias    =  {};
 trial_results  =  {'R'};
 exclude_units  =  [0,255];
-bin_size       =  0.01;
 extra_time     =  [0.2, 0.2];
 all_points     =  false;
 pos_offset     =  [0,0];
@@ -99,7 +101,6 @@ switch size(event_list,2)
     case 2, event_alias = event_list; event_list = event_list(:,1);
     otherwise, error('event_list should have two columns {name, alias (if desired)}');
 end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % see what array data is present
 if ~isempty(cds.units)
@@ -130,6 +131,9 @@ else
 end
 trial_data = repmat(struct(),1,length(idx_trials));
 
+% find the bin size of the CDS kinematics
+bin_size = round(1000*mode(diff(cds.kin.t)))/1000;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Add basic data and metadata
 for i = 1:length(idx_trials)
@@ -154,6 +158,10 @@ for i = 1:length(idx_trials)
     trial_data(i).trial_id = iTrial;
     trial_data(i).result = cds.trials.result(iTrial);
     trial_data(i).bin_size = bin_size;
+    
+    if all_points
+        trial_data(i).is_continuous = true;
+    end
     
     % loop along all meta fields
     if isfield(params,'meta')
