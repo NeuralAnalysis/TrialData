@@ -98,6 +98,7 @@ for trial = 1:length(trial_data)
     for iIdx = 1:length(fn_idx)
         temp = trial_data(trial).(fn_idx{iIdx});
         if temp > length(t), temp = length(t); end
+        if temp < 0, temp = NaN; end
         if ~isnan(temp)
             temp = t(temp);
             % in cases like the RW go cues, there can be multiple idx_, so
