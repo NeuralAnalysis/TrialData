@@ -57,7 +57,7 @@ for i = 1:length(fn)
         elseif iscell(fv{i})
             idx = idx & ismember({trial_data.(fn{i})},fv{i});
         else
-            idx = idx & [trial_data.(fn{i})] == fv{i};
+            idx = idx & ismember([trial_data.(fn{i})],fv{i});
         end
     end
 end
