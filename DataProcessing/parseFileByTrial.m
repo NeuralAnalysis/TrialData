@@ -159,6 +159,7 @@ for i = 1:length(idx_trials)
     trial_data(i).result = cds.trials.result(iTrial);
     trial_data(i).bin_size = bin_size;
     
+    % if it's all_points, add a flag for later use
     if all_points
         trial_data(i).is_continuous = true;
     end
