@@ -64,8 +64,7 @@ if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % process and prepare inputs
 signals = check_signals(trial_data(1),signals);
-% likely to be meta info
-if ~isnumeric(use_trials)
+if iscell(use_trials) % likely to be meta info
     use_trials = getTDidx(trial_data,use_trials{:});
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

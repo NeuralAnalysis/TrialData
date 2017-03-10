@@ -79,6 +79,9 @@ end
 if isempty(td_fn_prefix), td_fn_prefix = model_type; end
 in_signals = check_signals(trial_data(1),in_signals);
 out_signals = check_signals(trial_data(1),out_signals);
+if iscell(train_idx) % likely to be meta info
+    train_idx = getTDidx(trial_data,train_idx{:});
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isempty(b)  % fit a new model
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -98,8 +101,11 @@ if isempty(b)  % fit a new model
                 else
                     [b(:,iVar),~,s_temp] = glmfit(x,y(:,iVar),glm_distribution);
                 end
-                if isempty(s), s = s_temp; end
-                s(iVar) = s_temp;
+                if isempty(s),
+                    s = s_temp;
+                else
+                    s(iVar) = s_temp;
+                end
             case 'linmodel'
                 b(:,iVar) = [ones(size(x,1),1), x]\y(:,iVar);
         end

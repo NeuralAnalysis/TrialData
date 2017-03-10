@@ -56,8 +56,7 @@ if isempty(out_signals), error('Need to specify output signals'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 in_signals = check_signals(trial_data(1),in_signals);
 out_signals = check_signals(trial_data(1),out_signals);
-% likely to be meta info
-if ~isnumeric(use_trials)
+if iscell(use_trials) % likely to be meta info
     use_trials = getTDidx(trial_data,use_trials{:});
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

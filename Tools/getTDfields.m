@@ -87,7 +87,8 @@ switch lower(which_type)
         %   note: assumes rows are time and columns are variables
         fn_time = getTDfields(trial_data,'time');
         fn_idx  = getTDfields(trial_data,'idx');
-        idx = ismember(fn,fn_time) | ismember(fn,fn_idx);
+        fn_ug   = getTDfields(trial_data,'unit_guides');
+        idx = ismember(fn,fn_time) | ismember(fn,fn_idx) | ismember(fn,fn_ug);
         fn = fn(~idx);
     case 'cont' % same as 'time' but I exclude neural
         fn_time = getTDfields(trial_data,'time');
