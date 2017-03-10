@@ -20,10 +20,13 @@
 %   params    : struct of info
 %       .func_calls : the function calls (varargin)
 %       .git_hash   : the git hash for the current TrialData repo
+%       .extra_outs : extra outputs from functions that have them
+%                       Note: this field will be missing if no functions
+%                       return outputs, for the sake of cleanliness
 %
 % EXAMPLES:
 %   e.g. to bin data and trim it
-%   [td,params] = loadTDfiles(filename, {@binTD,1}, {@trimTD,{'idx_go_cue',0},{'idx_go_cue',30}});
+%   [td,params] = loadTDfiles(filename, {@binTD,5}, {@trimTD,{'idx_go_cue',0},{'idx_go_cue',30}});
 %
 % Written by Matt Perich. Updated Feb 2017.
 %
@@ -102,8 +105,9 @@ master_td = reorderTDfields(master_td);
 
 % package up params if desired
 if nargout > 1
-    params.func_calls = varargin;
-    params.git_info = getGitInfo();
+    params.filenames      = filenames;
+    params.func_calls     = varargin;
+    params.git_info       = getGitInfo();
     if ~all(all(cellfun(@isempty,extra_outs)))
         params.extra_outs = extra_outs;
     end
