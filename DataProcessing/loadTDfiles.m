@@ -8,11 +8,11 @@
 % INPUTS:
 %   filenames : a cell array of filenames
 %   varargin : any number of function call inputs
-%               Format 1: {'functionName',params}
+%               Format 1: {@functionName,params}
 %                       Note: the params struct should be made as you
 %                             would for the real function call.
-%               Format 2: 'functionName', will assume no params
-%               Format 3: {'functionName',var1,var2,etc} for arbitrary vars
+%               Format 2: @functionName, will assume no params
+%               Format 3: {@functionName,var1,var2,etc} for arbitrary vars
 %
 % OUTPUTS:
 %   master_td : the master trial_data struct with all files appended and
@@ -27,22 +27,23 @@ function master_td = loadTDfiles(filenames,varargin)
 if ~iscell(filenames), filenames = {filenames}; end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+disp(['Loading file ' num2str(1) ' of ' num2str(length(filenames)) '.']);
+if exist(filenames{1},'file')
+    load(filenames{1});
+else
+    error([filenames{1} ' not found.']);
+end
+
+if nargin > 1
+    for iFun = 1:length(varargin)
+        trial_data = run_func(trial_data,varargin{iFun});
+    end
+end
+
+master_td = trial_data;
+
 if length(filenames) > 1
-    disp(['Loading file ' num2str(1) ' of ' num2str(length(filenames)) '.']);
-    if exist(filenames{1},'file')
-        load(filenames{1});
-    else
-        error([filenames{1} ' not found.']);
-    end
-    
-    if nargin > 1
-        for iFun = 1:length(varargin)
-            trial_data = run_func(trial_data,varargin{iFun});
-        end
-    end
-    
-    master_td = trial_data;
-    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Loop along filenames
     for file = 2:length(filenames)
@@ -86,17 +87,17 @@ if length(filenames) > 1
     end
 else
     disp('Only one filename provided. Returning one file.');
-    load(filenames{1});
-    master_td = trial_data;
 end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = run_func(trial_data,funcCall)
 if ~iscell(funcCall), funcCall = {funcCall}; end
-if exist(funcCall{1},'file') || exist(funcCall{1},'builtin')
-    % build function call
-    f = eval(['@' funcCall{1}]);
+
+% first entry is function call
+f = funcCall{1};
+fh = functions(f);
+if ~isempty(fh.file)
     % call it
     if length(funcCall) > 1
         if isstruct(funcCall{2})
@@ -108,16 +109,35 @@ if exist(funcCall{1},'file') || exist(funcCall{1},'builtin')
                     in_var = num2str(funcCall{i});
                 else
                     in_var = funcCall{i};
+                    if ischar(in_var)
+                        in_var = ['''' in_var ''''];
+                    elseif iscell(in_var)
+                        temp = '{';
+                        for j = 1:length(in_var)
+                            if ischar(in_var{j})
+                                temp = [temp '''' in_var{j} ''''];
+                            elseif isnumeric(in_var{j})
+                                temp = [temp num2str(in_var{j})];
+                            end
+                            if j < length(in_var), temp = [temp ',']; end
+                        end
+                        in_var = [temp '}'];
+                    end
                 end
                 input_str = [input_str ',' in_var];
             end
-            eval(['trial_data = f(trial_data' input_str ');']);
+            % there is a special case for getTDidx
+            if strcmpi(fh.function,'getTDidx')
+                eval(['[~,trial_data] = f(trial_data' input_str ');']);
+            else
+                eval(['trial_data = f(trial_data' input_str ');']);
+            end
         end
     else
         trial_data = f(trial_data);
     end
 else
-    warning([funcCall ' function not found. Skipping...']);
+    error([funcCall ' function not found...']);
 end
 
 % restore logical order
