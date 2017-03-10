@@ -42,7 +42,8 @@ eval_metric      =  '';
 num_boots        =  1000;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented parameters
-td_fn_prefix     =  ''; % prefix for fieldname
+do_parallel      =  false; % can run predictions in parallel
+td_fn_prefix     =  '';    % prefix for fieldname
 if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 possible_metrics = {'pr2','vaf','r2','r'};
@@ -64,6 +65,19 @@ end
 if ~iscell(model_name), model_name = {model_name}; end
 if ~any(ismember(eval_metric,possible_metrics)), error('Metric not recognized.'); end
 out_signals = check_signals(trial_data(1),out_signals);
+
+
+% Check to ensure the matlab pool is open if parallel is desired
+if do_parallel % make sure pool already exists
+  if isempty(gcp('nocreate'))
+    disp('Matlab parallel pool not found. Opening pool...');
+    parpool;
+  end
+  num_workers = gcp.NumWorkers;
+else
+  num_workers = 0;
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Calculate pr2
 % quick hack here for when we aren't binning and want single trials
@@ -75,12 +89,12 @@ for i = 1:length(trial_idx)-1
     temp = get_vars(trial_data(trials),out_signals);
     temp1 = cat(1,trial_data(trials).([td_fn_prefix '_' model_name{1}]));
     if length(model_name) == 1
-        for iVar = 1:size(temp,2)
+        parfor (iVar = 1:size(temp,2),num_workers)
             metric(i,iVar,:) = get_metric(temp(:,iVar),temp1(:,iVar),eval_metric,num_boots);
         end
     else % relative metric
         temp2 = cat(1,trial_data(trials).([td_fn_prefix '_' model_name{2}]));
-        for iVar = 1:size(temp,2)
+        parfor (iVar = 1:size(temp,2),num_workers)
             metric(i,iVar,:) = get_metric(temp(:,iVar),temp1(:,iVar),temp2(:,iVar),eval_metric,num_boots);
         end
     end
@@ -100,7 +114,7 @@ y_test         = varargin{1};
 eval_metric    = varargin{end-1};
 num_bootstraps = varargin{end};
 
-% this is a really efficient way to bootstrap but you need temps
+% this is a really efficient way to bootstrap...
 if num_bootstraps > 1
     bs = randi(length(y_test),length(y_test),num_bootstraps);
 else
@@ -129,7 +143,7 @@ elseif nargin == 5 % relative metric
         case 'r2'
             error('R2 not yet implemented for relative metrics');
         case 'r'
-            error('R2 not yet implemented for relative metrics');
+            error('r not yet implemented for relative metrics');
     end
 end
 end
