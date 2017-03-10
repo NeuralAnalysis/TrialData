@@ -49,7 +49,7 @@
 function [trial_data,pca_info] = getPCA(trial_data, params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETER VALUES
-trial_idx       =  1:length(trial_data);
+use_trials      =  1:length(trial_data);
 signals         =  getTDfields(trial_data,'spikes');
 do_plot         =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -64,10 +64,14 @@ if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % process and prepare inputs
 signals = check_signals(trial_data(1),signals);
+% likely to be meta info
+if ~isnumeric(use_trials)
+    use_trials = getTDidx(trial_data,use_trials{:});
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % build PCA model for M1
 if isempty(w)
-    td = trial_data;
+    td = trial_data(use_trials);
     if do_smoothing
         td = smoothSignals(td,struct('signals',{signals},'kernel_SD',kernel_SD));
     end
@@ -104,7 +108,7 @@ if isempty(w)
     % Package up outputs
     pca_params = struct( ...
         'signals',{signals}, ...
-        'trial_idx',trial_idx);
+        'trial_idx',use_trials);
     pca_info = struct('w',w,'scores',scores,'eigen',eigen,'params',pca_params);
 else
     pca_info = params;
