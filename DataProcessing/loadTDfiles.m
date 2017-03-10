@@ -41,10 +41,11 @@ if exist(filenames{1},'file')
 else
     error([filenames{1} ' not found.']);
 end
+extra_outs = cell(length(filenames),length(varargin));
 
 if nargin > 1
     for iFun = 1:length(varargin)
-        trial_data = run_func(trial_data,varargin{iFun});
+        [trial_data,extra_outs{1,iFun}] = run_func(trial_data,varargin{iFun});
     end
 end
 
@@ -66,7 +67,7 @@ if length(filenames) > 1
         % Now run the arbitrary functions
         if nargin > 1
             for iFun = 1:length(varargin)
-                trial_data = run_func(trial_data,varargin{iFun});
+                [trial_data,extra_outs{file,iFun}] = run_func(trial_data,varargin{iFun});
             end
         end
         
@@ -103,6 +104,9 @@ master_td = reorderTDfields(master_td);
 if nargout > 1
     params.func_calls = varargin;
     params.git_info = getGitInfo();
+    if ~all(all(cellfun(@isempty,extra_outs)))
+        params.extra_outs = extra_outs;
+    end
 end
 
 end
@@ -110,27 +114,35 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function trial_data = run_func(trial_data,funcCall)
+% This function runs each of the input handles and parameters
+function [trial_data,out_params] = run_func(trial_data,funcCall)
 if ~iscell(funcCall), funcCall = {funcCall}; end
+out_params = [];
 
-% first entry is function call
+% first entry is function call!
 f = funcCall{1};
 fh = functions(f);
+% make sure it exists
 if ~isempty(fh.file)
-    % call it
+    % check if there are parameters too
     if length(funcCall) > 1
-        if isstruct(funcCall{2})
-            trial_data = f(trial_data,funcCall{2});
-        else
+        if isstruct(funcCall{2}) % it's a params struct
+            if nargout(f) > 1
+                [trial_data,out_params] = f(trial_data,funcCall{2});
+            else
+                trial_data = f(trial_data,funcCall{2});
+            end
+        else % it's a series of inputs
             input_str = [];
+            % loop along all of the inputs and build the function call
             for i = 2:length(funcCall)
-                if isnumeric(funcCall{i})
+                if isnumeric(funcCall{i}) % is it a number?
                     in_var = num2str(funcCall{i});
-                else
+                else %no...
                     in_var = funcCall{i};
-                    if ischar(in_var)
+                    if ischar(in_var) % is it a string?
                         in_var = ['''' in_var ''''];
-                    elseif iscell(in_var)
+                    elseif iscell(in_var) % is it a cell? Must break it out
                         temp = '{';
                         for j = 1:length(in_var)
                             if ischar(in_var{j})
@@ -148,11 +160,13 @@ if ~isempty(fh.file)
             % there is a special case for getTDidx
             if strcmpi(fh.function,'getTDidx')
                 eval(['[~,trial_data] = f(trial_data' input_str ');']);
+            elseif nargout(f) > 1
+                eval(['[trial_data,out_params] = f(trial_data' input_str ');']);
             else
                 eval(['trial_data = f(trial_data' input_str ');']);
             end
         end
-    else
+    else % easy if there are no parameters
         trial_data = f(trial_data);
     end
 else
