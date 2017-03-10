@@ -101,7 +101,7 @@ if isempty(b)  % fit a new model
                 else
                     [b(:,iVar),~,s_temp] = glmfit(x,y(:,iVar),glm_distribution);
                 end
-                if isempty(s),
+                if isempty(s)
                     s = s_temp;
                 else
                     s(iVar) = s_temp;

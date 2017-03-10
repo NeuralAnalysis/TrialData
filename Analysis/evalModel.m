@@ -69,11 +69,8 @@ out_signals = check_signals(trial_data(1),out_signals);
 
 % Check to ensure the matlab pool is open if parallel is desired
 if do_parallel % make sure pool already exists
-  if isempty(gcp('nocreate'))
-    disp('Matlab parallel pool not found. Opening pool...');
-    parpool;
-  end
-  num_workers = gcp.NumWorkers;
+  pool = gcp;
+  num_workers = pool.NumWorkers;
 else
   num_workers = 0;
 end
