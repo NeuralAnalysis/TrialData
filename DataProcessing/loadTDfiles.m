@@ -22,7 +22,7 @@
 %       .git_hash   : the git hash for the current TrialData repo
 %       .extra_outs : extra outputs from functions that have them
 %                       Note: this field will be missing if no functions
-%                       return outputs, for the sake of cleanliness
+%                             return outputs, for the sake of cleanliness
 %
 % EXAMPLES:
 %   e.g. to bin data and trim it
@@ -37,52 +37,31 @@ function [master_td, params] = loadTDfiles(filenames,varargin)
 if ~iscell(filenames), filenames = {filenames}; end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-disp(['Loading file ' num2str(1) ' of ' num2str(length(filenames)) '.']);
-if exist(filenames{1},'file')
-    load(filenames{1});
-else
-    error([filenames{1} ' not found.']);
-end
 extra_outs = cell(length(filenames),length(varargin));
 
-if nargin > 1
-    for iFun = 1:length(varargin)
-        [trial_data,extra_outs{1,iFun}] = run_func(trial_data,varargin{iFun});
-    end
-end
-
-master_td = trial_data;
+% Load the first file to get it started. Will then loop along any extra
+% files if desired
+disp(['Loading file ' num2str(1) ' of ' num2str(length(filenames)) '.']);
+[master_td,extra_outs(1,:)] = do_the_loading(filenames{1},varargin);
 
 if length(filenames) > 1
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Loop along filenames
     for file = 2:length(filenames)
         disp(['Loading file ' num2str(file) ' of ' num2str(length(filenames)) '.']);
-        
-        if exist(filenames{file},'file')
-            load(filenames{file});
-        else
-            error([filenames{file} ' not found.']);
-        end
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        [td,extra_outs(file,:)] = do_the_loading(filenames{file},varargin);
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % Now run the arbitrary functions
-        if nargin > 1
-            for iFun = 1:length(varargin)
-                [trial_data,extra_outs{file,iFun}] = run_func(trial_data,varargin{iFun});
-            end
-        end
-        
         % check fieldnames of new file against others
         master_fn = fieldnames(master_td);
-        fn = fieldnames(trial_data);
+        fn = fieldnames(td);
         [~,Ia,Ib] = setxor(master_fn,fn);
         % any fields not in common get filled in with NaNs
         if ~isempty(Ia)
             for i = 1:length(Ia)
                 disp(['Field ''' master_fn{Ia(i)} ''' is missing from File ' num2str(file) '.']);
-                [trial_data.(master_fn{Ia(i)})] = deal(NaN);
+                [td.(master_fn{Ia(i)})] = deal(NaN);
             end
         end
         if ~isempty(Ib)
@@ -94,15 +73,17 @@ if length(filenames) > 1
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % concatenate and move on
-        master_td = [master_td, trial_data];
+        master_td = [master_td, td];
     end
 else
     disp('Only one filename provided. Returning one file.');
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % restore logical order
 master_td = reorderTDfields(master_td);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % package up params if desired
 if nargout > 1
     params.filenames      = filenames;
@@ -113,6 +94,25 @@ if nargout > 1
     end
 end
 
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This function loads stuff
+function [trial_data,extra_outs] = do_the_loading(filename,func_calls)
+if ~ischar(filename), error('filename must be a string with a path to the trial_data file.'); end
+if exist(filename,'file')
+    load(filename);
+else
+    error([filename ' not found.']);
+end
+if nargin > 1
+    extra_outs = cell(1,length(func_calls));
+    for iFun = 1:length(func_calls)
+        [trial_data,extra_outs{1,iFun}] = run_func(trial_data,func_calls{iFun});
+    end
+end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
