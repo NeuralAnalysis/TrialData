@@ -93,13 +93,13 @@ if isempty(b)  % fit a new model
         switch lower(model_type)
             case 'glm'
                 if do_lasso % not quite implemented yet
-                    [b,temp] = lassoglm(x,y(:,iVar),glm_distribution,'lambda',lasso_lambda,'alpha',lasso_alpha);
-                    b = [temp.Intercept; b];
+                    [b_temp,s_temp] = lassoglm(x,y(:,iVar),glm_distribution,'lambda',lasso_lambda,'alpha',lasso_alpha);
+                    b(:,iVar) = [s_temp.Intercept; b_temp];
                 else
-                    [b(:,iVar),~,temp] = glmfit(x,y(:,iVar),glm_distribution);
+                    [b(:,iVar),~,s_temp] = glmfit(x,y(:,iVar),glm_distribution);
                 end
-                if isempty(s), s = temp; end
-                s(iVar) = temp;
+                if isempty(s), s = s_temp; end
+                s(iVar) = s_temp;
             case 'linmodel'
                 b(:,iVar) = [ones(size(x,1),1), x]\y(:,iVar);
         end
@@ -134,7 +134,9 @@ end
 % Package up outputs
 switch lower(model_type)
     case 'glm'
-        s = rmfield(s,{'resid','residp','residd','resida','wts'});
+        if strcmpi(model_type,'glm') && ~do_lasso
+            s = rmfield(s,{'resid','residp','residd','resida','wts'});
+        end
         model_info = struct( ...
             'model_type',   model_type, ...
             'model_name',   model_name, ...
