@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function master_td = loadTDfiles(varargin)
+% function [master_td, params] = loadTDfiles(varargin)
 %
 %   Loads an arbitrary number of trial_data files from disk and appends
 % them into one structure. If any fields don't match, will fill in the
@@ -17,11 +17,18 @@
 % OUTPUTS:
 %   master_td : the master trial_data struct with all files appended and
 %               all functions in varargin executed
+%   params    : struct of info
+%       .func_calls : the function calls (varargin)
+%       .git_hash   : the git hash for the current TrialData repo
+%
+% EXAMPLES:
+%   e.g. to bin data and trim it
+%   [td,params] = loadTDfiles(filename, {@binTD,1}, {@trimTD,{'idx_go_cue',0},{'idx_go_cue',30}});
 %
 % Written by Matt Perich. Updated Feb 2017.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function master_td = loadTDfiles(filenames,varargin)
+function [master_td, params] = loadTDfiles(filenames,varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % make sure the inputs make sense
 if ~iscell(filenames), filenames = {filenames}; end
@@ -88,8 +95,20 @@ if length(filenames) > 1
 else
     disp('Only one filename provided. Returning one file.');
 end
+
+% restore logical order
+master_td = reorderTDfields(master_td);
+
+% package up params if desired
+if nargout > 1
+    params.func_calls = varargin;
+    params.git_info = getGitInfo();
 end
 
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = run_func(trial_data,funcCall)
 if ~iscell(funcCall), funcCall = {funcCall}; end
@@ -139,7 +158,5 @@ if ~isempty(fh.file)
 else
     error([funcCall ' function not found...']);
 end
-
-% restore logical order
-trial_data = reorderTDfields(trial_data);
 end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
