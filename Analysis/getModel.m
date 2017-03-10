@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function [trial_data,glm_info] = getModel(trial_data,params)
+% function [trial_data,model_info] = getModel(trial_data,params)
 %
 %   This function will fit a linear model to take any combination of inputs
 % and predict some outputs. Supports GLM or normal linear models. Doesn't
