@@ -43,8 +43,8 @@ out_dims     =  [];
 use_trials   =  1:length(trial_data);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % other undocumented PCA parameters
-do_machens         =  true;   % whether to attempt Machens method
-do_smoothing       =  false;  % whether to smooth for machens method and PCA
+do_machens         =  true;   % whether to attempt Machens method to estimate dimensionality
+do_smoothing       =  false;  % whether to smooth for PCA (and machens method)
 trim_idx           =  {};     % can trim in Machens method ONLY
 pca_centered       =  true;   % whether to center data
 pca_algorithm      =  'svd';  % which PCA algorithm
@@ -82,6 +82,11 @@ if isempty(out_dims) && do_machens
 else
     error('Must specify output dimensionality');
 end
+if in_dims < out_dims
+    error(['Input dimensionality (' num2str(in_dims) ') is less than output (' num2str(out_dims) ').']);
+elseif in_dims == out_dims
+    warning(['No null space. Dimensionalities are equal (' num2str(in_dims) ').']);
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get input PC space
 pca_params.signals = in_signals;
@@ -107,11 +112,15 @@ if ~strcmpi([sig_name_in{:}],[sig_name_out{:}])
     x = score_in(:,1:in_dims);
     % find the model
     W = zeros( size(y,2), size(x,2) );
+    fit_r2 = zeros(size(y,2),1);
     for i = 1:size(y,2)
         %[b_pc, ~, ~, ~, stats_this] = regress(y(:,i),x);
         b_pc = x\y(:,i);
         % fill MIMO matrix W
         W(i,:) = b_pc';
+        
+        % check the quality of the fit
+        fit_r2(i) = compute_r2(y(:,i),x*b_pc);
     end
     
     % do SVD of weights to get potent/null spaces
@@ -119,7 +128,11 @@ if ~strcmpi([sig_name_in{:}],[sig_name_out{:}])
     % The output potent spaces is defined by the first m columns of V', where m
     % is the number of dimensions of the output
     V_potent                    = V(1:size(y,2),:)';
-    V_null                      = V(size(y,2)+1:end,:)';
+    if in_dims > out_dims
+        V_null                      = V(size(y,2)+1:end,:)';
+    else
+        V_null = [];
+    end
 else
     disp('Input and output signals are the same. Skipping null/potent.');
     [V_potent,V_null] = deal([]);
@@ -140,6 +153,7 @@ pca_info = struct(        ...
     'w_out',       w_out,    ...
     'eigen_in',    eigen_in, ...
     'eigen_out',   eigen_out, ...
+    'fit_r2',      fit_r2, ...
     'params',      out_params);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
