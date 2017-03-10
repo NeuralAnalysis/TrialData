@@ -19,16 +19,37 @@
 function [dims,noise_eigen_prctile] = estimateDimensionality(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
-signal        =  [];
+signals        =  [];
 condition     =  'target_direction';
 num_iter      =  1000;
 alpha         =  0.95; % what fraction of non-noise variance
+trim_idx      =  {};   % can trim data in here {'idx',val;'idx',val}
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if isempty(signal), error('Must provide desired signal'); end
+if isempty(signals), error('Must provide desired signal'); end
+signals = check_signals(trial_data(1),signals);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isfield(trial_data,'is_average')
     error('Provided average input. Must provide single trial data.');
+end
+
+% Process the desired signals
+if size(signals,1) > 1
+    % this is a hack, but make a new field that is the concatenated signals
+    signal = [signals{:,1}];
+    for trial = 1:length(trial_data)
+        trial_data(trial).(signal) = [];
+        for i = 1:size(signals,1)
+            temp = trial_data(trial).(signals{i,1});
+            trial_data(trial).(signal) = [trial_data(trial).(signal), temp(signals{i,2})];
+        end
+    end
+else
+    signal = signals{1,1};
+    for trial = 1:length(trial_data)
+        temp = trial_data(trial).(signal);
+        trial_data(trial).(signal) = temp(:,signals{1,2});
+    end
 end
 
 nbr_chs = size(trial_data(1).(signal),2);
@@ -39,6 +60,10 @@ tgt_idx = cellfun(@(x) getTDidx(trial_data,condition,x),num2cell(unique([trial_d
 
 if any(nbr_trials < 2)
     error('Too few trials for one or more conditions.');
+end
+
+if ~isempty(trim_idx)
+    trial_data = trimTD(trial_data,trim_idx(1,:),trim_idx(2,:));
 end
 
 % get PCA of smoothed, trial-averaged data
