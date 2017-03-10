@@ -43,23 +43,46 @@ out_dims     =  [];
 use_trials   =  1:length(trial_data);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % other undocumented PCA parameters
-pca_centered   =  true;   % whether to center data
-pca_algorithm  =  'svd';  % which PCA algorithm
-add_proj_to_td =  true;   % add projections to trial data
+do_machens         =  true;   % whether to attempt Machens method
+do_smoothing       =  false;  % whether to smooth for machens method and PCA
+trim_idx           =  {};     % can trim in Machens method ONLY
+pca_centered       =  true;   % whether to center data
+pca_algorithm      =  'svd';  % which PCA algorithm
+add_proj_to_td     =  true;   % add projections to trial data
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isempty(in_signals), error('Need to specify input signals'); end
 if isempty(out_signals), error('Need to specify output signals'); end
-if isempty(in_dims), error('Need to specify input dimensionality'); end
-if isempty(out_dims), error('Need to specify output dimensionality'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 in_signals = check_signals(trial_data(1),in_signals);
 out_signals = check_signals(trial_data(1),out_signals);
+% likely to be meta info
+if ~isnumeric(use_trials)
+    use_trials = getTDidx(trial_data,use_trials{:});
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 pca_params = params;
 pca_params.pca_centered = pca_centered;
 pca_params.pca_algorithm = pca_algorithm;
 
+if isempty(in_dims) && do_machens
+    disp('Input dimensionality not specified. Attempting Machens method.');
+    in_dims = estimateDimensionality(trial_data,struct( ...
+        'signals',{in_signals}, ...
+        'do_smoothing',do_smoothing, ...
+        'trim_idx',{trim_idx}));
+else
+    error('Must specify input dimensionality.');
+end
+if isempty(out_dims) && do_machens
+    disp('Output dimensionality not specified. Attempting Machens method.');
+    out_dims = estimateDimensionality(trial_data,struct( ...
+        'signals',{out_signals}, ...
+        'do_smoothing',do_smoothing, ...
+        'trim_idx',{trim_idx}));
+else
+    error('Must specify output dimensionality');
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get input PC space
 pca_params.signals = in_signals;
