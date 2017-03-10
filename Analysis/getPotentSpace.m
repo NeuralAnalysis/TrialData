@@ -70,7 +70,7 @@ if isempty(in_dims) && do_machens
         'signals',{in_signals}, ...
         'do_smoothing',do_smoothing, ...
         'trim_idx',{trim_idx}));
-else
+elseif isempty(in_dims)
     error('Must specify input dimensionality.');
 end
 if isempty(out_dims) && do_machens
@@ -79,7 +79,7 @@ if isempty(out_dims) && do_machens
         'signals',{out_signals}, ...
         'do_smoothing',do_smoothing, ...
         'trim_idx',{trim_idx}));
-else
+elseif isempty(out_dims)
     error('Must specify output dimensionality');
 end
 if in_dims < out_dims
