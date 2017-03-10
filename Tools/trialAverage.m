@@ -4,7 +4,7 @@
 %   Returns struct where each entry is an average for all time-varying
 % signals across trials for some condition. This function can interpolate
 % to stretch/shrink all trials to the same number of points, but it does
-% not trim data. This can be easily done with truncateAndBin.
+% not trim data. This can be easily done with trimTD.
 %
 % Note: returns all fields, but for meta parameters, etc, you can average
 % across trials with different values. If they all are the same, fills in
@@ -58,7 +58,7 @@ if do_stretch
 end
 
 if length(unique(cellfun(@(x) size(x,1),{trial_data.pos}))) ~= 1
-    error('Trials are not uniform length. Do this with time stretching option or truncateAndBin.');
+    error('Trials are not uniform length. Do this with time stretching option or trimTD.');
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % loop along conditions and get unique values for each

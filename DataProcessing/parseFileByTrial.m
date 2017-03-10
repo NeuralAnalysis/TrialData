@@ -5,8 +5,7 @@
 % CDS.
 % 
 % NOTE: Discretizes everything to the dt of the CDS kinematics (by default
-% should be 10 ms bins, I believe). Can rebin later if desired using
-% truncateAndBin.
+% should be 10 ms bins, I believe). Can rebin later if desired using binTD.
 %
 % INPUTS:
 %   data     : a CDS file or BDF file (not yet supported)

@@ -51,7 +51,7 @@ for a = 1:length(arrays)
     if isempty(fr_window)
         all_spikes = cat(1,trial_data.([array '_spikes']));
     else
-        td = truncateAndBin(trial_data,fr_window(1,:),fr_window(2,:));
+        td = trimTD(trial_data,fr_window(1,:),fr_window(2,:));
         all_spikes = cat(1,td.([array '_spikes']));
     end
     

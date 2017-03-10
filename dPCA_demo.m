@@ -17,8 +17,8 @@ td = smoothSignals(td,struct('signals',{signals},'sqrt_transform',true,'do_smoot
 
 % td = softNormalize(td);
 
-% td = truncateAndBin(td,{'idx_bumpTime',0},{'idx_bumpTime',50});
-td = truncateAndBin(td,{'idx_movement_on',-20},{'idx_movement_on',50});
+% td = trimTD(td,{'idx_bumpTime',0},{'idx_bumpTime',50});
+td = trimTD(td,{'idx_movement_on',-20},{'idx_movement_on',50});
 
 [~,td] = getTDidx(td,'epoch',{'BL','AD'});
 

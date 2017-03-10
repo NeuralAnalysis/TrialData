@@ -22,11 +22,14 @@ trial_data = smoothSignals(trial_data,struct( ...
     'kernel_SD', 0.1));
 
 % get struct that has preparatory and movement activity
-td = truncateAndBin(trial_data,n_bins,{'idx_movement_on',-50},{'idx_movement_on',70});
+td = trimTD(trial_data,{'idx_movement_on',-50},{'idx_movement_on',70});
+td = binTD(td,n_bins);
 % get struct that has only preparatory activity
-td_prep = truncateAndBin(trial_data,n_bins,{'idx_go_cue',-30},{'idx_go_cue',0});
+td_prep = trimTD(trial_data,{'idx_go_cue',-30},{'idx_go_cue',0});
+td_prep = binTD(td_prep,n_bins);
 % get struct that has only movement activity
-td_move = truncateAndBin(trial_data,n_bins,{'idx_movement_on',10},{'idx_movement_on',40});
+td_move = trimTD(trial_data,{'idx_movement_on',10},{'idx_movement_on',40});
+td_move = binTD(td_move,n_bins);
 
 % Now all of the trials will be uniform lenght for each data section, so
 % it's easy to trial average, which will clean up our results
