@@ -19,7 +19,7 @@
 %               all functions in varargin executed
 %   params    : struct of info
 %       .func_calls : the function calls (varargin)
-%       .git_hash   : the git hash for the current TrialData repo
+%       .git_info   : the git details for the current TrialData repo
 %       .extra_outs : extra outputs from functions that have them
 %                       Note: this field will be missing if no functions
 %                             return outputs, for the sake of cleanliness
@@ -107,6 +107,7 @@ if exist(filename,'file')
 else
     error([filename ' not found.']);
 end
+% run processing functions if provided
 if nargin > 1
     extra_outs = cell(1,length(func_calls));
     for iFun = 1:length(func_calls)
