@@ -146,19 +146,19 @@ for i = 1:length(idx_trials)
     switch lower(cds.meta.task)
         case 'co' % center out apparently has broken target dir, so use target id
             % this assumes there are exactly eight targets!!!
-            %   the ninth element is a repeat of pi/2, it doesn't happen
-            %   often but some CDS trials have it which is a bug likely
-            targ_angs = [pi/2, pi/4, 0, -pi/4, -pi/2, -3*pi/4, pi, 3*pi/4, pi/2];
-            if ~isnan(cds.trials.tgtID(iTrial)) && cds.trials.tgtID(iTrial) < 9
+            % some CDS trials have wrong vals which is a bug likely
+            targ_angs = [pi/2, pi/4, 0, -pi/4, -pi/2, -3*pi/4, pi, 3*pi/4];
+            if ~isnan(cds.trials.tgtID(iTrial)) && cds.trials.tgtID(iTrial) < length(targ_angs)
                 trial_data(i).target_direction = targ_angs(cds.trials.tgtID(iTrial)+1);
             else
+                disp('This CO trial had a bad target ID...');
                 trial_data(i).target_direction = NaN;
             end
         case 'rw' % In random walk, target_direction doesn't make sense
             trial_data(i).target_center = reshape(cds.trials.tgtCtr(iTrial,:),size(cds.trials.tgtCtr(iTrial,:),2)/2,2);
         otherwise
             if any(abs(cds.trials.tgtDir) > 2*pi) % good assumption that it's deg
-                trial_data(i).target_direction = (pi/180*cds.trials.tgtDir(iTrial));
+                trial_data(i).target_direction = pi/180*cds.trials.tgtDir(iTrial);
             else % should be rad
                 trial_data(i).target_direction = minusPi2Pi(cds.trials.tgtDir(iTrial));
             end
