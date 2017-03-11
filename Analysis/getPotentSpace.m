@@ -43,8 +43,8 @@ out_dims     =  [];
 use_trials   =  1:length(trial_data);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % other undocumented PCA parameters
-do_machens         =  true;   % whether to attempt Machens method to estimate dimensionality
-do_smoothing       =  false;  % whether to smooth for PCA (and machens method)
+do_machens         =  false;   % whether to attempt Machens method to estimate dimensionality
+do_smoothing       =  false;  % whether to smooth for PCA
 trim_idx           =  {};     % can trim in Machens method ONLY
 pca_centered       =  true;   % whether to center data
 pca_algorithm      =  'svd';  % which PCA algorithm
@@ -68,7 +68,6 @@ if isempty(in_dims) && do_machens
     disp('Input dimensionality not specified. Attempting Machens method.');
     in_dims = estimateDimensionality(trial_data,struct( ...
         'signals',{in_signals}, ...
-        'do_smoothing',do_smoothing, ...
         'trim_idx',{trim_idx}));
 elseif isempty(in_dims)
     error('Must specify input dimensionality.');
@@ -77,7 +76,6 @@ if isempty(out_dims) && do_machens
     disp('Output dimensionality not specified. Attempting Machens method.');
     out_dims = estimateDimensionality(trial_data,struct( ...
         'signals',{out_signals}, ...
-        'do_smoothing',do_smoothing, ...
         'trim_idx',{trim_idx}));
 elseif isempty(out_dims)
     error('Must specify output dimensionality');

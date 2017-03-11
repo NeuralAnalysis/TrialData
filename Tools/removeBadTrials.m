@@ -38,7 +38,7 @@ for trial = 1:length(trial_data)
         err = true;
     end
     
-    if isfield(trial_data,'target_directtion') && isnan(trial_data(trial).target_direction)
+    if isfield(trial_data,'target_direction') && isnan(trial_data(trial).target_direction)
         err = true;
     end
     

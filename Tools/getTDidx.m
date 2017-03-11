@@ -13,6 +13,9 @@
 %       that meet all other criteria. If start and end are integers, will
 %       return everything in between (ends included). However, if start/end
 %       are fractions, it will treat them like percentages
+%       There is the extra option to pass a cell like {'last',N} to get the
+%       last N trials.
+%
 %   2) Use ...'rand',N... to get N random trials that meet all other criteria
 %       (including the range specified above)
 %
@@ -28,7 +31,7 @@
 %  e.g. to get 10 random trials from the first half of baseline
 %       idx = getTDidx(trial_data,'epoch','BL','range',[0 0.5],'rand',10);
 %
-% Written by Matt Perich. Updated Feb 2017.
+% Written by Matt Perich. Updated March 2017.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [return_idx, trial_data] = getTDidx(trial_data,varargin)
@@ -68,6 +71,7 @@ return_idx = find(idx);
 idx = strcmpi(fn,'range');
 if any(idx)
     bounds = fv{idx};
+    if ~iscell(bounds)
     if bounds(1) >= bounds(2)
         warning('Make range monotonic increasing. Flipping order.');
         bounds = fliplr(bounds);
@@ -87,6 +91,14 @@ if any(idx)
             bounds(2) = length(return_idx);
         end
         return_idx = return_idx(bounds(1):bounds(2));
+    end
+    else % if cell, can have {'last',N} or {'first',N} functionality
+        switch lower(bounds{1})
+            case 'last'
+                return_idx = return_idx(end-(bounds{2}-1):end);
+            case 'first'
+                return_idx = return_idx(1:bounds{2});
+        end
     end
 end
 
