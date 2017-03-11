@@ -38,6 +38,10 @@ for trial = 1:length(trial_data)
         err = true;
     end
     
+    if isfield(trial_data,'target_directtion') && isnan(trial_data(trial).target_direction)
+        err = true;
+    end
+    
     %%%% LOOK FOR TRIALS THAT ARE OUTSIDE THE ALLOWABLE LENGTH
     if ~isempty(ranges)
         if size(ranges,2) ~= 3, error('Ranges input not properly formatted.'); end
