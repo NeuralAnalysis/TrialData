@@ -56,9 +56,6 @@ switch lower(which_metric)
                 bl_metric(iDir) = mean(temp_err);
             end, clear temp;
         end
-        if any(abs(bl_metric) > 1)
-            keyboard
-        end
         
         % get velocity at time of peak speed
         for iTrial = 1:length(trial_data)
@@ -73,15 +70,7 @@ switch lower(which_metric)
             
             iDir = utheta==trial_data(iTrial).target_direction;
             metric(iTrial) = angleDiff(bl_metric(iDir),temp_err,true,true);
-            if metric(iTrial) > pi/2
-                warning('Hack this shit until you figure out why the CDS had the wrong words.');
-                metric(iTrial) = metric(iTrial)-pi;
-            elseif metric(iTrial) < -pi/2
-                warning('Hack this shit until you figure out why the CDS had the wrong words.');
-                metric(iTrial) = metric(iTrial)+pi;
-            end
         end, clear temp;
-        
         
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
