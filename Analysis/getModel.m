@@ -96,7 +96,8 @@ if isempty(b)  % fit a new model
         switch lower(model_type)
             case 'glm'
                 if do_lasso % not quite implemented yet
-                    [b_temp,s_temp] = lassoglm(x,y(:,iVar),glm_distribution,'lambda',lasso_lambda,'alpha',lasso_alpha);
+                    % NOTE: Z-scores here!
+                    [b_temp,s_temp] = lassoglm(zscore(x),y(:,iVar),glm_distribution,'lambda',lasso_lambda,'alpha',lasso_alpha);
                     b(:,iVar) = [s_temp.Intercept; b_temp];
                 else
                     [b(:,iVar),~,s_temp] = glmfit(x,y(:,iVar),glm_distribution);
@@ -123,11 +124,16 @@ end
 if add_pred_to_td
     for trial = 1:length(trial_data)
         x  = get_vars(trial_data(trial),in_signals);
+        
         yfit = zeros(size(x,1),size(b,2));
         for iVar = 1:size(b,2)
             switch lower(model_type)
                 case 'glm'
-                    yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
+                    if do_lasso
+                        yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
+                    else
+                        yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
+                    end
                 case 'linmodel'
                     yfit(:,iVar) = [ones(size(x,1),1), x]*b(:,iVar);
             end
