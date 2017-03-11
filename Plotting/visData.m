@@ -132,12 +132,12 @@ end
 
 % Loop through trials and plot
 for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're skipping trials
-    tr_num = trials_to_plot(tr_idx); % Use tr_num from here down
+    trial = trials_to_plot(tr_idx); % Use tr_num from here down
     
     % check to make sure events aren't empty
     idx = true(1,length(events));
     for iEvent = 1:length(events)
-        if isempty(trial_data(tr_num).(events{iEvent}))
+        if isempty(trial_data(trial).(events{iEvent}))
             idx(iEvent) = false;
         end
     end
@@ -153,15 +153,15 @@ for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're
     % above is some logic to partition the available subplot space according to the parameters specified at the top
     hold all;
     plot( ...
-        trial_data(tr_num).pos(:,1) - pos_offset(1), ... % x pos
-        trial_data(tr_num).pos(:,2) - pos_offset(2), ... % y pos
+        trial_data(trial).pos(:,1) - pos_offset(1), ... % x pos
+        trial_data(trial).pos(:,2) - pos_offset(2), ... % y pos
         'LineWidth',line_width,'Color','k');
     
     % plot center target
     rectangle('Position',[-target_size/2 -target_size/2 target_size target_size],'LineWidth',line_width);
     % plot outer target based on target direction
-    x_center = target_distance*cos(trial_data(tr_num).target_direction);
-    y_center = target_distance*sin(trial_data(tr_num).target_direction);
+    x_center = target_distance*cos(trial_data(trial).target_direction);
+    y_center = target_distance*sin(trial_data(trial).target_direction);
     rectangle('Position',[x_center-target_size/2, y_center-target_size/2, target_size, target_size],'LineWidth',line_width);
     axis([pos_range pos_range]);
     axis square;
@@ -169,12 +169,12 @@ for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're
         'YAxisLocation',lower(pos_location),'Box','on','TickDir','out','FontSize',font_size);
     xlabel('X Pos (cm)','FontSize',font_size);
     ylabel('Y Pos (cm)','FontSize',font_size);
-    title(['Trial ' num2str(tr_num)],'FontSize',font_size);
+    title(['Trial ' num2str(trial)],'FontSize',font_size);
     
     % plot dots representing trial events
     for iEvent = 1:length(events)
-        plot(trial_data(tr_num).pos(trial_data(tr_num).(events{iEvent}),1) - pos_offset(1), ...
-            trial_data(tr_num).pos(trial_data(tr_num).(events{iEvent}),2) - pos_offset(2), ...
+        plot(trial_data(trial).pos(trial_data(trial).(events{iEvent}),1) - pos_offset(1), ...
+            trial_data(trial).pos(trial_data(trial).(events{iEvent}),2) - pos_offset(2), ...
             event_symbol,'LineWidth',dot_width,'Color',trial_event_colors(iEvent,:));
     end
     
@@ -184,19 +184,19 @@ for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're
         subplot(num_rows,num_cols, ...
             reshape(subplot_grid(pos_rows_max+1:num_rows,pos_start+1:pos_start+pos_cols)',1,pos_cols*(num_rows-pos_rows_max)));
         hold all;
-        plot3(trial_data(tr_num).([pca_array '_pca'])(:,1), ...
-            trial_data(tr_num).([pca_array '_pca'])(:,2), ...
-            trial_data(tr_num).([pca_array '_pca'])(:,3), ...
+        plot3(trial_data(trial).([pca_array '_pca'])(:,1), ...
+            trial_data(trial).([pca_array '_pca'])(:,2), ...
+            trial_data(trial).([pca_array '_pca'])(:,3), ...
             'linewidth',line_width,'color','k');
         
         % now plot event markers
         for iEvent = 1:length(events)
             % get indices
-            idx = trial_data(tr_num).(events{iEvent});
+            idx = trial_data(trial).(events{iEvent});
             
-            plot3(trial_data(tr_num).([pca_array '_pca'])(idx,1), ...
-                trial_data(tr_num).([pca_array '_pca'])(idx,2), ...
-                trial_data(tr_num).([pca_array '_pca'])(idx,3), ...
+            plot3(trial_data(trial).([pca_array '_pca'])(idx,1), ...
+                trial_data(trial).([pca_array '_pca'])(idx,2), ...
+                trial_data(trial).([pca_array '_pca'])(idx,3), ...
                 event_symbol,'linewidth',dot_width,'color',trial_event_colors(iEvent,:));
         end
         
@@ -223,9 +223,9 @@ for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're
         end
         
         hold all;
-        plot(trial_data(tr_num).(plot_signals{iSignal})(:,1) - offset(1),'r','LineWidth',line_width) % x
-        plot(trial_data(tr_num).(plot_signals{iSignal})(:,2) - offset(2),'b','LineWidth',line_width) % y
-        xlim([1 size(trial_data(tr_num).pos,1)]);
+        plot(trial_data(trial).(plot_signals{iSignal})(:,1) - offset(1),'r','LineWidth',line_width) % x
+        plot(trial_data(trial).(plot_signals{iSignal})(:,2) - offset(2),'b','LineWidth',line_width) % y
+        xlim([1 size(trial_data(trial).pos,1)]);
         ylabel(plot_signals{iSignal},'FontSize',font_size);
         set(gca,'Box','off','TickDir','out','XTick',[],'FontSize',font_size);
         row_tally = row_tally + kin_rows;
@@ -238,7 +238,7 @@ for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're
     hold all;
     
     for iEvent = 1:length(events)
-        idx = trial_data(tr_num).(events{iEvent});
+        idx = trial_data(trial).(events{iEvent});
         plot([idx idx],[0 1],'LineWidth',line_width,'Color',trial_event_colors(iEvent,:));
         % get the shorthand name from the event_db
         if any(strcmpi(event_db(:,1),events{iEvent}))
@@ -248,7 +248,7 @@ for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're
         end
     end
     
-    axis([1 size(trial_data(tr_num).pos,1) 0 1]);
+    axis([1 size(trial_data(trial).pos,1) 0 1]);
     set(gca,'Box','off','TickDir','out','XTick',[],'YTick',[],'FontSize',font_size);
     row_tally = row_tally + event_rows;
     
@@ -258,7 +258,7 @@ for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're
         for iDim = 1:length(pca_dims)
             subplot(num_rows,num_cols, ...
                 reshape(subplot_grid(row_tally+1:row_tally+traj_rows,time_start+1:time_start+time_cols)',1,(num_cols-pos_cols)*traj_rows ));
-            plot(trial_data(tr_num).([pca_array '_pca'])(:,pca_dims(iDim),:),'k','LineWidth',line_width);
+            plot(trial_data(trial).([pca_array '_pca'])(:,pca_dims(iDim),:),'k','LineWidth',line_width);
             axis('tight');
             set(gca,'Box','off','TickDir','out','YTick',[],'XTickLabels',[],'FontSize',font_size);
             ylabel([pca_array ' PC' num2str(pca_dims(iDim))],'FontSize',font_size)
@@ -273,8 +273,8 @@ for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're
         set(gca,'XTickLabels',[]);
         subplot(num_rows,num_cols, ...
             reshape(subplot_grid(row_tally+1:row_tally+spike_rows,time_start+1:time_start+time_cols)',1,(num_cols-pos_cols)*spike_rows ));
-        imagesc(trial_data(tr_num).(arrays{iArray})');
-        axis([1 size(trial_data(tr_num).pos,1) 0 size(trial_data(tr_num).([arrays{iArray}]),2)]);
+        imagesc(trial_data(trial).(arrays{iArray})');
+        axis([1 size(trial_data(trial).pos,1) 0 size(trial_data(trial).([arrays{iArray}]),2)]);
         set(gca,'Box','off','TickDir','out','FontSize',font_size);
         ylabel(arrays{iArray}(1:end-7),'FontSize',font_size);
         row_tally = row_tally + spike_rows;
