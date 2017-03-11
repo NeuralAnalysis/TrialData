@@ -7,6 +7,7 @@
 %       .signal       : which signal to work on
 %       .condition    : (string) which condition to average over
 %                           Default is 'target_direction'
+%       .use_trials   : which trials to use (default is all)
 %       .num_iter     : number of iterations (default 1000)
 %       .alpha        ; what fraction of non-noise variance do you want
 %                           Default is 0.95
@@ -19,8 +20,9 @@
 function [dims,noise_eigen_prctile] = estimateDimensionality(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
-signals        =  [];
+signals       =  [];
 condition     =  'target_direction';
+use_trials    =  1:length(trial_data);
 num_iter      =  1000;
 alpha         =  0.95; % what fraction of non-noise variance
 trim_idx      =  {};   % can trim data in here {'idx',val;'idx',val}
@@ -28,10 +30,15 @@ assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isempty(signals), error('Must provide desired signal'); end
 signals = check_signals(trial_data(1),signals);
+if iscell(use_trials) % likely to be meta info
+    use_trials = getTDidx(trial_data,use_trials{:});
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isfield(trial_data,'is_average')
     error('Provided average input. Must provide single trial data.');
 end
+
+trial_data = trial_data(use_trials);
 
 % Process the desired signals
 if size(signals,1) > 1
