@@ -42,7 +42,6 @@ eval_metric      =  '';
 num_boots        =  1000;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented parameters
-do_parallel      =  false; % can run predictions in parallel
 td_fn_prefix     =  '';    % prefix for fieldname
 if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -67,14 +66,6 @@ if ~any(ismember(eval_metric,possible_metrics)), error('Metric not recognized.')
 out_signals = check_signals(trial_data(1),out_signals);
 
 
-% Check to ensure the matlab pool is open if parallel is desired
-if do_parallel % make sure pool already exists
-  pool = gcp;
-  num_workers = pool.NumWorkers;
-else
-  num_workers = 0;
-end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Calculate pr2
 % quick hack here for when we aren't binning and want single trials
@@ -83,16 +74,16 @@ metric = NaN(length(trial_idx)-1,sum(cellfun(@(x) length(x),out_signals(:,2))),2
 for i = 1:length(trial_idx)-1
     trials = trial_idx(i):trial_idx(i+1)-1;
     
-    temp = get_vars(trial_data(trials),out_signals);
-    temp1 = cat(1,trial_data(trials).([td_fn_prefix '_' model_name{1}]));
+    y = get_vars(trial_data(trials),out_signals);
+    yhat1 = cat(1,trial_data(trials).([td_fn_prefix '_' model_name{1}]));
     if length(model_name) == 1
-        parfor (iVar = 1:size(temp,2),num_workers)
-            metric(i,iVar,:) = get_metric(temp(:,iVar),temp1(:,iVar),eval_metric,num_boots);
+        for iVar = 1:size(y,2)
+            metric(i,iVar,:) = get_metric(y(:,iVar),yhat1(:,iVar),eval_metric,num_boots);
         end
     else % relative metric
-        temp2 = cat(1,trial_data(trials).([td_fn_prefix '_' model_name{2}]));
-        parfor (iVar = 1:size(temp,2),num_workers)
-            metric(i,iVar,:) = get_metric(temp(:,iVar),temp1(:,iVar),temp2(:,iVar),eval_metric,num_boots);
+        yhat2 = cat(1,trial_data(trials).([td_fn_prefix '_' model_name{2}]));
+        for iVar = 1:size(y,2)
+            metric(i,iVar,:) = get_metric(y(:,iVar),yhat1(:,iVar),yhat2(:,iVar),eval_metric,num_boots);
         end
     end
 end
@@ -122,19 +113,17 @@ y_fit = varargin{2};
 if nargin == 4 % normal metric
     switch lower(eval_metric)
         case 'pr2'
-            metric = prctile(compute_pseudo_R2(y_test(bs),y_fit(bs),mean(y_test)),[2.5 97.5]);
+            metric = compute_pseudo_R2(y_test(bs),y_fit(bs),mean(y_test));
         case 'vaf'
-            metric = prctile(compute_vaf(y_test(bs),y_fit(bs)),[2.5 97.5]);
+            metric = compute_vaf(y_test(bs),y_fit(bs));
         case 'r2'
-            metric = prctile(compute_r2(y_test(bs),y_fit(bs)),[2.5 97.5]);
-        case 'r'
-            metric = sqrt(prctile(compute_r2(y_test(bs),y_fit(bs)),[2.5 97.5]));
+            metric = compute_r2(y_test(bs),y_fit(bs));
     end
 elseif nargin == 5 % relative metric
     y_fit2 = varargin{3};
     switch lower(eval_metric)
         case 'pr2'
-            metric = prctile(compute_rel_pseudo_R2(y_test(bs),y_fit(bs),y_fit2(bs)),[2.5 97.5]);
+            metric = compute_rel_pseudo_R2(y_test(bs),y_fit(bs),y_fit2(bs));
         case 'vaf'
             error('VAF not yet implemented for relative metrics');
         case 'r2'
@@ -142,5 +131,9 @@ elseif nargin == 5 % relative metric
         case 'r'
             error('r not yet implemented for relative metrics');
     end
+end
+% no need to repeat
+if num_bootstraps > 1
+    metric = prctile(metric,[2.5,97.5]);
 end
 end
