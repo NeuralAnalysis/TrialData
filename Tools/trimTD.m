@@ -7,6 +7,9 @@
 %   trial_data : (struct) trial_data struct
 %   idx_start  : (cell) {'idx_to_align_start',num_bins_after}
 %   idx_end    : (cell) {'idx_to_align_end',num_bins_after}
+%                   For the above, can put just 'start' or 'end' to do
+%                   first or last bin available. Also, second entry isn't
+%                   necessary. Will default to 0 for num_bins_after.
 %
 % Note bin number for alignment can be negative to go before idx
 %
@@ -16,17 +19,38 @@
 function trial_data = trimTD(trial_data,idx_start,idx_end)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin < 3, error('Must provide start and end points for trimming.'); end
+if ~iscell(idx_start), idx_start = {idx_start}; end
+if ~iscell(idx_end), idx_end = {idx_end}; end
 
-fn_spikes = getTDfields(trial_data,'spikes');
 fn_time = getTDfields(trial_data,'time');
 fn_idx = getTDfields(trial_data,'idx');
 
 for trial = 1:length(trial_data)
-    % assumes there will always be a pos
-    t = 1:size(trial_data(trial).pos,1);
+    % use any time signal to get the amount of time
+    t = 1:size(trial_data(trial).(fn_time{1}),1);
     
-    t_start = floor(trial_data(trial).(idx_start{1}) + idx_start{2});
-    t_end = ceil(trial_data(trial).(idx_end{1}) + idx_end{2});
+    % parse the input to get the start idx
+    if length(idx_start) == 2
+        t_start = floor(trial_data(trial).(idx_start{1}) + idx_start{2});
+    elseif length(idx_start) == 1 && strcmpi(idx_start,'start')
+        t_start = 1;
+    elseif length(idx_start) == 1
+        t_start = floor(trial_data(trial).(idx_start{1}));
+    else
+        error('End input not formatted properly.');
+    end
+    
+    % parse the input to get the end idx
+    if length(idx_end) == 2
+        t_end = ceil(trial_data(trial).(idx_end{1}) + idx_end{2});
+    elseif length(idx_end) == 1 && strcmpi(idx_end,'end')
+        t_end = size(trial_data(trial).(fn_time{1}),1);
+    elseif length(idx_end) == 1
+        t_end = ceil(trial_data(trial).(idx_end{1}));
+    else
+        error('End input not formatted properly.');
+    end
+    
     if t_end > t(end)
         warning('Requested end time went beyond trial time...')
         t_end = length(t);
