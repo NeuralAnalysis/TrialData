@@ -14,6 +14,7 @@
 %     .min_fr         : minimum firing rate value to be a good cell
 %     .fr_window      : when during trials to evaluate firing rate
 %                           {'idx_BEGIN',BINS_AFTER;'idx_END',BINS_AFTER}
+%     .use_trials     : can only use a subset of trials if desired
 %
 % OUTPUTS:
 %   trial_data : the struct with bad_units removed
@@ -31,9 +32,13 @@ prctile_cutoff  =  99.5;
 do_fr_check     =  true;
 min_fr          =  0;
 fr_window       =  {};
+use_trials      =  1:length(trial_data);
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 bin_size        =  trial_data(1).bin_size;
+if iscell(use_trials) % likely to be meta info
+    use_trials = getTDidx(trial_data,use_trials{:});
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if isempty(arrays) % get all spiking arrays
@@ -49,9 +54,9 @@ for a = 1:length(arrays)
     array = arrays{a};
     
     if isempty(fr_window)
-        all_spikes = cat(1,trial_data.([array '_spikes']));
+        all_spikes = cat(1,trial_data(use_trials).([array '_spikes']));
     else
-        td = trimTD(trial_data,fr_window(1,:),fr_window(2,:));
+        td = trimTD(trial_data(use_trials),fr_window(1,:),fr_window(2,:));
         all_spikes = cat(1,td.([array '_spikes']));
     end
     
