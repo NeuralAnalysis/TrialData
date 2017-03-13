@@ -54,7 +54,8 @@ signals         =  getTDfields(trial_data,'spikes');
 do_plot         =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some extra parameters you can change that aren't described in header
-do_smoothing    = false;  % will smooth before PCA  (trial_data projections are unsmoothed)
+sqrt_transform  = false; % square root transform before PCA (projections don't have it) 
+do_smoothing    = false; % will smooth before PCA  (trial_data projections are unsmoothed)
 kernel_SD       = 0.05;  %   gaussian kernel s.d. for smoothing
 pca_algorithm   = 'svd'; % algorithm for PCA
 pca_centered    = true;  % whether to center data
@@ -71,6 +72,9 @@ end
 % build PCA model for M1
 if isempty(w)
     td = trial_data(use_trials);
+    if sqrt_transform
+        td = sqrtTransform(td,signals);
+    end
     if do_smoothing
         td = smoothSignals(td,struct('signals',{signals},'kernel_SD',kernel_SD));
     end
@@ -84,7 +88,7 @@ if isempty(w)
     clear td;
     
     % compute PCA
-    [w, scores, eigen] = pca(data,'Algorithm',pca_algorithm,'Centered',pca_centered);
+    [w, scores, eigen,~,~,mu] = pca(data,'Algorithm',pca_algorithm,'Centered',pca_centered);
     
     if do_plot
         figure,
@@ -108,7 +112,7 @@ if isempty(w)
     pca_params = struct( ...
         'signals',{signals}, ...
         'trial_idx',use_trials);
-    pca_info = struct('w',w,'scores',scores,'eigen',eigen,'params',pca_params);
+    pca_info = struct('w',w,'scores',scores,'eigen',eigen,'mu',mu,'params',pca_params);
 else
     pca_info = params;
 end

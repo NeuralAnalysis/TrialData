@@ -92,6 +92,7 @@ pca_params.signals = in_signals;
 w_in = pca_info_in.w;
 score_in = pca_info_in.scores;
 eigen_in = pca_info_in.eigen;
+mu_in = pca_info_in.mu;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get output PC space
@@ -100,6 +101,7 @@ pca_params.signals = out_signals;
 w_out = pca_info_out.w;
 score_out = pca_info_out.scores;
 eigen_out = pca_info_out.eigen;
+mu_out = pca_info_out.mu;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Find null and potent spaces
@@ -145,34 +147,27 @@ out_params = struct( ...
     'out_dims',    out_dims, ...
     'use_trials',  use_trials);
 pca_info = struct(        ...
-    'V_potent',    V_potent, ...
-    'V_null',      V_null,   ...
-    'w_in',        w_in,     ...
-    'w_out',       w_out,    ...
-    'eigen_in',    eigen_in, ...
+    'V_potent',    V_potent,  ...
+    'V_null',      V_null,    ...
+    'w_in',        w_in,      ...
+    'w_out',       w_out,     ...
+    'mu_in',       mu_in,     ...
+    'mu_out',      mu_out,    ...
+    'eigen_in',    eigen_in,  ...
     'eigen_out',   eigen_out, ...
-    'fit_r2',      fit_r2, ...
+    'fit_r2',      fit_r2,    ...
     'params',      out_params);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % populate trial_data struct with PCA scores and null/potent projections
 if add_proj_to_td
-    if pca_centered
-        mu_in  = mean(get_vars(trial_data,in_signals),1);
-        mu_out = mean(get_vars(trial_data,out_signals),1);
-    else
-        n_signals_in  = cellfun(@(x) length(x),in_signals(:,2));
-        n_signals_out = cellfun(@(x) length(x),out_signals(:,2));
-        mu_in  = zeros(1,sum(n_signals_in));
-        mu_out = zeros(1,sum(n_signals_out));
-    end
     for trial = 1:length(trial_data)
-        % get signals to recreate input PCA
+        % get signals to recreate output PCA
         data = get_vars(trial_data(trial),out_signals);
         trial_data(trial).([sig_name_out{:} '_pca']) = (data - repmat(mu_out,size(data,1),1)) * w_out;
         
         if ~strcmpi(sig_name_in{:},sig_name_out{:}) % if they aren't the same
-            % now add output PCA
+            % now add input PCA
             data = get_vars(trial_data(trial),in_signals);
             trial_data(trial).([sig_name_in{:} '_pca']) = (data - repmat(mu_in,size(data,1),1)) * w_in;
             
