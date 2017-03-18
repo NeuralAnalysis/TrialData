@@ -53,7 +53,7 @@ if isempty(model_type), error('Unknown model type.'); end
 if isempty(out_signals), error('Need to provide output signal'); end
 if isempty(model_name), error('No model_name provided'); end
 if isempty(eval_metric), error('Must provide evaluation metric.'); end
-if iscell(model_name) % we are doing relative metric
+if iscell(model_name) && length(model_name) == 2 % we are doing relative metric
     if size(trial_data(1).([td_fn_prefix '_' model_name{1}]),2) ~= size(trial_data(1).([td_fn_prefix '_' model_name{2}]),2)
         error('Different numbers of variables for relative metric calc');
     end
@@ -89,7 +89,9 @@ for i = 1:length(trial_idx)-1
 end
 
 % if we don't need 3-D, ditch the single dim
-metric = squeeze(metric);
+if num_boots < 2
+    metric = squeeze(metric(:,:,1));
+end
 
 end%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
