@@ -131,47 +131,17 @@ fh = functions(f);
 if ~isempty(fh.file)
     % check if there are parameters too
     if length(funcCall) > 1
-        if isstruct(funcCall{2}) % it's a params struct
-            if nargout(f) > 1
-                [trial_data,out_params] = f(trial_data,funcCall{2});
+        % there is a special case for getTDidx
+        if strcmpi(fh.function,'getTDidx')
+            [~,trial_data] = f(trial_data,funcCall{2:end});
+        else
+            if nargout(f) > 1 % second output is stored in params
+                [trial_data,out_params] = f(trial_data,funcCall{2:end});
             else
-                trial_data = f(trial_data,funcCall{2});
-            end
-        else % it's a series of inputs
-            input_str = [];
-            % loop along all of the inputs and build the function call
-            for i = 2:length(funcCall)
-                if isnumeric(funcCall{i}) % is it a number?
-                    in_var = num2str(funcCall{i});
-                else %no...
-                    in_var = funcCall{i};
-                    if ischar(in_var) % is it a string?
-                        in_var = ['''' in_var ''''];
-                    elseif iscell(in_var) % is it a cell? Must break it out
-                        temp = '{';
-                        for j = 1:length(in_var)
-                            if ischar(in_var{j})
-                                temp = [temp '''' in_var{j} ''''];
-                            elseif isnumeric(in_var{j})
-                                temp = [temp num2str(in_var{j})];
-                            end
-                            if j < length(in_var), temp = [temp ',']; end
-                        end
-                        in_var = [temp '}'];
-                    end
-                end
-                input_str = [input_str ',' in_var];
-            end
-            % there is a special case for getTDidx
-            if strcmpi(fh.function,'getTDidx')
-                eval(['[~,trial_data] = f(trial_data' input_str ');']);
-            elseif nargout(f) > 1
-                eval(['[trial_data,out_params] = f(trial_data' input_str ');']);
-            else
-                eval(['trial_data = f(trial_data' input_str ');']);
+                trial_data = f(trial_data,funcCall{2:end});
             end
         end
-    else % easy if there are no parameters
+    else % no parameters
         trial_data = f(trial_data);
     end
 else
