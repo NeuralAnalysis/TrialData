@@ -47,7 +47,7 @@ if isempty(arrays) % get all spiking arrays
         arrays{a} = strrep(arrays{a},'_spikes','');
     end
 else
-    if ~iscell(arrays), arrays = {}; end
+    if ~iscell(arrays), arrays = {arrays}; end
 end
 
 for a = 1:length(arrays)

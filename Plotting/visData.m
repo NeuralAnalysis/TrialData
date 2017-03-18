@@ -12,7 +12,8 @@
 %   Trial_data : struct array where each element is a trial.
 %
 %   params     : parameter struct
-%     .trials      : (vector) trial indices to plot. MUST BE SPECIFIED.
+%     .trials      : (vector) trial indices to plot
+%                       Note: must be specified unless a single trial is passed in
 %     .signals     : (cell array) fieldnames of continuous signals to plot (Default to {'vel,'acc'})
 %     .target_direction : the angular direction of the target on that trial
 %     .idx_EVENT        : bin index of trial events. There can be many of these.
@@ -34,7 +35,7 @@
 function [ ] = visData( trial_data, params )
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
-if isfield(params,'trials'), trials_to_plot = params.trials; else, error('No trials specified.'); end
+trials_to_plot    =   1;
 plot_signals      =   {'vel'};
 plot_pca          =   false;
 pca_dims          =   1:3;
@@ -74,11 +75,12 @@ spike_rows         =   4;        % how many rows for spike markers
 pos_location       =   'right'; % if position plot is on 'left' or 'right'
 trial_event_colors =   parula(size(event_db,1)); % use default matlab colors
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if length(params) > 1, error('Params has multiple entries.'); end
-assignParams(who,params); % overwrite parameters
+if nargin > 1, assignParams(who,params); else params = struct(); end% overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % bin_size     =   trial_data(1).bin_size; %bin size of data in s
-
+if ~isfield(params,'trials') && length(trial_data) > 1
+    error('No trials specified.');
+end
 % check for foolish inputs
 if max(trials_to_plot) > length(trial_data)
     error('Requested too many trials.');

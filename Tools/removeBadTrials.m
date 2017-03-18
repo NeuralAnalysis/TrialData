@@ -62,6 +62,6 @@ for trial = 1:length(trial_data)
     
     if err, bad_idx(trial) = true; end
 end
-disp(['Pruning ' num2str(sum(bad_idx)) ' trials.']);
+disp(['Removing ' num2str(sum(bad_idx)) ' trials.']);
 bad_trials = trial_data(bad_idx);
 trial_data = trial_data(~bad_idx);
