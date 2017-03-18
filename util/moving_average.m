@@ -24,6 +24,6 @@ function data_mvavg = moving_average(data,bins)
 data_mvavg = zeros(size(data,1)-(bins),size(data,2));
 for i = 1:size(data,2)
     for j = 1:size(data,1)-(bins)
-        data_mvavg(j,i) = mean(data(j:j+bins,i));
+        data_mvavg(j,i) = nanmean(data(j:j+bins,i));
     end
 end
