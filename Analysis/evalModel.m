@@ -9,20 +9,23 @@
 % INPUTS:
 %   trial_data : the struct
 %   params     : parameter struct
-%       .out_signals : which output signal is predicted by model_name
-%       .model_name  : string name of model to evaluate
+%       .out_signals  : which output signal is predicted by model_name
+%       .model_name   : string name of model to evaluate
 %                         OR {'NAME1','NAME2'} to do relative metric of 2 rel to 1
-%       .trial_idx   : trials to evaluate. Ways to use:
+%       .trial_idx    : trials to evaluate. Ways to use:
 %                     1) 1:end treats each trial separately
 %                     2) 1:N:end predicts in bins of size N trials
 %                     3) [1,end] returns a single value for predicting all trials
 %                         DEFAULT: [1,length(trial_data]
-%       .eval_metric : (string) name of metric for evaluation
+%       .eval_metric  : (string) name of metric for evaluation
 %                           'pr2' : pseudo-R2 (Default)
 %                           'vaf' : VAF (good thing I have these descriptions)
 %                           'r2'  : R2 (as in, square of r)
 %                           'r'   : correlation coefficient
-%       .num_boots   : # bootstrap iterations to use (if <2, doesn't bootstrap)
+%       .block_trials : if true, takes input of trial indices and pools
+%                       them together for a single eval. If false, treats the trial indices
+%                       like a list of blocked testing segments
+%       .num_boots    : # bootstrap iterations to use (if <2, doesn't bootstrap)
 %
 % OUTPUTS:
 %   metric : calculated evaluation metric
@@ -39,6 +42,7 @@ out_signals      =  [];
 model_name       =  [];
 trial_idx        =  [1,length(trial_data)];
 eval_metric      =  '';
+block_trials     =  false;
 num_boots        =  1000;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented parameters
@@ -68,30 +72,50 @@ out_signals = check_signals(trial_data(1),out_signals);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Calculate pr2
-% quick hack here for when we aren't binning and want single trials
-if unique(diff(trial_idx)) == 1, trial_idx = [trial_idx, trial_idx(end)+1]; end
-metric = NaN(length(trial_idx)-1,sum(cellfun(@(x) length(x),out_signals(:,2))),2);
-for i = 1:length(trial_idx)-1
-    trials = trial_idx(i):trial_idx(i+1)-1;
-    
-    y = get_vars(trial_data(trials),out_signals);
-    yhat1 = cat(1,trial_data(trials).([td_fn_prefix '_' model_name{1}]));
+if block_trials
+    metric = NaN(sum(cellfun(@(x) length(x),out_signals(:,2))),2);
+    y = get_vars(trial_data(trial_idx),out_signals);
+    yhat1 = cat(1,trial_data(trial_idx).([td_fn_prefix '_' model_name{1}]));
     if length(model_name) == 1
         for iVar = 1:size(y,2)
-            metric(i,iVar,:) = get_metric(y(:,iVar),yhat1(:,iVar),eval_metric,num_boots);
+            metric(iVar,:) = get_metric(y(:,iVar),yhat1(:,iVar),eval_metric,num_boots);
         end
     else % relative metric
-        yhat2 = cat(1,trial_data(trials).([td_fn_prefix '_' model_name{2}]));
+        yhat2 = cat(1,trial_data(trial_idx).([td_fn_prefix '_' model_name{2}]));
         for iVar = 1:size(y,2)
-            metric(i,iVar,:) = get_metric(y(:,iVar),yhat1(:,iVar),yhat2(:,iVar),eval_metric,num_boots);
+            metric(iVar,:) = get_metric(y(:,iVar),yhat1(:,iVar),yhat2(:,iVar),eval_metric,num_boots);
         end
+    end
+    if num_boots < 2
+        metric = metric(:,1);
+    end
+else
+    % quick hack here for when we aren't binning and want single trials
+    if unique(diff(trial_idx)) == 1, trial_idx = [trial_idx, trial_idx(end)+1]; end
+    metric = NaN(length(trial_idx)-1,sum(cellfun(@(x) length(x),out_signals(:,2))),2);
+    for i = 1:length(trial_idx)-1
+        trials = trial_idx(i):trial_idx(i+1)-1;
+        
+        y = get_vars(trial_data(trials),out_signals);
+        yhat1 = cat(1,trial_data(trials).([td_fn_prefix '_' model_name{1}]));
+        if length(model_name) == 1
+            for iVar = 1:size(y,2)
+                metric(i,iVar,:) = get_metric(y(:,iVar),yhat1(:,iVar),eval_metric,num_boots);
+            end
+        else % relative metric
+            yhat2 = cat(1,trial_data(trials).([td_fn_prefix '_' model_name{2}]));
+            for iVar = 1:size(y,2)
+                metric(i,iVar,:) = get_metric(y(:,iVar),yhat1(:,iVar),yhat2(:,iVar),eval_metric,num_boots);
+            end
+        end
+    end
+    % if we don't need 3-D, ditch the single dim
+    if num_boots < 2
+        metric = squeeze(metric(:,:,1));
     end
 end
 
-% if we don't need 3-D, ditch the single dim
-if num_boots < 2
-    metric = squeeze(metric(:,:,1));
-end
+
 
 end%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
