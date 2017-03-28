@@ -56,7 +56,7 @@ for trial = 1:length(trial_data)
         peaks = [dds(1:end-1)>0 & dds(2:end)<0; 0];
         mvt_peak = find(peaks & (1:length(peaks))' > td(trial).(start_idx) & ds > min_ds & move_inds, 1, 'first');
         if ~isempty(mvt_peak)
-            thresh = ds(mvt_peak)/2;                             % Threshold is half max of acceleration peak
+            thresh = ds(mvt_peak)/2; % Threshold is half max of acceleration peak
             on_idx = find(ds<thresh & (1:length(ds))'<mvt_peak & move_inds,1,'last');
             
             % check to make sure the numbers make sense
