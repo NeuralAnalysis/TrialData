@@ -38,8 +38,24 @@ for trial = 1:length(trial_data)
         err = true;
     end
     
+    % no nan directions
     if isfield(trial_data,'target_direction') && isnan(trial_data(trial).target_direction)
         err = true;
+    end
+    
+    if isfield(trial_data,'idx_movement_on') && isfield(trial_data,'idx_go_cue') && isfield(trial_data,'idx_peak_speed')
+        if ~isnan(trial_data(trial).idx_movement_on) && ~isnan(trial_data(trial).idx_go_cue) && ...
+                trial_data(trial).idx_movement_on < trial_data(trial).idx_go_cue
+            err = true;
+        end
+        if ~isnan(trial_data(trial).idx_peak_speed) && ~isnan(trial_data(trial).idx_go_cue) && ...
+                trial_data(trial).idx_peak_speed < trial_data(trial).idx_go_cue
+            err = true;
+        end
+        if ~isnan(trial_data(trial).idx_movement_on) && ~isnan(trial_data(trial).idx_peak_speed) && ...
+                trial_data(trial).idx_peak_speed < trial_data(trial).idx_movement_on
+            err = true;
+        end
     end
     
     %%%% LOOK FOR TRIALS THAT ARE OUTSIDE THE ALLOWABLE LENGTH
