@@ -214,6 +214,22 @@ if ~isempty(cds.emg)
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Process OpenSim data
+if length(cds.analog)>=3 % replace with something else once CDS handling of openSim data is set
+    opensim=cds.analog{3};
+    opensimList = opensim.Properties.VariableNames;
+    
+    % replace this with something that separates out the different types of
+    % opensim data
+    idx_opensim = 1:width(opensim);
+    idx_opensim = idx_opensim>1;
+    
+    % Assign to a new 'opensim' variable
+    cds_bin.opensim = decimate_signals(opensim,opensimList,bin_size);
+    clear opensim;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Check the time vectors for these signals to make a master one
 fn = fieldnames(cds_bin);
 cds_bin.t = roundTime(cds_bin.(fn{1}).t);
@@ -321,6 +337,22 @@ for i = 1:length(idx_trials)
             end
             % add emg names
             trial_data(i).emg_names = fn;
+        end
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Add opensim
+        if isfield(cds_bin,'opensim') && ~isempty(cds_bin.opensim)
+            fn = cds.analog{3}.Properties.VariableNames; %need to fix CDS to deal with opensim better
+            fn = fn(~strcmpi(fn,'t'));
+            
+            trial_data(i).opensim = zeros(length(idx),length(fn));
+            % loop along the muscles to decimate
+            for entry = 1:length(fn)
+                temp = cds_bin.opensim.(fn{entry});
+                trial_data(i).opensim(:,entry) = temp(idx);
+            end
+            % add opensim names
+            trial_data(i).opensim_names = fn;
         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
