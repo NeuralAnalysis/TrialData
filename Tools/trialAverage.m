@@ -67,7 +67,7 @@ for iCond = 1:length(conditions)
     % unique doesn't work on numeric cell arrays for some reason
     if ischar(trial_data(1).(conditions{iCond}))
         uc = unique({trial_data.(conditions{iCond})});
-    elseif isnumeric(trial_data(1).(conditions{iCond}))
+    elseif isnumeric(trial_data(1).(conditions{iCond})) || islogical(trial_data(1).(conditions{iCond}))
         uc = num2cell(unique([trial_data.(conditions{iCond})]));
     end
     cond_vals{iCond} = uc;
