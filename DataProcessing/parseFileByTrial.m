@@ -215,12 +215,22 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Process OpenSim data
-if length(cds.analog)>=3 % replace with something else once CDS handling of openSim data is set
-    opensim=cds.analog{3};
+% Figure out if we have opensim data
+opensim_analog_idx = 0;
+for i=1:length(cds.analog)
+    header = cds.analog{i}.Properties.VariableNames;
+    if any(contains(header,'_ang')) || any(contains(header,'_vel')) || any(contains(header,'_len')) || any(contains(header,'_muscVel'))
+        opensim_analog_idx = i;
+        break
+    end
+end
+if opensim_analog_idx > 0
+    opensim=cds.analog{opensim_analog_idx};
     opensimList = opensim.Properties.VariableNames;
     
-    % replace this with something that separates out the different types of
-    % opensim data
+    % TODO: replace this with something that separates out the different types of
+    % opensim data, e.g. separate joints and muscles, kinematics and
+    % dynamics
     idx_opensim = 1:width(opensim);
     idx_opensim = idx_opensim>1;
     
@@ -342,7 +352,7 @@ for i = 1:length(idx_trials)
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Add opensim
         if isfield(cds_bin,'opensim') && ~isempty(cds_bin.opensim)
-            fn = cds.analog{3}.Properties.VariableNames; %need to fix CDS to deal with opensim better
+            fn = opensimList;
             fn = fn(~strcmpi(fn,'t'));
             
             trial_data(i).opensim = zeros(length(idx),length(fn));
