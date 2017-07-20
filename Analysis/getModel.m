@@ -113,6 +113,7 @@ if isempty(b)  % fit a new model
     end
 else % use an old GLM
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % these parameters should already be assigned from assignParams
 %     fn = fieldnames(params);
 %     for i = 1:length(fn)
 %         assignin('caller',fn{i},params.(fn{i}));
