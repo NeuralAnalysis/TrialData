@@ -113,10 +113,10 @@ if isempty(b)  % fit a new model
     end
 else % use an old GLM
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    fn = fieldnames(params);
-    for i = 1:length(fn)
-        assignin('caller',fn{i},params.(fn{i}));
-    end
+%     fn = fieldnames(params);
+%     for i = 1:length(fn)
+%         assignin('caller',fn{i},params.(fn{i}));
+%     end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -147,7 +147,9 @@ end
 switch lower(model_type)
     case 'glm'
         if strcmpi(model_type,'glm') && ~do_lasso
-            s = rmfield(s,{'resid','residp','residd','resida','wts'});
+            if isfield(s,'resid')
+                s = rmfield(s,{'resid','residp','residd','resida','wts'});
+            end
         end
         model_info = struct( ...
             'model_type',   model_type, ...
