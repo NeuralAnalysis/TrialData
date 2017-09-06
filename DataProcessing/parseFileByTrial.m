@@ -156,6 +156,8 @@ for i = 1:length(idx_trials)
             end
         case 'rw' % In random walk, target_direction doesn't make sense
             trial_data(i).target_center = reshape(cds.trials.tgtCtr(iTrial,:),size(cds.trials.tgtCtr(iTrial,:),2)/2,2);
+        case 'trt' % TRT denotes targets in the same way as random walk
+            trial_data(i).target_center = reshape(cds.trials.tgtCtr(iTrial,:),size(cds.trials.tgtCtr(iTrial,:),2)/2,2);
         otherwise
             if any(abs(cds.trials.tgtDir) > 2*pi) % good assumption that it's deg
                 trial_data(i).target_direction = pi/180*cds.trials.tgtDir(iTrial);
@@ -427,7 +429,7 @@ out = struct();
 for e = 1:length(event_list)
     all_events = trials.(event_list{e});
     nan_bins = NaN(size(all_events));
-    for i = 1:size(all_events,2) % e.g. in RW there can be multiple go cues
+    for i = 1:size(all_events,2) % e.g. in RW and TRT there can be multiple go cues
         temp = find(histcounts(all_events(:,i),t_bin));
         nan_bins(~isnan(all_events(:,i)),i) = temp;
     end
