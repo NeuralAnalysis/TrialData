@@ -49,8 +49,7 @@ switch lower(which_metric)
                     t2 = trial_data(bl_idx(iTrial)).(time_window{2,1})+time_window{2,2};
                     temp = trial_data(bl_idx(iTrial)).(vel_or_pos);
                     temp_err(iTrial) = angleDiff(minusPi2Pi(trial_data(bl_idx(iTrial)).target_direction), ...
-                        atan2(temp(t2,2) - temp(t1,2), ...
-                        temp(t2,1) - temp(t1,1)), ...
+                        atan2(temp(t2,2) - temp(t1,2), temp(t2,1) - temp(t1,1)), ...
                         true,true);
                 end
                 bl_metric(iDir) = mean(temp_err);
@@ -64,8 +63,7 @@ switch lower(which_metric)
             
             temp = trial_data(iTrial).(vel_or_pos);
             temp_err = angleDiff(minusPi2Pi(trial_data(iTrial).target_direction), ...
-                atan2(temp(t2,2) - temp(t1,2), ...
-                temp(t2,1) - temp(t1,1)), ...
+                atan2(temp(t2,2) - temp(t1,2), temp(t2,1) - temp(t1,1)), ...
                 true,true);
             
             iDir = utheta==trial_data(iTrial).target_direction;
@@ -110,6 +108,42 @@ switch lower(which_metric)
                 interp1(1:length(idx),temp(idx,2),linspace(1,length(idx),corr_samples))'];
             metric(iTrial) = corr2(squeeze(bl_metric(iDir,:,:)),temp)^2;
         end
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    case 'curvature'
+        % get baseline curvature to each target
+        bl_metric = zeros(length(utheta),1);
+        if use_bl_ref
+            for iDir = 1:length(utheta)
+                bl_idx = getTDidx(trial_data,'epoch','bl','target_direction',utheta(iDir));
+                if isempty(bl_idx)
+                    error('No BL ref found for all targets');
+                end
+                
+                temp_err = zeros(length(bl_idx),1);
+                for iTrial = 1:length(bl_idx)
+                    t1 = trial_data(bl_idx(iTrial)).(time_window{1,1})+time_window{1,2};
+                    t2 = trial_data(bl_idx(iTrial)).(time_window{2,1})+time_window{2,2};
+                    temp = trial_data(bl_idx(iTrial)).(vel_or_pos);
+                    temp_err(iTrial) = median(curvature(temp(t1:t2,:)));
+                end
+                bl_metric(iDir) = mean(temp_err);
+            end, clear temp;
+        end
+        
+        % 
+        for iTrial = 1:length(trial_data)
+            t1 = trial_data(iTrial).(time_window{1,1})+time_window{1,2};
+            t2 = trial_data(iTrial).(time_window{2,1})+time_window{2,2};
+            
+            temp = trial_data(iTrial).(vel_or_pos);
+            temp_err = median(curvature(temp(t1:t2,:)));
+            
+            iDir = utheta==trial_data(iTrial).target_direction;
+            metric(iTrial) = temp_err - bl_metric(iDir);
+        end, clear temp;
+        
+        metric = -metric;
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     case 'time'
