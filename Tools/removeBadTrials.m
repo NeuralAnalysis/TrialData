@@ -24,6 +24,7 @@
 function [trial_data,bad_trials] = removeBadTrials(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ranges = [];
+remove_nan_idx = true;
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 
 bad_idx = false(1,length(trial_data));
@@ -34,8 +35,10 @@ for trial = 1:length(trial_data)
     
     % loop along all indices and make sure they aren't NaN
     fn = getTDfields(td,'idx');
-    if any(cell2mat(cellfun(@(x) all(isnan(td.(x))),fn,'uni',0)))
-        err = true;
+    if remove_nan_idx
+        if any(cell2mat(cellfun(@(x) all(isnan(td.(x))),fn,'uni',0)))
+            err = true;
+        end
     end
     
     % no nan directions
