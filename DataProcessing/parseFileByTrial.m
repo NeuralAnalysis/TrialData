@@ -120,7 +120,15 @@ if ismember({'tgtOnTime'},fn), event_list = union({'tgtOnTime'},event_list); end
 % determine which signals are time-varying and which are parameter values
 %   There was a CDS bug where start/end times didn't have units, but I know
 %   they are supposed to be here so it's hard coded for now
-time_events = union({'startTime','endTime'},fn(strcmpi(cds.trials.Properties.VariableUnits,'s')));
+%   Some parameter values have 's' as units but are not time events.
+%   Include them in the time_event_exceptions below.
+time_event_exceptions = {'ctrHold'};
+time_event_exc_idx = false(size(fn));
+for exc = 1:length(time_event_exceptions)
+    time_event_exc_idx = time_event_exc_idx | contains(fn,time_event_exceptions{exc});
+end
+extra_time_events = fn( strcmpi(cds.trials.Properties.VariableUnits,'s') & ~time_event_exc_idx );
+time_events = union({'startTime','endTime'},extra_time_events);
 
 % get trial list and initialize
 if all_points % we want everything
