@@ -1,6 +1,4 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [rho,sort_idx] = pairwiseCorr(trial_data,params)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function [rho,sort_idx] = pairwiseCorr(trial_data,params)
 %
 %   Compute pairwise correlations between neurons in _spikes.
@@ -21,6 +19,8 @@ function [rho,sort_idx] = pairwiseCorr(trial_data,params)
 %
 % Written by Matt Perich. Updated Feb 2017.
 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [rho,sort_idx] = pairwiseCorr(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PARAMETER DEFAULTS
 signals          =  [];
