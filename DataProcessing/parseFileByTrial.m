@@ -26,7 +26,13 @@
 %     .all_points    : flag to include all data points. Thus, disregards extra_time
 %                       and trial_results. Each trial ends at trial_start of the one after
 %     .pos_offset    : offset (in units of cds.pos) to zero position (default [0,0])
-%
+%     .include_ts    : Flag to denote whether to include timestamps aligned
+%                       start of the trial or not. If so, includes a cell
+%                       array of timestamps for each trial, one for each
+%                       source of neural data.
+%     .include_start :  Flag to denot whether to include an extra column
+%                       which contains the 'real time' start for each trial
+%                       Useful for comparing in non-standard tasks
 % OUTPUTS:
 %   trial_data : the struct! Huzzah!
 %
@@ -78,6 +84,7 @@ exclude_units  =  [0,255];
 extra_time     =  [0.2, 0.2];
 all_points     =  false;
 pos_offset     =  [0,0];
+include_ts     =  false;
 if ~isfield(params,'meta'), disp('WARNING: no meta information provided.'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some parameters that CAN be overwritten, but are mostly intended to be
@@ -283,13 +290,27 @@ end
 % get a new master event list in case any weren't found
 event_list = fieldnames(cds_bin.trials);
 
-
+extra_time_temp = extra_time;
 % This is a little "hack" in case all data is desired
 if all_points % here we want to include all data
     cds_bin.trials.endTime = [cds_bin.trials.startTime(2:end)-1; length(cds_bin.t)];
     extra_time = [0 0];
 else
     extra_time = round(extra_time/bin_size); % convert to number of bins
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Compute the timestamps for raster plots (if wanted)
+if include_ts
+    for i = 1:length(idx_trials)
+        trialStart(i) = cds_bin.t(cds_bin.trials.startTime(i));
+        trialEnd(i) = cds_bin.t(cds_bin.trials.endTime(i));
+        for j = 1:length(arrays)
+            for k = 1:length(unit_idx{j})
+                timestamps{i,j,k} = cds.units(unit_idx{j}(k)).spikes.ts(cds.units(unit_idx{j}(k)).spikes.ts> trialStart(i)-extra_time_temp(1) & cds.units(unit_idx{j}(k)).spikes.ts < trialEnd(i)+extra_time_temp(2)) - trialStart(i);
+            end
+        end
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -390,6 +411,10 @@ for i = 1:length(idx_trials)
             binned_spikes = cds_bin.([arrays{array} '_spikes']);
             trial_data(i).([use_array_name '_spikes']) = binned_spikes(idx,:);
             trial_data(i).([use_array_name '_unit_guide']) = cds_bin.([arrays{array} '_unit_guide']);
+            if include_ts
+                trial_data(i).([use_array_name '_ts']) = squeeze(timestamps(i, array, 1:length(unit_idx{array})));
+                trial_data(i).trial_start_time = trialStart(i);
+            end
         end
     end
 end
