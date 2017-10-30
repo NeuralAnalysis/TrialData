@@ -46,47 +46,40 @@ for trial = 1:length(trial_data)
     s = td(trial).speed;
     
     % find the time bins where the monkey may be moving
-
-    for reach = 1:length(trial_data(trial).idx_goCueTime)
-        move_inds = false(size(s));
-        startVec = td(trial).(start_idx);
-        startInd = startVec(reach);
-        move_inds(startInd:td(trial).(end_idx)) = true;
-
-        [on_idx,peak_idx] = deal(NaN);
-        if strcmpi(which_method,'peak')
-            ds = [0; diff(s)];
-            dds = [0; diff(ds)];
-            peaks = [dds(1:end-1)>0 & dds(2:end)<0; 0];
-            mvt_peak = find(peaks & (1:length(peaks))' > td(trial).(start_idx) & ds > min_ds & move_inds, 1, 'first');
-            if ~isempty(mvt_peak)
-                thresh = ds(mvt_peak)/2; % Threshold is half max of acceleration peak
-                on_idx = find(ds<thresh & (1:length(ds))'<mvt_peak & move_inds,1,'last');
-
-                % check to make sure the numbers make sense
-                if on_idx <= td(trial).(start_idx)
-                    % something is fishy. Fall back on threshold method
-                    on_idx = NaN;
-                end
-            end
-            % peak is max velocity during movement
-            temp = s; temp(~move_inds) = 0;
-            [~,peak_idx] = max(temp);
-        end
-
-        if isempty(on_idx) || isnan(on_idx)
-            on_idx = find(s > s_thresh & move_inds,1,'first');
-            if isempty(on_idx) % usually means it never crosses threshold
-                warning('Could not identify movement onset');
+    move_inds = false(size(s));
+    move_inds(td(trial).(start_idx):td(trial).(end_idx)) = true;
+    
+    [on_idx,peak_idx] = deal(NaN);
+    if strcmpi(which_method,'peak')
+        ds = [0; diff(s)];
+        dds = [0; diff(ds)];
+        peaks = [dds(1:end-1)>0 & dds(2:end)<0; 0];
+        mvt_peak = find(peaks & (1:length(peaks))' > td(trial).(start_idx) & ds > min_ds & move_inds, 1, 'first');
+        if ~isempty(mvt_peak)
+            thresh = ds(mvt_peak)/2; % Threshold is half max of acceleration peak
+            on_idx = find(ds<thresh & (1:length(ds))'<mvt_peak & move_inds,1,'last');
+            
+            % check to make sure the numbers make sense
+            if on_idx <= td(trial).(start_idx)
+                % something is fishy. Fall back on threshold method
                 on_idx = NaN;
             end
         end
-        on_all(reach) = on_idx;
-        peak_all(reach) = peak_idx;
+        % peak is max velocity during movement
+        temp = s; temp(~move_inds) = 0;
+        [~,peak_idx] = max(temp);
     end
-    trial_data(trial).(['idx_' onset_name]) = on_all;
+    
+    if isempty(on_idx) || isnan(on_idx)
+        on_idx = find(s > s_thresh & move_inds,1,'first');
+        if isempty(on_idx) % usually means it never crosses threshold
+            warning('Could not identify movement onset');
+            on_idx = NaN;
+        end
+    end
+    trial_data(trial).(['idx_' onset_name]) = on_idx;
     if strcmpi(which_method,'peak')
-        trial_data(trial).(['idx_' peak_name]) = peak_all;
+        trial_data(trial).(['idx_' peak_name]) = peak_idx;
     end
 end
 
