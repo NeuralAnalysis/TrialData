@@ -36,8 +36,8 @@ do_onset           =  true;
 % Some parameters to overwrite that aren't documented
 start_name         =  'idx_trial_start';
 end_name           =  'idx_trial_end';
-onset_name         =  'idx_movement_on';
-peak_name          =  'idx_peak_speed';
+onset_name         =  'movement_on';
+peak_name          =  'peak_speed';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1, assignParams(who,params); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -53,6 +53,7 @@ rw_td = repmat(struct(),1,num_moves);
 
 fn_time = getTDfields(trial_data,'time');
 fn_meta = getTDfields(trial_data,'meta');
+fn_array = getTDfields(trial_data, 'arrays');
 
 count = 0;
 for trial = 1:length(trial_data)
@@ -88,7 +89,9 @@ for trial = 1:length(trial_data)
             rw_td(count).(start_name) = extra_bins(1)+1;
             rw_td(count).(go_cue_name) = extra_bins(1)+1;
             rw_td(count).(end_name)   = idx_end - extra_bins(2) - go_cues(cue)+1;
-            
+            for k = 1:length(fn_array)
+                rw_td(count).([fn_array{k}, '_unit_guide']) = trial_data(1).([fn_array{k}, '_unit_guide']);
+            end
             % check that the index won't crash
             if idx_end > size(td.(fn_time{1}),1)
                 disp('Requested time extended beyond available trial data. Defaulting to last bin.');
@@ -102,6 +105,7 @@ for trial = 1:length(trial_data)
         end
     end
 end
+
 
 % get movement onset etc for each trial
 if do_onset
