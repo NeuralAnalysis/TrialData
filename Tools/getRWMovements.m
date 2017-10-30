@@ -70,6 +70,7 @@ for trial = 1:length(trial_data)
             % adjust trial_id
             rw_td(count).trial_id = [td.trial_id, cue];
             % target_center will be copied over in full, so index it
+            rw_td(count).cursor_start(:) = td.pos(go_cues(cue),:);
             rw_td(count).target_center = rw_td(count).target_center(cue,:);
             
             % copy over the time data
