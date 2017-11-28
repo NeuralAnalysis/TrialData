@@ -303,8 +303,8 @@ end
 % Compute the timestamps for raster plots (if wanted)
 if include_ts
     for i = 1:length(idx_trials)
-        trialStart(i) = cds_bin.t(cds_bin.trials.startTime(i));
-        trialEnd(i) = cds_bin.t(cds_bin.trials.endTime(i));
+        trialStart(i) = cds_bin.t(cds_bin.trials.startTime(idx_trials(i)));
+        trialEnd(i) = cds_bin.t(cds_bin.trials.endTime(idx_trials(i)));
         for j = 1:length(arrays)
             for k = 1:length(unit_idx{j})
                 timestamps{i,j,k} = cds.units(unit_idx{j}(k)).spikes.ts(cds.units(unit_idx{j}(k)).spikes.ts> trialStart(i)-extra_time_temp(1) & cds.units(unit_idx{j}(k)).spikes.ts < trialEnd(i)+extra_time_temp(2)) - trialStart(i);
