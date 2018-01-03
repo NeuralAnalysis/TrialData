@@ -137,10 +137,10 @@ end
 for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're skipping trials
     trial = trials_to_plot(tr_idx); % Use tr_num from here down
     
-    % check to make sure events aren't empty
+    % check to make sure events aren't empty or nan
     idx = true(1,length(events));
     for iEvent = 1:length(events)
-        if isempty(trial_data(trial).(events{iEvent}))
+        if isempty(trial_data(trial).(events{iEvent})) || isnan(trial_data(trial).(events{iEvent})) 
             idx(iEvent) = false;
         end
     end
