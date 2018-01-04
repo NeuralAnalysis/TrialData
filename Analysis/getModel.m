@@ -68,6 +68,9 @@ glm_distribution     =  'poisson';   % which distribution to assume for GLM
 td_fn_prefix         =  '';  % name prefix for trial_data field
 b                    =  [];          % b and s identify if model_info was
 s                    =  [];          %    provided as a params input
+
+layer_sizes = 10;
+train_func = 'trainlm';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -109,6 +112,11 @@ if isempty(b)  % fit a new model
                 end
             case 'linmodel'
                 b(:,iVar) = [ones(size(x,1),1), x]\y(:,iVar);
+            case 'nn'
+                net = feedforwardnet(layer_sizes, train_func);
+                net = train(net, x', y');
+                yPred = net(x');
+
         end
     end
 else % use an old GLM
@@ -137,6 +145,8 @@ if add_pred_to_td
                     end
                 case 'linmodel'
                     yfit(:,iVar) = [ones(size(x,1),1), x]*b(:,iVar);
+                case 'nn'
+                    yfit = net(x')';
             end
         end
         trial_data(trial).([td_fn_prefix '_' model_name]) = yfit;
@@ -172,4 +182,12 @@ switch lower(model_type)
             'out_signals',  {out_signals}, ...
             'train_idx',    train_idx, ...
             'b',            b);
+    case 'nn'
+        model_info = struct(...
+            'model_type',   model_type, ...
+            'model_name',   model_name, ...
+            'in_signals',   {in_signals}, ...
+            'out_signals',  {out_signals}, ...
+            'train_idx',    train_idx, ...
+            'b',            net);
 end

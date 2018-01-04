@@ -33,6 +33,11 @@
 %     .include_start :  Flag to denot whether to include an extra column
 %                       which contains the 'real time' start for each trial
 %                       Useful for comparing in non-standard tasks
+%       
+%     .include_naming: Flag to denote whether to include a conversion
+%                       matrix between the labels that appear on the screen when you are doing sensory mapping
+%                       versus the labels that are given to the recorded
+%                       file.
 % OUTPUTS:
 %   trial_data : the struct! Huzzah!
 %
@@ -85,6 +90,7 @@ extra_time     =  [0.2, 0.2];
 all_points     =  false;
 pos_offset     =  [0,0];
 include_ts     =  false;
+include_naming =  false;
 if ~isfield(params,'meta'), disp('WARNING: no meta information provided.'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some parameters that CAN be overwritten, but are mostly intended to be
@@ -115,8 +121,21 @@ if ~isempty(cds.units)
     unit_idx = cell(1,length(arrays));
     for array = 1:length(arrays)
         unit_idx{array} = find(~ismember([cds.units.ID],exclude_units) & strcmpi({cds.units.array},arrays{array}));
+        if include_naming
+            chanNames = cds.units(~cellfun(@isempty,([strfind({cds.units.array},arrays{array})])));
+            sortedUnits = chanNames([chanNames.ID]>0 & [chanNames.ID]<255);
+            elecNames = unique([sortedUnits.chan]);
+            screenNames = {sortedUnits.label};
+            labelNames = zeros(length(sortedUnits),1);
+            for i= 1:length(sortedUnits)
+               labelNames(i) = str2num(screenNames{i}(5:end)); 
+            end
+            labels = unique(labelNames);
+            conversion{array} = [elecNames', labels];
+        end
     end
 end
+
 
 % process some of the trial information
 fn = cds.trials.Properties.VariableNames;
@@ -414,6 +433,9 @@ for i = 1:length(idx_trials)
             if include_ts
                 trial_data(i).([use_array_name '_ts']) = squeeze(timestamps(i, array, 1:length(unit_idx{array})));
                 trial_data(i).trial_start_time = trialStart(i);
+            end
+            if include_naming
+                trial_data(i).([use_array_name '_naming']) = conversion{array};
             end
         end
     end
