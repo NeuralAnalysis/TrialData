@@ -69,7 +69,7 @@ td_fn_prefix         =  '';  % name prefix for trial_data field
 b                    =  [];          % b and s identify if model_info was
 s                    =  [];          %    provided as a params input
 
-layer_sizes = 10;
+layer_sizes = [10,10];
 train_func = 'trainlm';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 assignParams(who,params); % overwrite parameters
@@ -95,9 +95,9 @@ if isempty(b)  % fit a new model
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Fit GLMs
     b = zeros(size(x,2)+1,size(y,2));
-    for iVar = 1:size(y,2) % loop along outputs to predict
-        switch lower(model_type)
-            case 'glm'
+    switch lower(model_type)
+        case 'glm'
+            for iVar = 1:size(y,2) % loop along outputs to predict
                 if do_lasso % not quite implemented yet
                     % NOTE: Z-scores here!
                     [b_temp,s_temp] = lassoglm(zscore(x),y(:,iVar),glm_distribution,'lambda',lasso_lambda,'alpha',lasso_alpha);
@@ -110,14 +110,16 @@ if isempty(b)  % fit a new model
                 else
                     s(iVar) = s_temp;
                 end
-            case 'linmodel'
+            end
+        case 'linmodel'
+            for iVar = 1:size(y,2) % loop along outputs to predict
                 b(:,iVar) = [ones(size(x,1),1), x]\y(:,iVar);
-            case 'nn'
-                net = feedforwardnet(layer_sizes, train_func);
-                net = train(net, x', y');
-                yPred = net(x');
-
-        end
+            end
+        case 'nn'
+            net = feedforwardnet(layer_sizes, train_func);
+            net = train(net, x', y');
+            b = net;
+            yPred = net(x');
     end
 else % use an old GLM
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -135,20 +137,23 @@ if add_pred_to_td
         x  = get_vars(trial_data(trial),in_signals);
         
         yfit = zeros(size(x,1),size(b,2));
-        for iVar = 1:size(b,2)
+
             switch lower(model_type)
                 case 'glm'
-                    if do_lasso
-                        yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
-                    else
-                        yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
+                    for iVar = 1:size(b,2)
+                        if do_lasso
+                            yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
+                        else
+                            yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
+                        end
                     end
                 case 'linmodel'
-                    yfit(:,iVar) = [ones(size(x,1),1), x]*b(:,iVar);
+                    for iVar = 1:size(b,2)
+                        yfit(:,iVar) = [ones(size(x,1),1), x]*b(:,iVar);
+                    end
                 case 'nn'
-                    yfit = net(x')';
-            end
-        end
+                    yfit = b(x')';
+            end       
         trial_data(trial).([td_fn_prefix '_' model_name]) = yfit;
     end
 end
