@@ -91,6 +91,7 @@ all_points     =  false;
 pos_offset     =  [0,0];
 include_ts     =  false;
 include_naming =  false;
+marker_data    =  [];
 if ~isfield(params,'meta'), disp('WARNING: no meta information provided.'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some parameters that CAN be overwritten, but are mostly intended to be
@@ -191,7 +192,7 @@ for i = 1:length(idx_trials)
         case 'rw' % In random walk, target_direction doesn't make sense
             trial_data(i).target_center = reshape(cds.trials.tgtCtr(iTrial,:),size(cds.trials.tgtCtr(iTrial,:),2)/2,2);
         case 'trt' % TRT denotes targets in the same way as random walk
-            trial_data(i).target_center = reshape(cds.trials.tgtCtr(iTrial,:),size(cds.trials.tgtCtr(iTrial,:),2)/2,2);
+            trial_data(i).target_center = reshape(cds.trials.tgtCtr(iTrial,:),2,size(cds.trials.tgtCtr(iTrial,:),2)/2)';
         otherwise
             if any(abs(cds.trials.tgtDir) > 2*pi) % good assumption that it's deg
                 trial_data(i).target_direction = pi/180*cds.trials.tgtDir(iTrial);
@@ -223,9 +224,12 @@ end
 %   1) Check for kinematics and bin those
 %   2) Check for force and bin that
 %   3) Check for EMG and process/bin those
-%   4) Turn the trial table into a binned version
+%   4) Check for OpenSim data and bin those
+%   5) Check for marker data and bin those
+%   6) Turn the trial table into a binned version
 kin_list = {'t','x','y','vx','vy','ax','ay'};
-force_list = {'t','fx','fy'};
+% force_list = {'t','fx','fy'};
+force_list = cds.force.Properties.VariableNames;
 cds_bin = struct();
 cds_bin.kin = decimate_signals(cds.kin,kin_list,bin_size);
 cds_bin.force = decimate_signals(cds.force,force_list,bin_size);
@@ -264,15 +268,49 @@ if opensim_analog_idx > 0
     opensim=cds.analog{opensim_analog_idx};
     opensimList = opensim.Properties.VariableNames;
     
-    % TODO: replace this with something that separates out the different types of
+    % TODO?: replace this with something that separates out the different types of
     % opensim data, e.g. separate joints and muscles, kinematics and
     % dynamics
-    idx_opensim = 1:width(opensim);
-    idx_opensim = idx_opensim>1;
     
     % Assign to a new 'opensim' variable
     cds_bin.opensim = decimate_signals(opensim,opensimList,bin_size);
     clear opensim;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Process Markers data
+% Figure out if we have marker data
+marker_analog_idx = 0;
+for i=1:length(cds.analog)
+    header = cds.analog{i}.Properties.VariableNames;
+    if any(contains(header,'Frame')) || any(contains(header,'Marker'))
+        marker_analog_idx = i;
+        break
+    end
+end
+if marker_analog_idx > 0
+    markers=cds.analog{marker_analog_idx};
+    markers = markers(:,2:end); % get rid of frames column
+    
+    % recondition table to have only single column variables
+    new_markers = table(markers.t,'VariableNames',{'t'});
+    marker_postfix = {'_x','_y','_z'};
+    marker_names = markers.Properties.VariableNames;
+    for marker_ctr = 2:width(markers)
+        % for each column in each marker
+        for col_ctr = 1:3
+            % add new column to new_markers
+            col_name = [marker_names{marker_ctr} marker_postfix{col_ctr}];
+            new_col = table(markers.(marker_names{marker_ctr})(:,col_ctr),'VariableNames',{col_name});
+            new_markers = [new_markers new_col];
+        end
+    end
+    markersList = new_markers.Properties.VariableNames;
+    clear marker_analog_idx header markers marker_postfix marker_names marker_ctr col_ctr col_name new_col
+    
+    % Assign to a new 'markers' variable
+    cds_bin.markers = resample_signals(new_markers,markersList,bin_size,cds.kin.t(1),cds.kin.t(end));
+    clear new_markers
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -406,13 +444,29 @@ for i = 1:length(idx_trials)
             fn = fn(~strcmpi(fn,'t'));
             
             trial_data(i).opensim = zeros(length(idx),length(fn));
-            % loop along the muscles to decimate
+            % loop along the opensim to decimate
             for entry = 1:length(fn)
                 temp = cds_bin.opensim.(fn{entry});
                 trial_data(i).opensim(:,entry) = temp(idx);
             end
             % add opensim names
             trial_data(i).opensim_names = fn;
+        end
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Add markers
+        if isfield(cds_bin,'markers') && ~isempty(cds_bin.markers)
+            fn = markersList;
+            fn = fn(~strcmpi(fn,'t'));
+            
+            trial_data(i).markers = zeros(length(idx),length(fn));
+            % loop along the markers to decimate
+            for entry = 1:length(fn)
+                temp = cds_bin.markers.(fn{entry});
+                trial_data(i).markers(:,entry) = temp(idx);
+            end
+            % add opensim names
+            trial_data(i).marker_names = fn;
         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -472,6 +526,57 @@ if ~isempty(data)
     for var = 1:length(var_list)
         out.(var_list{var}) = decimate(data.(var_list{var}),round(bin_size/dt));
     end
+else
+    out = [];
+end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function out = resample_signals(data,var_list,bin_size,start_time,end_time)
+% resamples continuous data from CDS that may be irregularly sampled
+% assumes data is cds field, e.g. cds.markers
+% Uses spline to reconstruct missing points
+% alters time vector to fit given start_time, end_time, and bin_size
+% also assumes each variable in data table is single column
+if ~isempty(data)
+    out = struct();
+    
+    for var = 1:length(var_list)
+        x = data.(var_list{var});
+        tx = data.t;
+        
+        if size(x,2)>1
+            error('Data in table must have single column variables to resample correctly')
+        end
+        % set edges of signal to 0 to remove edge effects from spline fit
+        % (see https://www.mathworks.com/help/signal/examples/resampling-nonuniformly-sampled-signals.html)
+        x(1) = x(find(~isnan(x(:,1)),1,'first'));
+        x(end) = x(find(~isnan(x(:,1)),1,'last'));
+        a(1) = (x(end)-x(1)) / (tx(end)-tx(1));
+        a(2) = x(1);
+        xdetrend = x - polyval(a,tx);
+
+        % Make sure time vector endpoints are start_time and end_time
+        if start_time>tx(1)
+            xdetrend = xdetrend(tx>start_time);
+            tx = tx(tx>start_time);
+        end
+        tx = [start_time; tx];
+        xdetrend = [xdetrend(1,:); xdetrend];
+        if end_time<tx(end)
+            xdetrend = xdetrend(tx<end_time);
+            tx = tx(tx<end_time);
+        end
+        tx = [tx;end_time];
+        xdetrend = [xdetrend; xdetrend(end,:)];
+        
+        % resample signal
+        [ydetrend,ty] = resample(xdetrend,tx,1/bin_size,'spline');
+        
+        % add back trend line
+        out.(var_list{var}) = ydetrend + polyval(a,ty);
+    end
+    out.t = ty;
 else
     out = [];
 end
