@@ -54,8 +54,8 @@ function [trial_data,model_info] = getModel(trial_data,params)
 % DEFAULT PARAMETERS
 model_type    =  '';
 model_name    =  'default';
-in_signals    =  {};%{'name',idx; 'name',idx};
-out_signals   =  {};%{'name',idx};
+in_signals    =  {};% {'name',idx; 'name',idx};
+out_signals   =  {};% {'name',idx};
 train_idx     =  1:length(trial_data);
 % GLM-specific parameters
 do_lasso      =  false;
@@ -138,22 +138,22 @@ if add_pred_to_td
         
         yfit = zeros(size(x,1),size(b,2));
 
-            switch lower(model_type)
-                case 'glm'
-                    for iVar = 1:size(b,2)
-                        if do_lasso
-                            yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
-                        else
-                            yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
-                        end
+        switch lower(model_type)
+            case 'glm'
+                for iVar = 1:size(b,2)
+                    if do_lasso
+                        yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
+                    else
+                        yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
                     end
-                case 'linmodel'
-                    for iVar = 1:size(b,2)
-                        yfit(:,iVar) = [ones(size(x,1),1), x]*b(:,iVar);
-                    end
-                case 'nn'
-                    yfit = b(x')';
-            end       
+                end
+            case 'linmodel'
+                for iVar = 1:size(b,2)
+                    yfit(:,iVar) = [ones(size(x,1),1), x]*b(:,iVar);
+                end
+            case 'nn'
+                yfit = b(x')';
+        end       
         trial_data(trial).([td_fn_prefix '_' model_name]) = yfit;
     end
 end
@@ -194,5 +194,5 @@ switch lower(model_type)
             'in_signals',   {in_signals}, ...
             'out_signals',  {out_signals}, ...
             'train_idx',    train_idx, ...
-            'b',            net);
+            'b',            b);
 end
