@@ -60,7 +60,9 @@ kernel_SD       = 0.05;  %   gaussian kernel s.d. for smoothing
 pca_algorithm   = 'svd'; % algorithm for PCA
 pca_centered    = true;  % whether to center data
 add_proj_to_td  = true;  % whether to add PCA projections
+pca_recenter_for_proj = false; % whether to recenter data before projecting into PC space
 w               = [];    % w is used to know if params was pca_info
+mu              = [];    % mu is the mean from fitting a pca, only filled if pca_info is passed in
 if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % process and prepare inputs
@@ -69,7 +71,7 @@ if iscell(use_trials) % likely to be meta info
     use_trials = getTDidx(trial_data,use_trials{:});
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% build PCA model for M1
+% if pca_info not already sent in...build PCA model
 if isempty(w)
     td = trial_data(use_trials);
     if sqrt_transform
@@ -112,7 +114,7 @@ if isempty(w)
     pca_params = struct( ...
         'signals',{signals}, ...
         'trial_idx',use_trials);
-    pca_info = struct('w',w,'scores',scores,'eigen',eigen,'mu',mu,'params',pca_params);
+    pca_info = struct('w',w,'scores',scores,'eigen',eigen,'mu',mu,'signals',{signals},'params',pca_params);
 else
     pca_info = params;
 end
@@ -123,10 +125,12 @@ if add_proj_to_td
     sig_names = cellfun(@(x) strrep(x,'_spikes',''),signals(:,1),'uni',0);
     n_signals = cellfun(@(x) length(x),signals(:,2));
     
-    if pca_centered
-        mu = mean(get_vars(trial_data,signals),1);
-    else
-        mu = zeros(1,sum(n_signals));
+    if pca_recenter_for_proj
+        if pca_centered
+            mu = mean(get_vars(trial_data,signals),1);
+        else
+            mu = zeros(1,sum(n_signals));
+        end
     end
     
     for trial = 1:length(trial_data)
