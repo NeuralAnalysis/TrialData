@@ -380,6 +380,13 @@ for i = 1:length(idx_trials)
         t_end = cds_bin.trials.endTime(iTrial) + extra_time(2);
 
     idx = t_start:t_end-1;
+    % check if any trials have idx<0, i.e. first trial starts within
+    % extra_time samples of beginning of file
+    if any(idx<0)
+        % skip trial
+        warning(['Trial ' num2str(iTrial) ' starts before file starts, skipping'])
+        continue
+    end
     
     % adjust start time for use next
     cds_bin.trials.startTime(iTrial) = cds_bin.trials.startTime(iTrial)+1;
@@ -572,6 +579,28 @@ if ~isempty(data)
         
         % resample signal
         [ydetrend,ty] = resample(xdetrend,tx,1/bin_size,'spline');
+        
+        % check time vector (sometimes ty is one sample too long?)
+        if abs(ty(end)-end_time)>eps
+            % check what's wrong
+            if ty(end)>end_time
+                % probably an extra sample, remove it
+                ty=ty(1:end-1);
+                ydetrend = ydetrend(1:end-1);
+            else
+                warning('Something screwy going on with the end of ty in resample_signals...')
+            end
+        end
+        if abs(ty(1)-start_time)>eps
+            % check what's wrong
+            if ty(1)<end_time
+                % probably an extra sample, remove it
+                ty=ty(2:end);
+                ydetrend = ydetrend(2:end);
+            else
+                warning('Something screwy going on with the start of ty in resample_signals...')
+            end
+        end
         
         % add back trend line
         out.(var_list{var}) = ydetrend + polyval(a,ty);
