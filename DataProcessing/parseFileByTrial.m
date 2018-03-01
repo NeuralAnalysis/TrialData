@@ -382,9 +382,9 @@ for i = 1:length(idx_trials)
     idx = t_start:t_end-1;
     % check if any trials have idx<0, i.e. first trial starts within
     % extra_time samples of beginning of file
-    if any(idx<0)
+    if any(idx<0) || any(idx>length(cds_bin.kin.t))
         % skip trial
-        warning(['Trial ' num2str(iTrial) ' starts before file starts, skipping'])
+        warning(['Trial ' num2str(iTrial) ' extends outside of file, skipping'])
         continue
     end
     
@@ -481,7 +481,7 @@ for i = 1:length(idx_trials)
         for array = 1:length(arrays)
             use_array_name = arrays{array};
             if ~isempty(array_alias)
-                temp_idx = ismember(arrays,array_alias(:,1));
+                temp_idx = ismember(array_alias(:,1),arrays{array});
                 if sum(temp_idx) == 0
                     warning([arrays{array} ': not found in alias list. Using original name instead.']);
                 else
@@ -584,19 +584,23 @@ if ~isempty(data)
         if abs(ty(end)-end_time)>eps
             % check what's wrong
             if ty(end)>end_time
-                % probably an extra sample, remove it
-                ty=ty(1:end-1);
-                ydetrend = ydetrend(1:end-1);
+                while ty(end)>end_time
+                    % probably an extra sample, remove it
+                    ty=ty(1:end-1);
+                    ydetrend = ydetrend(1:end-1);
+                end
             else
                 warning('Something screwy going on with the end of ty in resample_signals...')
             end
         end
         if abs(ty(1)-start_time)>eps
             % check what's wrong
-            if ty(1)<end_time
-                % probably an extra sample, remove it
-                ty=ty(2:end);
-                ydetrend = ydetrend(2:end);
+            if ty(1)<start_time
+                while ty(1)<start_time
+                    % probably an extra sample, remove it
+                    ty=ty(2:end);
+                    ydetrend = ydetrend(2:end);
+                end
             else
                 warning('Something screwy going on with the start of ty in resample_signals...')
             end
