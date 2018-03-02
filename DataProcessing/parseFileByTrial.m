@@ -581,10 +581,11 @@ if ~isempty(data)
         [ydetrend,ty] = resample(xdetrend,tx,1/bin_size,'spline');
         
         % check time vector (sometimes ty is one sample too long?)
-        if abs(ty(end)-end_time)>eps
+        tol = 1e-6;
+        if abs(ty(end)-end_time)>tol
             % check what's wrong
             if ty(end)>end_time
-                while ty(end)>end_time
+                while ty(end)-end_time>tol
                     % probably an extra sample, remove it
                     ty=ty(1:end-1);
                     ydetrend = ydetrend(1:end-1);
@@ -593,10 +594,10 @@ if ~isempty(data)
                 warning('Something screwy going on with the end of ty in resample_signals...')
             end
         end
-        if abs(ty(1)-start_time)>eps
+        if abs(ty(1)-start_time)>tol
             % check what's wrong
             if ty(1)<start_time
-                while ty(1)<start_time
+                while start_time-ty(1)>tol
                     % probably an extra sample, remove it
                     ty=ty(2:end);
                     ydetrend = ydetrend(2:end);
