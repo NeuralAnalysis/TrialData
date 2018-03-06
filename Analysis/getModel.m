@@ -141,10 +141,20 @@ if add_pred_to_td
         switch lower(model_type)
             case 'glm'
                 for iVar = 1:size(b,2)
-                    if do_lasso
-                        yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
+                    if strcmpi(glm_distribution,'poisson')
+                        if do_lasso
+                            yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
+                        else
+                            yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
+                        end
+                    elseif strcmpi(glm_distribution,'normal')
+                        if do_lasso
+                            yfit(:,iVar) = [ones(size(x,1),1), zscore(x)]*b(:,iVar);
+                        else
+                            yfit(:,iVar) = [ones(size(x,1),1), x]*b(:,iVar);
+                        end
                     else
-                        yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
+                        error('prediction link for given glm distribution not implemented')
                     end
                 end
             case 'linmodel'
