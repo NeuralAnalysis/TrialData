@@ -51,6 +51,7 @@ event_db          =   { ...
     'idx_startTime',   'strt'; ...
     'idx_target_on',   'tgt'; ... % list of possible field names for events and a shorthand name
     'idx_tgtOnTime',   'tgt'; ...         % add any new events here
+    'idx_bumpTime',    'bump'; ...
     'idx_go_cue',      'go'; ...
     'idx_goCueTime',   'go'; ...
     'idx_movement_on', 'mv'; ...
@@ -78,7 +79,7 @@ trial_event_colors =   parula(size(event_db,1)); % use default matlab colors
 if nargin > 1, assignParams(who,params); else params = struct(); end% overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % bin_size     =   trial_data(1).bin_size; %bin size of data in s
-if ~isfield(params,'trials') && length(trial_data) > 1
+if ~isfield(params,'trials_to_plot') && length(trial_data) > 1
     error('No trials specified.');
 end
 % check for foolish inputs
@@ -136,10 +137,10 @@ end
 for tr_idx = 1:num_trials_to_plot % tr_idx is a dummy variable; useful if you're skipping trials
     trial = trials_to_plot(tr_idx); % Use tr_num from here down
     
-    % check to make sure events aren't empty
+    % check to make sure events aren't empty or nan
     idx = true(1,length(events));
     for iEvent = 1:length(events)
-        if isempty(trial_data(trial).(events{iEvent}))
+        if isempty(trial_data(trial).(events{iEvent})) || isnan(trial_data(trial).(events{iEvent})) 
             idx(iEvent) = false;
         end
     end

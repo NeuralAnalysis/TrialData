@@ -54,8 +54,8 @@ function [trial_data,model_info] = getModel(trial_data,params)
 % DEFAULT PARAMETERS
 model_type    =  '';
 model_name    =  'default';
-in_signals    =  {};%{'name',idx; 'name',idx};
-out_signals   =  {};%{'name',idx};
+in_signals    =  {};% {'name',idx; 'name',idx};
+out_signals   =  {};% {'name',idx};
 train_idx     =  1:length(trial_data);
 % GLM-specific parameters
 do_lasso      =  false;
@@ -69,6 +69,9 @@ glm_distribution     =  'poisson';   % which distribution to assume for GLM
 td_fn_prefix         =  '';  % name prefix for trial_data field
 b                    =  [];          % b and s identify if model_info was
 s                    =  [];          %    provided as a params input
+
+layer_sizes = [10,10];
+train_func = 'trainlm';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -93,9 +96,9 @@ if isempty(b)  % fit a new model
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Fit GLMs
     b = zeros(size(x,2)+1,size(y,2));
-    for iVar = 1:size(y,2) % loop along outputs to predict
-        switch lower(model_type)
-            case 'glm'
+    switch lower(model_type)
+        case 'glm'
+            for iVar = 1:size(y,2) % loop along outputs to predict
                 if do_lasso % not quite implemented yet
                     % NOTE: Z-scores here!
                     [b_temp,s_temp] = lassoglm(zscore(x),y(:,iVar),glm_distribution,'lambda',lasso_lambda,'alpha',lasso_alpha);
@@ -108,11 +111,16 @@ if isempty(b)  % fit a new model
                 else
                     s(iVar) = s_temp;
                 end
-            case 'linmodel'
-                b(:,iVar) = [ones(size(x,1),1), x]\y(:,iVar);
-            case 'neural_net'
-                trained_net = trainNetwork(x, y, nn_params,  
             end
+        case 'linmodel'
+            for iVar = 1:size(y,2) % loop along outputs to predict
+                b(:,iVar) = [ones(size(x,1),1), x]\y(:,iVar);
+            end
+        case 'nn'
+            net = feedforwardnet(layer_sizes, train_func);
+            net = train(net, x', y');
+            b = net;
+            yPred = net(x');
     end
 else % use an old GLM
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -130,18 +138,33 @@ if add_pred_to_td
         x  = get_vars(trial_data(trial),in_signals);
         
         yfit = zeros(size(x,1),size(b,2));
-        for iVar = 1:size(b,2)
-            switch lower(model_type)
-                case 'glm'
-                    if do_lasso
-                        yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
+
+        switch lower(model_type)
+            case 'glm'
+                for iVar = 1:size(b,2)
+                    if strcmpi(glm_distribution,'poisson')
+                        if do_lasso
+                            yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
+                        else
+                            yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
+                        end
+                    elseif strcmpi(glm_distribution,'normal')
+                        if do_lasso
+                            yfit(:,iVar) = [ones(size(x,1),1), zscore(x)]*b(:,iVar);
+                        else
+                            yfit(:,iVar) = [ones(size(x,1),1), x]*b(:,iVar);
+                        end
                     else
-                        yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
+                        error('prediction link for given glm distribution not implemented')
                     end
-                case 'linmodel'
+                end
+            case 'linmodel'
+                for iVar = 1:size(b,2)
                     yfit(:,iVar) = [ones(size(x,1),1), x]*b(:,iVar);
-            end
-        end
+                end
+            case 'nn'
+                yfit = b(x')';
+        end       
         trial_data(trial).([td_fn_prefix '_' model_name]) = yfit;
     end
 end
@@ -175,4 +198,13 @@ switch lower(model_type)
             'out_signals',  {out_signals}, ...
             'train_idx',    train_idx, ...
             'b',            b);
+    case 'nn'
+        model_info = struct(...
+            'model_type',   model_type, ...
+            'model_name',   model_name, ...
+            'in_signals',   {in_signals}, ...
+            'out_signals',  {out_signals}, ...
+            'train_idx',    train_idx, ...
+            'b',            b);
 end
+
