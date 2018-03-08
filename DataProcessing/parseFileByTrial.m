@@ -225,8 +225,8 @@ if ~isempty(cds.emg)
     [bhigh,ahigh] = butter(n_poles,HPF_cutoff/samprate,'high');
     idx_emg = contains(emg.Properties.VariableNames,'EMG');
     emg{:,idx_emg} = filtfilt(blow,alow,abs(filtfilt(bhigh,ahigh,emg{:,idx_emg})));
-    
     cds_bin.emg = decimate_signals(emg,emg_list,bin_size);
+    
     clear emg;
 end
 
@@ -446,7 +446,7 @@ function out = decimate_signals(data,var_list,bin_size)
 if ~isempty(data)
     out = struct();
     
-    dt = mode(diff(data.t));
+    dt = round(mode(diff(data.t)),7);
     for var = 1:length(var_list)
         out.(var_list{var}) = decimate(data.(var_list{var}),round(bin_size/dt));
     end

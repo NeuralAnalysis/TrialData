@@ -61,6 +61,7 @@ train_idx     =  1:length(trial_data);
 do_lasso      =  false;
 lasso_lambda  =  0;
 lasso_alpha   =  0;
+nn_params = [];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Here are some parameters that you can overwrite that aren't documented
 add_pred_to_td       =  true;        % whether to add predictions to trial_data
@@ -109,7 +110,9 @@ if isempty(b)  % fit a new model
                 end
             case 'linmodel'
                 b(:,iVar) = [ones(size(x,1),1), x]\y(:,iVar);
-        end
+            case 'neural_net'
+                trained_net = trainNetwork(x, y, nn_params,  
+            end
     end
 else % use an old GLM
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
