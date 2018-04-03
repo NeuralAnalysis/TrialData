@@ -124,7 +124,7 @@ switch lower(which_type)
                 (cellfun(@(x) ~isempty(regexp(x,[arrays{array} '_'],'ONCE')),fn) & ...
                 ~cellfun(@(x) ~isempty(regexp(x,[arrays{array} '_unit_guide'],'ONCE')),fn));
         end
-        fn = fn(neural_idx);
+        fn = fn(~~neural_idx); % quick hack converts to bool
     case 'idx' % any idx_ field
         fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'idx_')));
     otherwise
