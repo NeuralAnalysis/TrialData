@@ -16,8 +16,13 @@
 %       There is the extra option to pass a cell like {'last',N} to get the
 %       last N trials.
 %
-%   2) Use ...'rand',N... to get N random trials that meet all other criteria
+%   2) Use ...'rand',N,... to get N random trials that meet all other criteria
 %       (including the range specified above)
+%
+%   3) Use ...'boot',true,... to take random samples with replacement. Will
+%       always use the number of total trials. Note that this basically
+%       overrides 'rand' so you don't need both, and it will ignore the 'N'
+%       input to rand if you provide both.
 %
 % OUTPUTS:
 %   return_idx : list of indices that meet the desired criteria
@@ -54,7 +59,7 @@ idx = ones(size(trial_data));
 
 % Check for the trials that match each criterion
 for i = 1:length(fn)
-    if ~strcmpi(fn{i},'rand') && ~strcmpi(fn{i},'range')
+    if ~strcmpi(fn{i},'rand') && ~strcmpi(fn{i},'range') && ~strcmpi(fn{i},'boot')
         if ischar(fv{i})
             idx = idx & strcmpi({trial_data.(fn{i})},fv{i});
         elseif iscell(fv{i})
@@ -72,26 +77,26 @@ idx = strcmpi(fn,'range');
 if any(idx)
     bounds = fv{idx};
     if ~iscell(bounds)
-    if bounds(1) >= bounds(2)
-        warning('Make range monotonic increasing. Flipping order.');
-        bounds = fliplr(bounds);
-    end
-    if bounds(2) <= 1 % it's a percent
-        if bounds(1) < 0
-            warning('No negative percent. Set to 0.');
-            bounds(1) = 0;
+        if bounds(1) >= bounds(2)
+            warning('Make range monotonic increasing. Flipping order.');
+            bounds = fliplr(bounds);
         end
-        return_idx = return_idx( 1+floor(bounds(1)*length(return_idx)) : floor(bounds(2)*length(return_idx)) );
-    else
-        if bounds(1) > length(return_idx)
-            warning('Requested lower bound too large. No trials will match');
+        if bounds(2) <= 1 % it's a percent
+            if bounds(1) < 0
+                warning('No negative percent. Set to 0.');
+                bounds(1) = 0;
+            end
+            return_idx = return_idx( 1+floor(bounds(1)*length(return_idx)) : floor(bounds(2)*length(return_idx)) );
+        else
+            if bounds(1) > length(return_idx)
+                warning('Requested lower bound too large. No trials will match');
+            end
+            if bounds(2) > length(return_idx)
+                warning('Requested upper bound too large. Returning max instead.');
+                bounds(2) = length(return_idx);
+            end
+            return_idx = return_idx(bounds(1):bounds(2));
         end
-        if bounds(2) > length(return_idx)
-            warning('Requested upper bound too large. Returning max instead.');
-            bounds(2) = length(return_idx);
-        end
-        return_idx = return_idx(bounds(1):bounds(2));
-    end
     else % if cell, can have {'last',N} or {'first',N} functionality
         switch lower(bounds{1})
             case 'last'
@@ -102,10 +107,26 @@ if any(idx)
     end
 end
 
+n = NaN; % use this as a flag
+
+% see if a bootstrap is requested
+do_boot = false;
+idx = strcmpi(fn,'boot');
+if any(idx)
+    if fv{idx}
+        do_boot = true;
+        n = length(return_idx);
+    end
+end
+
 % see if a random return is requested
 idx = strcmpi(fn,'rand');
-if any(idx)
+if any(idx) && ~do_boot
     n = fv{idx};
+end
+
+
+if ~isnan(n) %this means we either bootstrap or take rand trials
     if n > length(return_idx)
         warning('Requested too many random trials. Receiving all');
         n = length(return_idx);
@@ -115,7 +136,11 @@ if any(idx)
         n = 1;
     end
     % get random trials
-    temp = randperm(length(return_idx));
+    if do_boot % sample with replacement
+        temp = randi(n,[1,n]);
+    else % return unique trials
+        temp = randperm(length(return_idx));
+    end
     return_idx = return_idx(temp(1:n));
 end
 

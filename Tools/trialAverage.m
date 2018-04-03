@@ -16,6 +16,7 @@
 %   params     : struct with parameters
 %     .conditions : (string or cell array) the field name(s) in trial_data
 %                       avg_data will have an entry for each unique combo
+%                       Hint: use 'all' to just do all of trial_data
 %     .do_stretch : (bool) whether to stretch/shrink trials to uniform length
 %                       if false, all trials must have same number of points
 %     .num_samp   : (int) how many time points to use for interpolation
@@ -46,6 +47,7 @@ if ~iscell(conditions), conditions = {conditions}; end
 % get list of time-varying signals that we will average over
 time_vars = getTDfields(trial_data,'time');
 
+if strcmpi(conditions,'all'), error('all not implemented yet...'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Time warp each trial to the same number of points, if desired
 if do_stretch
@@ -57,7 +59,8 @@ if do_stretch
     end
 end
 
-if length(unique(cellfun(@(x) size(x,1),{trial_data.pos}))) ~= 1
+fn_time = getTDfields(trial_data,'time');
+if length(unique(cellfun(@(x) size(x,1),{trial_data.(fn_time{1})}))) ~= 1
     error('Trials are not uniform length. Do this with time stretching option or trimTD.');
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

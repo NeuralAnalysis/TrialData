@@ -31,22 +31,43 @@ for trial = 1:length(trial_data)
     
     % parse the input to get the start idx
     if length(idx_start) == 2
-        t_start = floor(trial_data(trial).(idx_start{1}) + idx_start{2});
+        if strcmpi(idx_start{1},'start')
+            t_start = 1+idx_start{2};
+        elseif strcmpi(idx_start{1},'end')
+            t_start = size(trial_data(trial).(fn_time{1}),1) + idx_start{2};
+        else
+            t_start = floor(trial_data(trial).(idx_start{1}) + idx_start{2});
+        end
     elseif length(idx_start) == 1 && strcmpi(idx_start,'start')
         t_start = 1;
     elseif length(idx_start) == 1
-        t_start = floor(trial_data(trial).(idx_start{1}));
+        if ischar(idx_start{1}) % if it's a idx field name
+            t_start = floor(trial_data(trial).(idx_start{1}));
+        else % it's a numerical index
+            t_start = int32(idx_start{1});
+        end
+        
     else
         error('End input not formatted properly.');
     end
     
     % parse the input to get the end idx
     if length(idx_end) == 2
-        t_end = ceil(trial_data(trial).(idx_end{1}) + idx_end{2});
+        if strcmpi(idx_end{1},'start')
+            t_end = 1+idx_end{2};
+        elseif strcmpi(idx_end{1},'end')
+            t_end = size(trial_data(trial).(fn_time{1}),1) + idx_end{2};
+        else
+            t_end = ceil(trial_data(trial).(idx_end{1}) + idx_end{2});
+        end
     elseif length(idx_end) == 1 && strcmpi(idx_end,'end')
         t_end = size(trial_data(trial).(fn_time{1}),1);
     elseif length(idx_end) == 1
-        t_end = ceil(trial_data(trial).(idx_end{1}));
+        if ischar(idx_end{1}) % if it's a idx field name
+            t_end = ceil(trial_data(trial).(idx_end{1}));
+        else % it's a numerical index
+            t_end = int32(idx_end{1});
+        end
     else
         error('End input not formatted properly.');
     end

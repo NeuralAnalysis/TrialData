@@ -14,7 +14,8 @@
 %                   5) 'idx'         : name of all time index fields
 %                   6) 'neural'      : any neural signals (e.g. M1_WHATEVER)
 %                   7) 'unit_guides' : all unit_guides
-%                   8) 'meta'        : all fields that are not time-varying or idx_
+%                   8) 'labels'      : for naming signals (unit_guides or _names)
+%                   9) 'meta'        : all fields that are not time-varying or idx_
 %
 % OUTPUTS:
 %   fn : the fieldnames of which_type
@@ -22,12 +23,20 @@
 % Written by Matt Perich. Updated Feb 2017.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function fn = getTDfields(trial_data,which_type)
+function fn = getTDfields(trial_data,which_type,cont_var_ref)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-cont_vars = {'pos','vel','speed','acc','force','emg'}; % hard coded list of options
+cont_vars = {'pos','vel','speed','acc','force','emg','t','x','y','z','M1_spikes'}; % hard coded list of options
 % these vars are common and known to be meta. Useful for edge case outlined below in time
 meta_vars = {'trial_id','target_direction','target_center','bin_size','perturbation_info'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if nargin < 3
+    cont_var_ref = cont_vars;
+elseif nargin == 3
+    if ~iscell(cont_var_ref)
+        cont_var_ref = {cont_var_ref};
+    end
+end
 
 fn = fieldnames(trial_data);
 switch lower(which_type)
@@ -36,7 +45,7 @@ switch lower(which_type)
         % then find all signals that have the same number of rows
         % kinda hack-y but it works
         %   note: assumes rows are time and columns are variables
-        cont_vars_here = fn(ismember(fn,cont_vars));
+        cont_vars_here = fn(ismember(fn,cont_var_ref));
         % use the max over all trials so we have the lowest chance of
         % getting zero or one
         [t,trial_idx] = max(cellfun(@(x) size(x,1),{trial_data.(cont_vars_here{1})}));
@@ -73,8 +82,8 @@ switch lower(which_type)
             end
             bad_idx = bad_idx | ismember(fn,fn_idx) | ismember(fn,fn_ug) | ismember(fn,meta_vars);
             good_idx = zeros(length(fn),1);
-            for i = 1:length(cont_vars)
-                good_idx = good_idx | cellfun(@(x) ~isempty(x),strfind(fn,cont_vars{i}));
+            for i = 1:length(cont_var_ref)
+                good_idx = good_idx | cellfun(@(x) ~isempty(x),strfind(fn,cont_var_ref{i}));
             end
             good_idx = good_idx | ismember(fn,fn_spikes);
             fn = fn(good_idx | ~bad_idx);
@@ -99,8 +108,12 @@ switch lower(which_type)
         fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_spikes')));
     case 'unit_guides'
         fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_unit_guide')));
-    case 'arrays' % same as spikes but I only return the array name
-        fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_spikes')));
+    case 'labels'
+        fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_unit_guide')) | ...
+            cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_names')));
+    case 'arrays' % same as spikes but I only return the array name, and I exclude "shift"
+        fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_spikes')) & ...
+            ~cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_shift')));
         fn = strrep(fn,'_spikes','')';
     case 'neural' % anything that is neural derived (e.g. M1_spikes and M1_pca)
         arrays = getTDfields(trial_data,'arrays');
