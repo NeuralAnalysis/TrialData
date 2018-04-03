@@ -4,7 +4,7 @@
 % INPUTS:
 %   trial_data : the struct
 %   params     : parameter struct
-%       .signal       : which signal to work on
+%       .signals      : which signal(s) to work on
 %       .condition    : (string) which condition to average over
 %                           Default is 'target_direction'
 %       .use_trials   : which trials to use (default is all)
@@ -48,7 +48,7 @@ if size(signals,1) > 1
         trial_data(trial).(signal) = [];
         for i = 1:size(signals,1)
             temp = trial_data(trial).(signals{i,1});
-            trial_data(trial).(signal) = [trial_data(trial).(signal), temp(signals{i,2})];
+            trial_data(trial).(signal) = [trial_data(trial).(signal), temp(:,signals{i,2})];
         end
     end
 else
@@ -90,6 +90,33 @@ for j = 1:num_iter
         % calculate difference in firing rate between trials
     sfr_noise_diff  = (sfr_noise1 - sfr_noise2)/sqrt(2*min(nbr_trials));
     
+    
+    % This will makea  plot of a single neuron and the noise etc
+% % %     [sfr_noise1,sfr_noise2] = deal(zeros(n1,n2));
+% % %     for i = 1%:length(tgt_idx)
+% % %         sfr_noise1((i-1)*n1+1:(i-1)*n1+n1,:) = trial_data(tgt_idx{i}(trial_nbrs(1))).(signal);
+% % %         sfr_noise2((i-1)*n1+1:(i-1)*n1+n1,:)   = trial_data(tgt_idx{i}(trial_nbrs(2))).(signal);
+% % %     end
+% % %         % calculate difference in firing rate between trials
+% % %     sfr_noise_diff  = (sfr_noise1 - sfr_noise2)/sqrt(2*min(nbr_trials));
+% % %     figure;
+% % %     subplot(121); hold all;
+% % %     for i = 1:nbr_trials, temp = trial_data(tgt_idx{1}(i)).(signal); plot(temp(:,28),'k'); end;
+% % %     temp = td(1).(signal);
+% % %     plot(temp(:,28),'r-','LineWidth',2);
+% % %     set(gca,'Box','off','TickDir','out','FontSize',14);
+% % %     subplot(122); hold all;
+% % %     for i = 1:size(sfr_noise_diff,2)
+% % %         if i == 28
+% % %             plot(sfr_noise_diff(:,i),'r','LineWidth',2);
+% % %         else
+% % %             plot(sfr_noise_diff(:,i),'k');
+% % %         end
+% % %     end
+% % %     set(gca,'Box','off','TickDir','out','FontSize',14);
+    
+    
+    
     % Do PCA of the noise
     [~,~,noise_eigen{j}] = pca(sfr_noise_diff);
 end
@@ -109,6 +136,13 @@ for j = 1:size(eigenv_noise,1)
     hist_scree_noise(:,j) = histcounts(scree_noise(j,:),hist_x)/num_iter;
 end
 
+% % % ANOTHER PLOT FOR ILLUSTRATING THE PROCESS
+% % figure; hold all;
+% % plot(hist_scree_noise);
+% % set(gca,'Box','off','TickDir','out','FontSize',14,'XLim',[0 100],'YLim',[0 1]);
+% % xlabel('% Variance Explained');
+% % ylabel('Density');
+
 % find 99 % limit (as in Lalazar et al., PLoC Comp Biol, 2016)
 noise_var_99        = zeros(1,nbr_chs);
 for i = 1:nbr_chs
@@ -120,4 +154,28 @@ noise_eigen_prctile      = prctile(eigenv_noise,99,2);
 % eigenvalues is greater than what can be proven to be not noise
 e = pca_info.eigen/sum(pca_info.eigen);
 dims = find(cumsum(e)./(alpha*(1-cumsum(noise_eigen_prctile))) > 1,1,'first');
+
+
+% %% Make some more fun plots to show the method
+% % % plot noise cumsum and threshold
+% % figure;
+% % subplot(211); hold all;
+% % plot(cumsum(noise_eigen_prctile),'LineWidth',2);
+% % % plot([1,length(noise_eigen_prctile)],[alpha,alpha],'k--','LineWidth',1);
+% % plot([1,length(noise_eigen_prctile)],[(alpha*(sum(noise_eigen_prctile))),(alpha*(sum(noise_eigen_prctile)))],'k--','LineWidth',1);
+% % axis('tight');
+% % set(gca,'Box','off','TickDir','out','FontSize',14);
+% % xlabel('Nbr Noise Dims');
+% % ylabel('Cum Var Explained');
+% % 
+% % subplot(212); hold all;
+% % bar(e);
+% % plot([1,length(noise_eigen_prctile)],[(alpha*(sum(noise_eigen_prctile))),(alpha*(sum(noise_eigen_prctile)))],'k--','LineWidth',1);
+% % set(gca,'Box','off','TickDir','out','FontSize',14);
+% % axis('tight');
+% % 
+% % xlabel('Nbr Neural Dims');
+% % ylabel('Var Explained');
+% % V = axis;
+% % plot([dims,dims],V(3:4),'r-','LineWidth',2);
 

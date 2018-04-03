@@ -66,6 +66,7 @@ if ~isfield(trial_data,'is_continuous') || ~any([trial_data.is_continuous])
             if temp > length(t), temp = length(t); end
             if temp < 0, temp = NaN; end
             if ~isnan(temp)
+                temp(temp > max(t)) = [];
                 temp = t(temp);
                 % in cases like the RW go cues, there can be multiple idx_, so
                 % loop along them

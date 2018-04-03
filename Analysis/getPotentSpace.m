@@ -23,7 +23,7 @@
 % OUTPUTS:
 %   trial_data : the struct with potent/null fields added
 %                NOTE: processed by getPCA too (e.g. trial averaging, etc)
-%   pca_results : struct with PCA output
+%   pca_info   : struct with PCA output
 %       .V_potent : potent space basis vectors
 %       .V_null   : null space basis vectors
 %       .w_in     : weights for PC space of input signals
@@ -43,8 +43,7 @@ out_dims     =  [];
 use_trials   =  1:length(trial_data);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % other undocumented PCA parameters
-do_machens         =  false;   % whether to attempt Machens method to estimate dimensionality
-do_smoothing       =  false;  % whether to smooth for PCA
+do_dim_estimate    =  false;   % whether to attempt Machens method to estimate dimensionality
 trim_idx           =  {};     % can trim in Machens method ONLY
 pca_centered       =  true;   % whether to center data
 pca_algorithm      =  'svd';  % which PCA algorithm
@@ -64,7 +63,7 @@ pca_params = params;
 pca_params.pca_centered = pca_centered;
 pca_params.pca_algorithm = pca_algorithm;
 
-if isempty(in_dims) && do_machens
+if isempty(in_dims) && do_dim_estimate
     disp('Input dimensionality not specified. Attempting Machens method.');
     in_dims = estimateDimensionality(trial_data,struct( ...
         'signals',{in_signals}, ...
@@ -72,7 +71,7 @@ if isempty(in_dims) && do_machens
 elseif isempty(in_dims)
     error('Must specify input dimensionality.');
 end
-if isempty(out_dims) && do_machens
+if isempty(out_dims) && do_dim_estimate
     disp('Output dimensionality not specified. Attempting Machens method.');
     out_dims = estimateDimensionality(trial_data,struct( ...
         'signals',{out_signals}, ...
@@ -88,7 +87,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get input PC space
 pca_params.signals = in_signals;
-[~,pca_info_in] = getPCA(trial_data(use_trials),pca_params);
+[~,pca_info_in] = getPCA(trial_data,pca_params);
 w_in = pca_info_in.w;
 score_in = pca_info_in.scores;
 eigen_in = pca_info_in.eigen;
@@ -97,7 +96,7 @@ mu_in = pca_info_in.mu;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get output PC space
 pca_params.signals = out_signals;
-[~,pca_info_out] = getPCA(trial_data(use_trials),pca_params);
+[~,pca_info_out] = getPCA(trial_data,pca_params);
 w_out = pca_info_out.w;
 score_out = pca_info_out.scores;
 eigen_out = pca_info_out.eigen;
@@ -120,8 +119,21 @@ if ~strcmpi([sig_name_in{:}],[sig_name_out{:}])
         W(i,:) = b_pc';
         
         % check the quality of the fit
-        fit_r2(i) = compute_r2(y(:,i),x*b_pc);
+        fit_r2(i) = compute_vaf(y(:,i),x*b_pc);
     end
+    
+% % %     %%% A little plotting thing
+% % %     figure;
+% % %     subplot1(size(y,2),1)
+% % %     n = 1000;
+% % %     for i = 1:size(y,2)
+% % %         subplot1(i); hold all;
+% % %         plot(y(1:n,i),'k');
+% % %         plot(x(1:n,:)*W(i,:)','r');
+% % %         axis('tight');
+% % %         set(gca,'Box','off','TickDir','out','FontSize',14,'YLim',[-1 1]);
+% % %         title(fit_r2(i));
+% % %     end
     
     % do SVD of weights to get potent/null spaces
     [U, S, V]                   = svd( W );

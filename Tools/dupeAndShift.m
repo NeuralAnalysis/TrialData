@@ -39,7 +39,7 @@ fn = fieldnames(trial_data);
 the_shifts = [varargin{2:2:end}];
 which_fields = {varargin{1:2:end}};
 
-if any(~ismember(which_fields,fn)), error('Field not recognized'); end
+if all(~ismember(which_fields,fn)), error('Field not recognized'); end
 
 [the_shifts,sort_idx] = sort(the_shifts,2,'Ascend');
 which_fields = which_fields(sort_idx);
