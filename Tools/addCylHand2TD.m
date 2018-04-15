@@ -35,8 +35,8 @@ for trial = 1:length(trial_data)
                     coords = [coords trial_data(trial).opensim(:,contains(trial_data(trial).opensim_names,...
                                                                         [cart_prefix{prefix_ctr} cart_postfix{postfix_ctr}]))];
                 end
-                [az,el,r] = cart2pol(coords(:,1),coords(:,2),coords(:,3));
-                trial_data(trial).(['cyl_hand_' cyl_postfix{postfix_ctr}]) = [az el r];
+                [th,r,z] = cart2pol(coords(:,1),coords(:,2),coords(:,3));
+                trial_data(trial).(['cyl_hand_' cyl_postfix{postfix_ctr}]) = [th r z];
             else
                 warning(['no hand marker ' cyl_postfix{postfix_ctr} ' found for one or more trials'])
             end
