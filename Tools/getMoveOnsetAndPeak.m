@@ -14,7 +14,8 @@
 %                       a peak speed as a field.
 %     .min_ds       : minimum diff(speed) to find movement onset
 %     .s_thresh     : % speed threshold in cm/s (secondary method if first fails)
-%
+%     .peak_idx_offset  :  indices after start_idx to find max speed. 
+%     .start_idx_offset :  indices after start_idx to find movement onset
 % OUTPUTS:
 %   trial_data : same struct, with fields for:
 %       idx_peak_speed
@@ -29,6 +30,8 @@ function trial_data = getMoveOnsetAndPeak(trial_data,params)
 which_method  =  'peak';
 min_ds        =  0.3;
 s_thresh      =  7;
+peak_idx_offset = 0;
+start_idx_offset = 0;
 % these parameters aren't documented because I expect them to not need to
 % change but you can overwrite them if you need to.
 start_idx     =  'idx_goCueTime';
@@ -47,14 +50,14 @@ for trial = 1:length(trial_data)
     
     % find the time bins where the monkey may be moving
     move_inds = false(size(s));
-    move_inds(td(trial).(start_idx):td(trial).(end_idx)) = true;
+    move_inds(td(trial).(start_idx)+start_idx_offset:td(trial).(end_idx)) = true;
     
     [on_idx,peak_idx] = deal(NaN);
     if strcmpi(which_method,'peak')
         ds = [0; diff(s)];
         dds = [0; diff(ds)];
         peaks = [dds(1:end-1)>0 & dds(2:end)<0; 0];
-        mvt_peak = find(peaks & (1:length(peaks))' > td(trial).(start_idx) & ds > min_ds & move_inds, 1, 'first');
+        mvt_peak = find(peaks & (1:length(peaks))' > td(trial).(start_idx)+peak_idx_offset & ds > min_ds & move_inds, 1, 'first');
         if ~isempty(mvt_peak)
             thresh = ds(mvt_peak)/2; % Threshold is half max of acceleration peak
             on_idx = find(ds<thresh & (1:length(ds))'<mvt_peak & move_inds,1,'last');
