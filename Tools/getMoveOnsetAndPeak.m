@@ -16,6 +16,8 @@
 %     .s_thresh     : % speed threshold in cm/s (secondary method if first fails)
 %     .peak_idx_offset  :  indices after start_idx to find max speed. 
 %     .start_idx_offset :  indices after start_idx to find movement onset
+%     .which_field     : which field to find movement onset from 
+%     .field_idx       : idx of the above field to find movement onset from
 % OUTPUTS:
 %   trial_data : same struct, with fields for:
 %       idx_peak_speed
@@ -32,6 +34,8 @@ min_ds        =  0.3;
 s_thresh      =  7;
 peak_idx_offset = 0;
 start_idx_offset = 0;
+which_field = 'speed';
+field_idx = 1;
 % these parameters aren't documented because I expect them to not need to
 % change but you can overwrite them if you need to.
 start_idx     =  'idx_goCueTime';
@@ -46,7 +50,7 @@ td = getSpeed(trial_data);
 
 for trial = 1:length(trial_data)
     % use velocity to find bin corresponding to movement onset, movement offset, and peak speed
-    s = td(trial).speed;
+    s = td(trial).(which_field)(:,field_idx);
     
     % find the time bins where the monkey may be moving
     move_inds = false(size(s));
