@@ -3,7 +3,7 @@ function [trial_data,td_params] = convertDataToTD(varargin)
 %
 % This function provides a more flexible and experiment-agnostic framework
 % to bring data into the trial_data world. Basic functionality for
-% processing Cerebus data and common signals (spiking neurons, EMG) is
+% processing common signals (spiking neurons, EMG, soon LFP) is
 % built-in, but it can be expanded to any arbitrary data type, format, or
 % setup using the 'routine' and 'operation' inputs (see initSignalStruct
 % for some usage details).
@@ -12,13 +12,7 @@ function [trial_data,td_params] = convertDataToTD(varargin)
 %   1) signal_info : see initSignalStruct
 %   2) params      : (optional struct) allows you to overwrite defaults
 %       .bin_size        : (default: 0.01) the standard time vector
-%       .exclude_units   : (default: 255) exclude these neuron sort codes
-%       .strip_sort      : (default: false) remove any existing sort codes
-%       .add_waveforms   : (default: false) load spike waveforms from .nev
-%       .add_spike_times : (default: false) add spike times to struct
-%               NOTE: these add_ things aren't implemented yet. Note this
-%               also poses a problem for splitTD, and will require
-%               modification there
+%       .trigger_thresh  : (default: 1) threshold for trigger signals
 %
 % OUTPUTS:
 %   trial_data : the struct
@@ -26,7 +20,7 @@ function [trial_data,td_params] = convertDataToTD(varargin)
 %
 % Things to do:
 %   - implement LFP. It's important to ensure indices match up with spikes!
-%   - read comments/digital data from cerebus NEV files
+%   - read digital data from cerebus NEV files
 %   - deal with case where signals have lower sampling rate than bin_size.
 %       Do we upsample those signals or increase the bin_size?
 %   - Implement read_waveforms and include_spike_times
@@ -36,17 +30,11 @@ function [trial_data,td_params] = convertDataToTD(varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
 bin_size       =  0.01;    % start at 10ms bins by default
-add_waveforms =  false;   % (not implemented) whether to include waveforms for spikes. Big file size increase
-add_spike_times = false; % (not implemented) add unbinned spike times
-exclude_units  =  [255];   % sort id of units to exclude
-strip_sort     =  false;   % whether to ignore unit sort codes
+trigger_thresh  =  1;     % to identify time
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some parameters that CAN be overwritten, but are mostly intended to be
 % hard coded and thus aren't documented in the function header
-reload_NEV      =  false; % if NEV has been processed to .mat, will load it by default
-save_NEV_mat    =  false; % whether to save .mat file with NEV after processing
-spiking_chans   =  1:96;    % blackrock array channels to use for spikes
-trigger_thresh  =  1;     % to identify time
+add_spike_times = false; % (not implemented) add unbinned spike times
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin == 1
     signal_info = varargin{1};
@@ -80,42 +68,30 @@ count = 1;
 for iFile = 1:length(signal_info)
     which_file    = signal_info{iFile}.filename;
     which_routine = signal_info{iFile}.routine;
-    
-    [~,~,ext] = fileparts(which_file);
-    
+        
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % process based on file type or other instructions
+    % process using specified routine
     if ~isempty(which_routine)
         % Inputs to function must be 1) filename, 2) params struct
         % Output needs format of struct with fields:
-        %   duration
-        %   data (rows are time, cols are signals)
-        %   labels (cell array, one entry for each col of data)
-        %   samprate (sampling rate in Hz)
-        %   meta (optional field, a struct holding any info to add)
+        %   duration : in s, how long is the file
+        %   t_bin    : time vector
+        %   data     : (rows are time, cols are signals)
+        %   labels   : (cell array, one entry for each col of data)
+        %   samprate : (sampling rate in Hz)
+        %   meta     : (optional field, a struct holding any info to add)
+        %
+        % Note that data for spikes is different: it's a cell array of
+        %  spike times of the same length as labels, rather than a matrix.
+        % Also, events functions in this same way.
         %
         % Can be any time length, but first index for all signals (e.g. NEV,
         % NSx, and these, etc) has to all be aligned at the start so
         % this processing function has to handle syncing somehow
+        % !!!!!BUT I AM FIXING THIS!!!!!
         file_data = which_routine(which_file,signal_info{iFile}.routine_params);
     else
-        if regexp(ext,'ns\d') % check if it's an NSx
-            % here is where I can prepare the inputs if I want
-            %   but the openNEV has a super-shit design and you can't have variable
-            %   inputs without building a string eval command. Dumbasses.
-            file_data = process_nsx(which_file);
-            
-        elseif regexp(ext,'nev')
-            file_data = process_nev(which_file,struct( ...
-                'reload_NEV',reload_NEV, ...
-                'save_NEV_mat',save_NEV_mat, ...
-                'read_waveforms',add_waveforms, ...
-                'spiking_chans',spiking_chans, ...
-                'exclude_units',exclude_units, ...
-                'strip_sort',strip_sort));
-        else
-            error('file type not recognized.');
-        end
+        error('routine not specified!');
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -201,9 +177,11 @@ for iFile = 1:length(signal_info)
                 trig_ts = find([0; diff(data > trigger_thresh) > 0])/file_data_temp.samprate;
                 data_bin = histcounts(trig_ts,t_bin)'; % bin
                 
-            case 'event' % these are indices
-                t_bin = [];%(0:bin_size:file_data_temp.duration)';
-                data_bin = data;
+            case 'event' % these are timestamps (in seconds)
+                t_bin = (0:bin_size:file_data_temp.duration)';
+                % will be cell if it's multiple labels, but otherwise
+                if ~iscell(data), data = {data}; end
+                data_bin = bin_events(data,t_bin);
                 
             case 'meta' % it's a bit of a hack but meta goes in as if it's a signal
                 t_bin = [];
@@ -234,8 +212,12 @@ for iSig = 1:length(sig_data)
         sig_data(iSig).duration = max(cell2mat({sig_data.duration}));
     end
 end
-        
 
+% Also, check all of the names. Replace ' ' with '_' so that it doesn't
+% throw errors on the struct field naming
+for iSig = 1:length(sig_data)
+    sig_data(iSig).name = strrep(sig_data(iSig).name,' ','_');
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % we should now have a bunch of signals. Group appropriately and put in a
@@ -287,23 +269,12 @@ trial_data = trim_time(trial_data);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % find indices for trigger times to turn them into events
-if ismember('trigger',file_types) % triggers will need an extra "find"
-    idx = find(strcmpi({sig_data.type},'trigger'));
+if ismember('trigger',file_types) || ismember('event',file_types) % triggers will need an extra "find"
+    idx = find(strcmpi({sig_data.type},'trigger') | strcmpi({sig_data.type},'event'));
     for i = 1:length(idx)
         trial_data.(['idx_' sig_data(idx(i)).name]) = find(sig_data(idx(i)).data)';
     end
 end
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% put in the already-identified events
-if ismember('event',file_types) 
-    idx = find(strcmpi({sig_data.type},'event'));
-    for i = 1:length(idx)
-        trial_data.(['idx_' sig_data(idx(i)).name]) = sig_data(idx(i)).data';
-    end
-end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % now add in meta data from the sig_data entries
@@ -342,12 +313,7 @@ trial_data = reorderTDfields(trial_data);
 td_params = struct( ...
     'datetime', datetime, ...
     'bin_size', bin_size, ...
-    'exclude_units', exclude_units, ...
-    'signal_info', signal_info, ...
-    'bin_size', bin_size, ...
-    'add_waveforms',add_waveforms, ...
-    'add_spike_times', add_spike_times, ...
-    'strip_sort',strip_sort);
+    'signal_info', signal_info);
 end
 
 
@@ -359,98 +325,6 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SUB FUNCS
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function out = process_nsx(filename)
-
-NSx = openNSx_td(filename,'read');
-
-% strip whitespace from labels
-labels = {NSx.ElectrodesInfo.Label};
-for i = 1:length(labels)
-    temp = uint16(labels{i});
-    labels{i} = labels{i}(temp ~= 0);
-end
-
-out.duration = NSx.MetaTags.DataDurationSec;
-out.samprate = NSx.MetaTags.SamplingFreq;
-out.data = NSx.Data';
-out.labels = labels;
-
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function out = process_nev(filename,params)
-% process .nev files
-%
-% some parameters
-save_NEV_mat   = false;
-reload_NEV     = false;
-read_waveforms = false;
-spiking_chans  = 1:96;
-exclude_units  = 255;
-strip_sort     = false;
-assignParams(who,params); % overwrite parameters
-
-
-% here is where I can prepare the inputs if I want
-%   but the openNEV has a super-shit design and you can't have variable
-%   inputs without building a string eval command. Dumbasses.
-[~,f,~] = fileparts(filename);
-if exist([f,'.mat'],'file') && ~reload_NEV
-    load([f,'.mat'],'NEV');
-else
-    if save_NEV_mat
-        NEV = openNEV_td(filename);
-    else
-        NEV = openNEV_td(filename,'nosave');
-    end
-end
-%%%%%%%%%%%
-% TO DO
-%   Add support for captured digital events
-%%%%%%%%%%%
-
-
-%%%%%%
-% parse NEV format into something easier to use for me
-% get spiking data
-count = 0;
-out = struct( ...
-    'duration',NEV.MetaTags.DataDurationSec, ...
-    'samprate',NEV.MetaTags.SampleRes, ...
-    'labels',zeros(length(spiking_chans),2), ...
-    'data',{{}}, ...
-    'wf',{{}});
-for iElec = 1:length(spiking_chans)
-    chan_idx = NEV.Data.Spikes.Electrode == spiking_chans(iElec);
-    
-    found_units = unique(NEV.Data.Spikes.Unit(chan_idx));
-    % exclude based on unit id, if sorted
-    found_units = setdiff(found_units,exclude_units);
-    
-    if strip_sort
-        found_units = 0;
-    end
-    
-    for iUnit = 1:length(found_units)
-        count = count + 1;
-        if strip_sort
-            unit_idx = chan_idx;
-        else
-            unit_idx = chan_idx & NEV.Data.Spikes.Unit == found_units(iUnit);
-        end
-        
-        out.labels(count,:) = [spiking_chans(iElec), found_units(iUnit)];
-        out.data{count} = double(NEV.Data.Spikes.TimeStamp(unit_idx))/NEV.MetaTags.TimeRes;
-        if read_waveforms
-            out.wf{count} = NEV.Data.Spikes.Waveform(:,unit_idx);
-        end
-        
-    end
-end
-
-end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -483,6 +357,7 @@ if ~isempty(params), assignParams(who,params); end
 
 [blow,alow] = butter(emg_n_poles,emg_LPF_cutoff/samprate);
 [bhigh,ahigh] = butter(emg_n_poles,emg_HPF_cutoff/samprate,'high');
+% !!! note the rectification step in the following command:
 data = filtfilt(blow,alow,abs(filtfilt(bhigh,ahigh,double(data))));
 
 binned_emg = zeros(ceil(size(data,1)/round(bin_size*samprate)),size(data,2));
@@ -491,6 +366,29 @@ for i = 1:size(data,2)
 end
 clear temp_data;
 end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function binned_events = bin_events(data,t_bin)
+% here, the events start already as indices but we want to make sure they
+% align with the timeframe provided, so we put them in bins again. This
+% also helps streamline the processing code by reducing conditional
+% processing on the data types, without a great hit to processing speed
+% note that histcounts outputs rows
+binned_events = zeros(length(data),length(t_bin));
+
+% histcounts works weirdly and needs an extra bin
+t_bin = [t_bin; t_bin(end)+mode(diff(t_bin))];
+
+for e = 1:length(data)
+    % get the event times for that cell in the current time window
+    binned_events(e,:) = histcounts(data{e},t_bin);
+end
+% must transform to have same dimensions as kinematics etc
+binned_events = binned_events';
+
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
