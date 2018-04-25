@@ -166,8 +166,11 @@ end
 trial_data = repmat(struct(),1,length(idx_trials));
 
 % find the bin size of the CDS kinematics
-bin_size = round(1000*mode(diff(cds.kin.t)))/1000;
-
+if ~isempty(cds.kin)
+    bin_size = round(1000*mode(diff(cds.kin.t)))/1000;
+else
+    bin_size = .01;
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Add basic data and metadata
 for i = 1:length(idx_trials)
@@ -194,10 +197,12 @@ for i = 1:length(idx_trials)
         case 'trt' % TRT denotes targets in the same way as random walk
             trial_data(i).target_center = reshape(cds.trials.tgtCtr(iTrial,:),2,size(cds.trials.tgtCtr(iTrial,:),2)/2)';
         otherwise
-            if any(abs(cds.trials.tgtDir) > 2*pi) % good assumption that it's deg
-                trial_data(i).target_direction = pi/180*cds.trials.tgtDir(iTrial);
-            else % should be rad
-                trial_data(i).target_direction = minusPi2Pi(cds.trials.tgtDir(iTrial));
+            if isfield(cds.trials, 'tgtDir') 
+                if any(abs(cds.trials.tgtDir) > 2*pi) % good assumption that it's deg
+                    trial_data(i).target_direction = pi/180*cds.trials.tgtDir(iTrial);
+                else % should be rad
+                    trial_data(i).target_direction = minusPi2Pi(cds.trials.tgtDir(iTrial));
+                end
             end
     end
     
@@ -231,9 +236,12 @@ kin_list = {'t','x','y','vx','vy','ax','ay'};
 % force_list = {'t','fx','fy'};
 force_list = cds.force.Properties.VariableNames;
 cds_bin = struct();
-cds_bin.kin = decimate_signals(cds.kin,kin_list,bin_size);
-cds_bin.force = decimate_signals(cds.force,force_list,bin_size);
-
+if ~isempty(cds.kin)
+    cds_bin.kin = decimate_signals(cds.kin,kin_list,bin_size);
+end
+if ~isempty(cds.force)
+    cds_bin.force = decimate_signals(cds.force,force_list,bin_size);
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Process EMG (high pass, rectify, low pass)
 %   default: high pass at 10 Hz, rectify, low pass at 20 Hz
@@ -315,15 +323,19 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Check the time vectors for these signals to make a master one
-fn = fieldnames(cds_bin);
-cds_bin.t = roundTime(cds_bin.(fn{1}).t);
-% check the time vector lengths just to be sure
-for i = 2:length(fn)
-    if ~isempty(cds_bin.(fn{i})) && (size(cds_bin.(fn{i}).t,1) ~= size(cds_bin.t,1))
-        error('Time is different!');
-    end
-end
+if numel(fieldnames(cds_bin)) ~=0
+    fn = fieldnames(cds_bin);
 
+    cds_bin.t = roundTime(cds_bin.(fn{1}).t);
+    % check the time vector lengths just to be sure
+    for i = 2:length(fn)
+        if ~isempty(cds_bin.(fn{i})) && (size(cds_bin.(fn{i}).t,1) ~= size(cds_bin.t,1))
+            error('Time is different!');
+        end
+    end
+else
+    cds_bin.t = linspace(0, cds.meta.duration, cds.meta.duration*100)';
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Neural data now
 for array = 1:length(arrays)
@@ -382,7 +394,7 @@ for i = 1:length(idx_trials)
     idx = t_start:t_end-1;
     % check if any trials have idx<0, i.e. first trial starts within
     % extra_time samples of beginning of file
-    if any(idx<0) || any(idx>length(cds_bin.kin.t))
+    if any(idx<0) || any(idx>length(cds_bin.t))
         % skip trial
         warning(['Trial ' num2str(iTrial) ' extends outside of file, skipping'])
         continue
