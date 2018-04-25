@@ -197,7 +197,7 @@ for i = 1:length(idx_trials)
         case 'trt' % TRT denotes targets in the same way as random walk
             trial_data(i).target_center = reshape(cds.trials.tgtCtr(iTrial,:),2,size(cds.trials.tgtCtr(iTrial,:),2)/2)';
         otherwise
-            if isfield(cds.trials, 'tgtDir') 
+            if any(strcmp('tgtDir', cds.trials.Properties.VariableNames))
                 if any(abs(cds.trials.tgtDir) > 2*pi) % good assumption that it's deg
                     trial_data(i).target_direction = pi/180*cds.trials.tgtDir(iTrial);
                 else % should be rad
