@@ -8,6 +8,7 @@
 %   trial_data : the struct
 %   params     : parameter struct
 %     .signals        : which signals (format as in getPCA or getModel)
+%     .method         : which method (default @corr, could do @cov for ex)
 %     .trial_idx      : which trials to use (default: all)
 %     .cluster_order  : flag to reorder cells to show structure (default: false)
 %     .cluster_arrays : flag treat arrays differently when clustering
@@ -24,6 +25,7 @@ function [rho,sort_idx] = pairwiseCorr(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PARAMETER DEFAULTS
 signals          =  [];
+method           =  @corr;
 trial_idx        =  1:length(trial_data);
 cluster_order    =  false;
 cluster_signals  =  false;
@@ -42,8 +44,8 @@ for i = 1:size(signals,1)
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% get pairwise correlations, and replace diagonal with zeros
-rho = corr(data).*(-1*eye(size(data,2))+ones(size(data,2)));
+% get pairwise correlations (or other method), and replace diagonal with zeros
+rho = method(data).*(-1*eye(size(data,2))+ones(size(data,2)));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % reorder to highlight structure
@@ -88,7 +90,7 @@ end
 function sort_idx = cluster_rho(rho)
 
 d = squareform(pdist(rho));
-c = cluster(linkage(pdist(rho)),'cutoff',1);
+c = cluster(linkage(pdist(rho),'average'),'cutoff',1);
 u = unique(c);
 
 sort_idx = [];

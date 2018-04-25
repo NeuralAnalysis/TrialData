@@ -12,7 +12,7 @@
 %   params   : a struct containing parameters
 %     .meta          : a struct with a field for each meta parameter you want attached
 %                       to this file. This can handle any arbitrary information!
-%     .event_names   : Which cds.trials events to add to struct
+%     .event_list   : Which cds.trials events to add to struct
 %                       Format: {'CDS_TRIAL_TABLE_NAME','ALIAS'; ... etc ...}
 %                       Can ignore ALIAS and give Nx1 cell vector if you want
 %                       By default, assumes startTime and endTime exist,
