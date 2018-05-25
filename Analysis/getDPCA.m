@@ -60,6 +60,9 @@ do_plot        =  true;
 combined_params = { {1}, {2,[1 2]}, {3,[1,3]}, {[2 3],[1 2 3]} };
 marg_names      = {'time','target','learning','target/learning interaction'};
 marg_colors     = [150 150 150; 23 100 171; 187 20 25; 114 97 171]/256; % blue, red, grey, purple
+W = [];
+V = [];
+which_marg = [];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra functions
 dpca_plot_fcn  =  @dpca_plot_td;
@@ -109,7 +112,9 @@ firing_rates = permute(firing_rates,[1:2,2+fliplr(1:length(conditions))]);
 % ------------------------------------------------------------------------
 % 2. Do dPCA without regularization
 
-[W, V, which_marg]  = dpca( firing_rates, num_dims, 'combinedParams', combined_params );
+if isempty(W)
+    [W, V, which_marg]  = dpca( firing_rates, num_dims, 'combinedParams', combined_params );
+end
 
 expl_var            = dpca_explainedVariance(firing_rates, W, V, ...
     'combinedParams', combined_params);
