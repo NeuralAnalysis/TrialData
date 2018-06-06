@@ -11,7 +11,7 @@
 %     .method         : which method (default @corr, could do @cov for ex)
 %     .trial_idx      : which trials to use (default: all)
 %     .cluster_order  : flag to reorder cells to show structure (default: false)
-%     .cluster_arrays : flag treat arrays differently when clustering
+%     .cluster_signals : flag treat arrays differently when clustering
 %     .do_norm        : normalize each row/col to go from -1 to 1
 %
 % OUTPUTS:
