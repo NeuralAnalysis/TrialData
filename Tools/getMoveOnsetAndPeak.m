@@ -30,8 +30,8 @@ function trial_data = getMoveOnsetAndPeak(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
 which_method  =  'peak';
-min_ds        =  0.3;
-s_thresh      =  7;
+min_ds        =  1.9;
+s_thresh      =  10;
 peak_idx_offset = 0;
 start_idx_offset = 0;
 which_field = 'speed';

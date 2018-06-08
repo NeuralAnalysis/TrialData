@@ -131,7 +131,7 @@ if ~isempty(cds.units)
             for i= 1:length(sortedUnits)
                labelNames(i) = str2num(screenNames{i}(5:end)); 
             end
-            labels = unique(labelNames);
+            labels = unique(labelNames, 'stable');
             conversion{array} = [elecNames', labels];
         end
     end
