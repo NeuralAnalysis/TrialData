@@ -15,8 +15,10 @@ for iArray = 1:length(fn_array)
     for e = 1:length(elecs)
         idx = sg(:,1) == elecs(e);
         
-        temp = trial_data(trial).([fn_array{iArray} '_spikes']);
-        trial_data(trial).temp_spikes(:,e) = sum(temp(:,idx),2);
+        for trial = 1:length(trial_data)
+            temp = trial_data(trial).([fn_array{iArray} '_spikes']);
+            trial_data(trial).temp_spikes(:,e) = sum(temp(:,idx),2);
+        end
     end
     
     
