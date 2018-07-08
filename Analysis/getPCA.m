@@ -54,6 +54,7 @@ signals         =  getTDfields(trial_data,'spikes');
 do_plot         =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some extra parameters you can change that aren't described in header
+sig_name        = '';    % output will be in field "SIG_NAMES_pca". Defaults to concatenated names of signals
 sqrt_transform  = false; % square root transform before PCA (projections don't have it) 
 do_smoothing    = false; % will smooth before PCA  (trial_data projections are unsmoothed)
 kernel_SD       = 0.05;  %   gaussian kernel s.d. for smoothing
@@ -114,7 +115,7 @@ if isempty(w)
     pca_params = struct( ...
         'signals',{signals}, ...
         'trial_idx',use_trials);
-    pca_info = struct('w',w,'scores',scores,'eigen',eigen,'mu',mu,'signals',{signals},'params',pca_params);
+    pca_info = struct('w',w,'scores',scores,'eigen',eigen,'mu',mu,'signals',{signals},'params',pca_params,'sig_name',sig_name);
 else
     pca_info = params;
 end
@@ -122,7 +123,11 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Add scores to trial_data
 if add_proj_to_td
-    sig_names = cellfun(@(x) strrep(x,'_spikes',''),signals(:,1),'uni',0);
+    if isempty(sig_name)
+        sig_name = cellfun(@(x) strrep(x,'_spikes',''),signals(:,1),'uni',0);
+    else
+        if ~iscell(sig_name), sig_name = {sig_name}; end
+    end
     n_signals = cellfun(@(x) length(x),signals(:,2));
     
     if pca_recenter_for_proj
@@ -142,6 +147,6 @@ if add_proj_to_td
             count = count + n_signals(i);
         end
         
-        trial_data(trial).([[sig_names{:}] '_pca']) = (data - repmat(mu,size(data,1),1)) * w;
+        trial_data(trial).([[sig_name{:}] '_pca']) = (data - repmat(mu,size(data,1),1)) * w;
     end
 end
