@@ -64,7 +64,7 @@ if ~isfield(trial_data,'is_continuous') || ~any([trial_data.is_continuous])
         for iIdx = 1:length(fn_idx)
             temp = trial_data(trial).(fn_idx{iIdx});
             if temp > length(t), temp = length(t); end
-            if temp < 0, temp = NaN; end
+            if temp <= 0, temp = NaN; end
             if ~isnan(temp)
                 temp(temp > max(t)) = [];
                 temp = t(temp);
@@ -131,6 +131,16 @@ elseif isfield(trial_data,'is_continuous') && all([trial_data.is_continuous]) % 
     
     % process idx fields
     for iIdx = 1:length(fn_idx)
+        
+        % does not like empty fields
+        for trial = 1:length(trial_data)
+            if isempty(trial_data(trial).(fn_idx{iIdx}))
+                trial_data(trial).(fn_idx{iIdx}) = NaN;
+            end
+            if length(trial_data(trial).(fn_idx{iIdx})) > 1
+                error('Multiple events are not supported yet. Sorry!');
+            end
+        end
         events = [trial_data.(fn_idx{iIdx})];
         events = events + trial_starts(1:end-1)-1;
         events(events > length(t)) = length(t);
