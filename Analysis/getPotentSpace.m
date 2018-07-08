@@ -112,6 +112,7 @@ if ~strcmpi([sig_name_in{:}],[sig_name_out{:}])
     % find the model
     W = zeros( size(y,2), size(x,2) );
     fit_r2 = zeros(size(y,2),1);
+    b = zeros(size(x,2),size(y,2));
     for i = 1:size(y,2)
         %[b_pc, ~, ~, ~, stats_this] = regress(y(:,i),x);
         b_pc = x\y(:,i);
@@ -120,6 +121,8 @@ if ~strcmpi([sig_name_in{:}],[sig_name_out{:}])
         
         % check the quality of the fit
         fit_r2(i) = compute_vaf(y(:,i),x*b_pc);
+        
+        b(:,i) = b_pc;
     end
     
 % % %     %%% A little plotting thing
@@ -167,6 +170,7 @@ pca_info = struct(        ...
     'mu_out',      mu_out,    ...
     'eigen_in',    eigen_in,  ...
     'eigen_out',   eigen_out, ...
+    'b',           b,         ...
     'fit_r2',      fit_r2,    ...
     'params',      out_params);
 
