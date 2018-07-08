@@ -96,7 +96,9 @@ for i = 1:num_conds
     
     % populate meta fields
     for f = 1:length(fn_meta)
-        if ischar(trial_data(1).(fn_meta{f}))
+        if ~isempty(regexp(fn_meta{f},'_names', 'once')) % names are a special kind of meta
+            avg_data(i).(fn_meta{f}) = trial_data(cond_idx{i}).(fn_meta{f});
+        elseif ischar(trial_data(1).(fn_meta{f}))
             u = unique({trial_data(cond_idx{i}).(fn_meta{f})});
             if length(u) == 1
                 avg_data(i).(fn_meta{f}) = u{1};
