@@ -1,7 +1,7 @@
-function out = processNSx(filename,params)
-if nargin > 1
-    warning('no parameters supported for processNSx now...')
-end
+function out = processNSx(filename,signal_info)
+% if isfield(signal_info,'params')
+%     warning('no parameters supported for processNSx now...')
+% end
 
 NSx = openNSx_td(filename,'read');
 
@@ -12,8 +12,7 @@ for i = 1:length(labels)
     labels{i} = labels{i}(temp ~= 0);
 end
 
-out.duration = NSx.MetaTags.DataDurationSec;
-out.samprate = NSx.MetaTags.SamplingFreq;
+out.t = 0:1/NSx.MetaTags.SamplingFreq:NSx.MetaTags.DataDurationSec-1/NSx.MetaTags.SamplingFreq;
 out.data = NSx.Data';
 out.labels = labels;
 

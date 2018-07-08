@@ -16,7 +16,7 @@ function signal_info = initSignalStruct(varargin)
 %           Note that filename and routine must only have one entry per
 %           struct. Together, these define the unique processing operations
 %           taken by the convertDataToTD code.
-%     3) routine_params : a struct containing arbitrary parameters for the
+%     3) params : a struct containing arbitrary parameters for the
 %                         routine, if desired.
 %     4) name : Must be specified, but can be a cell array of arbitrary
 %               length. Each provided name will put one signal in the
@@ -51,7 +51,6 @@ function signal_info = initSignalStruct(varargin)
 %                           Note for now, it assumes the processing code
 %                           will spit out a bin number in the correct time
 %                           frame, and won't do any corrections.
-%             - 'meta'  : any arbitrary meta parameter
 %
 %    NOTE: If name is a cell array of length > 1, it will process multiple
 %    signals from the specified file. Two options for other parameters...
@@ -118,7 +117,7 @@ end
 signal_info = struct( ...
     'filename','', ...
     'routine','', ...
-    'routine_params',struct(), ...
+    'params',struct(), ...
     'label',{{}}, ...
     'name','', ...
     'type','generic', ...
@@ -136,7 +135,7 @@ for i = 1:2:length(varargin)
     end
 end
 
-% filename, routine, and routine_params must always be single
+% filename, routine, and params must always be single
 if iscell(signal_info.filename)
     if length(signal_info.filename) > 1
         error('Can only use one file per signal_info struct');
@@ -151,11 +150,11 @@ if iscell(signal_info.routine)
         signal_info.routine = signal_info.routine{1};
     end
 end
-if iscell(signal_info.routine_params)
-    if length(signal_info.routine_params) > 1
+if iscell(signal_info.params)
+    if length(signal_info.params) > 1
         error('Can only use one routine per signal_info struct');
     else
-        signal_info.routine_params = signal_info.routine_params{1};
+        signal_info.params = signal_info.params{1};
     end
 end
 
@@ -171,7 +170,7 @@ fn = fieldnames(signal_info);
 
 for i = 1:length(fn)
     % skip filename and routine
-    if ~strcmpi(fn{i},'filename') && ~strcmpi(fn{i},'routine') && ~strcmpi(fn{i},'routine_params')
+    if ~strcmpi(fn{i},'filename') && ~strcmpi(fn{i},'routine') && ~strcmpi(fn{i},'params')
         
         if ~iscell(signal_info.(fn{i}))
             % if it's not a cell, make it a cell of length num_signals
@@ -189,6 +188,7 @@ for i = 1:length(fn)
                     % appropriate length for num_signals
                     % set label to name
                     signal_info.(fn{i}) = signal_info.name;
+                    if ~iscell(signal_info.(fn{i})), signal_info.(fn{i}) = {signal_info.(fn{i})}; end
                     %signal_info.(fn{i}) = repmat({signal_info.(fn{i})},1,num_signals);
                 elseif iscell(temp{1}) && length(temp) ~= num_signals
                     error('Label does not match .name field');
@@ -201,7 +201,13 @@ for i = 1:length(fn)
     end
 end
 
-% search through it all and look for empty type or routine_params
+% commented now because name must be provided for the above code to work
+% % if no name was provided, default to duplicating labels to name
+% if isempty(signal_info.name{1})
+%     signal_info.name = signal_info.label;
+% end
+
+% search through it all and look for empty type or params
 temp = signal_info.type;
 idx = find(cellfun(@isempty,temp));
 for i = idx

@@ -1,7 +1,7 @@
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function out = processNEV(filename,params)
+function out = processNEV(filename,signal_info)
 % process .nev files
 %
 % some parameters
@@ -12,7 +12,7 @@ read_waveforms = false; % (not implemented) whether to include waveforms for spi
 spiking_chans  = 1:96;
 exclude_units  = 255; % sort id of units to exclude
 strip_sort     = false;  % whether to ignore unit sort codes
-assignParams(who,params); % overwrite parameters
+assignParams(who,signal_info.params); % overwrite parameters
 
 % here is where I can prepare the inputs if I want
 %   but the openNEV has a super-shit design and you can't have variable
@@ -27,6 +27,10 @@ else
         NEV = openNEV_td(filename,'nosave');
     end
 end
+
+if isempty(NEV)
+    error('NEV not found.');
+end
 %%%%%%%%%%%
 % TO DO
 %   Add support for captured digital events
@@ -34,15 +38,13 @@ end
 
 
 %%%%%%
-% parse NEV format into something easier to use for me
-% get spiking data
+% parse NEV format into something easier to use to get spiking data into TD
 count = 0;
 out = struct( ...
-    'duration',NEV.MetaTags.DataDurationSec, ...
-    'samprate',NEV.MetaTags.SampleRes, ...
+    't', 0:1/double(NEV.MetaTags.SampleRes):NEV.MetaTags.DataDurationSec, ...
     'labels',zeros(length(spiking_chans),2), ...
     'data',{{}}, ...
-    'wf',{{}});
+    'wf',{{}}); % for future waveform implementation
 
 switch lower(data_type)
     
@@ -51,12 +53,14 @@ switch lower(data_type)
         for iElec = 1:length(spiking_chans)
             chan_idx = NEV.Data.Spikes.Electrode == spiking_chans(iElec);
             
-            found_units = unique(NEV.Data.Spikes.Unit(chan_idx));
-            % exclude based on unit id, if sorted
-            found_units = setdiff(found_units,exclude_units);
-            
-            if strip_sort
+            % if no spikes are found, we just need to make sure it gets
+            % filled with something
+            if strip_sort || sum(chan_idx) == 0
                 found_units = 0;
+            else
+                found_units = unique(NEV.Data.Spikes.Unit(chan_idx));
+                % exclude based on unit id, if sorted
+                found_units = setdiff(found_units,exclude_units);
             end
             
             for iUnit = 1:length(found_units)

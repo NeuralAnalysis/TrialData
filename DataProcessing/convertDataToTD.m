@@ -11,6 +11,7 @@ function [trial_data,td_params] = convertDataToTD(varargin)
 % INPUTS:
 %   1) signal_info : see initSignalStruct
 %   2) params      : (optional struct) allows you to overwrite defaults
+%       .meta            : (struct) adds all fields as meta info to trials
 %       .bin_size        : (default: 0.01) the standard time vector
 %       .trigger_thresh  : (default: 1) threshold for trigger signals
 %
@@ -20,9 +21,9 @@ function [trial_data,td_params] = convertDataToTD(varargin)
 %
 % Things to do:
 %   - implement LFP. It's important to ensure indices match up with spikes!
-%   - read digital data from cerebus NEV files
 %   - deal with case where signals have lower sampling rate than bin_size.
 %       Do we upsample those signals or increase the bin_size?
+%       Or, do we limit bin_size to the lowest sample rate?
 %   - Implement read_waveforms and include_spike_times
 %
 % Written by Matt Perich. Updated April 2018.
@@ -74,22 +75,19 @@ for iFile = 1:length(signal_info)
     if ~isempty(which_routine)
         % Inputs to function must be 1) filename, 2) params struct
         % Output needs format of struct with fields:
-        %   duration : in s, how long is the file
-        %   t_bin    : time vector
+        %   t        : time vector. All signals will be aligned at 0! To
+        %               account for sync signals your code should make the
+        %               final sync/start time 0, and any time before should
+        %               be negative. Signals will be truncated to shortest
+        %               time duration
         %   data     : (rows are time, cols are signals)
         %   labels   : (cell array, one entry for each col of data)
-        %   samprate : (sampling rate in Hz)
         %   meta     : (optional field, a struct holding any info to add)
         %
         % Note that data for spikes is different: it's a cell array of
         %  spike times of the same length as labels, rather than a matrix.
         % Also, events functions in this same way.
-        %
-        % Can be any time length, but first index for all signals (e.g. NEV,
-        % NSx, and these, etc) has to all be aligned at the start so
-        % this processing function has to handle syncing somehow
-        % !!!!!BUT I AM FIXING THIS!!!!!
-        file_data = which_routine(which_file,signal_info{iFile}.routine_params);
+        file_data = which_routine(which_file,signal_info{iFile});
     else
         error('routine not specified!');
     end
@@ -112,8 +110,8 @@ for iFile = 1:length(signal_info)
         end
         sig_data(count).name = which_name;
         sig_data(count).type = which_type;
-        sig_data(count).duration = file_data_temp.duration;
-        sig_data(count).samprate = file_data_temp.samprate;
+        sig_data(count).duration = file_data_temp.t(end);
+        sig_data(count).samprate = 1/mode(diff(file_data_temp.t));
         
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -126,7 +124,11 @@ for iFile = 1:length(signal_info)
         
         if ~isempty(which_label)
             if ischar(which_label{1})
-                idx = ismember(file_data_temp.labels,which_label);
+                if strcmpi(which_type,'spikes')
+                    idx = 1:size(file_data_temp.labels,1);
+                else
+                    idx = ismember(file_data_temp.labels,which_label);
+                end
                 if isempty(idx), error(['No label found! Here is the list: ' file_data_temp.labels]); end
             elseif length(which_label) == 1 % it's not a char, so it must be an array of numbers
                 idx = which_label{1};
@@ -153,6 +155,16 @@ for iFile = 1:length(signal_info)
             data = which_operation(data')';
         end
         
+        % remove negative time values, thus aligning all signals
+        if iscell(data) % it's a spike or event, so time
+            for i = 1:length(data)
+                idx_keep = data{i} >= 0;
+                data{i} = data{i}(idx_keep);
+            end
+        else
+            idx_keep = file_data_temp.t >= 0;
+            data = data(idx_keep,:);
+        end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Make all of these generic based on routine, and put this code in a
@@ -160,25 +172,28 @@ for iFile = 1:length(signal_info)
         switch lower(which_type)
             case 'spikes'
                 % for binning we need an extra on the end
-                t_bin = (0:bin_size:file_data_temp.duration+bin_size)';
+                t_bin = (0:bin_size:sig_data(count).duration+bin_size)';
                 data_bin = bin_spikes(data,1:length(data),t_bin);
                 
             case 'emg' % filter appropriately and downsample
-                t_bin = (0:bin_size:file_data_temp.duration)';
-                data_bin = process_emg(data,samprate,params);
+                t_bin = (0:bin_size:sig_data(count).duration)';
+                temp_params = params;
+                temp_params.bin_size = bin_size;
+                temp_params.samprate = sig_data(count).samprate;
+                data_bin = process_emg(data,temp_params);
                 
             case 'lfp' % filter into requested bands and downsample
-                t_bin = (0:bin_size:file_data_temp.duration)';
+                t_bin = (0:bin_size:sig_data(count).duration)';
                 error('LFP not supported yet.');
                 
             case 'trigger' % look for threshold crossing and call it an event
-                t_bin = (0:bin_size:file_data_temp.duration)';
+                t_bin = (0:bin_size:sig_data(count).duration)';
                 % turn trigger into a timestamp
-                trig_ts = find([0; diff(data > trigger_thresh) > 0])/file_data_temp.samprate;
+                trig_ts = find([0; diff(data > trigger_thresh) > 0])/sig_data(count).samprate;
                 data_bin = histcounts(trig_ts,t_bin)'; % bin
                 
             case 'event' % these are timestamps (in seconds)
-                t_bin = (0:bin_size:file_data_temp.duration)';
+                t_bin = (0:bin_size:sig_data(count).duration)';
                 % will be cell if it's multiple labels, but otherwise
                 if ~iscell(data), data = {data}; end
                 data_bin = bin_events(data,t_bin);
@@ -188,10 +203,10 @@ for iFile = 1:length(signal_info)
                 data_bin = data;
                 
             case 'generic' % just downsample and call it a day
-                t_bin = (0:bin_size:file_data_temp.duration)';
-                data_bin = zeros(ceil(size(data,1)/round(bin_size*file_data_temp.samprate)),size(data,2));
+                t_bin = (0:bin_size:sig_data(count).duration)';
+                data_bin = zeros(ceil(size(data,1)/round(bin_size*sig_data(count).samprate)),size(data,2));
                 for i = 1:size(data,2)
-                    data_bin(:,i) = decimate(double(data(:,i)),round(bin_size*file_data_temp.samprate));
+                    data_bin(:,i) = decimate(double(data(:,i)),round(bin_size*sig_data(count).samprate));
                 end
                 
             otherwise
@@ -272,7 +287,12 @@ trial_data = trim_time(trial_data);
 if ismember('trigger',file_types) || ismember('event',file_types) % triggers will need an extra "find"
     idx = find(strcmpi({sig_data.type},'trigger') | strcmpi({sig_data.type},'event'));
     for i = 1:length(idx)
-        trial_data.(['idx_' sig_data(idx(i)).name]) = find(sig_data(idx(i)).data)';
+        temp = find(sig_data(idx(i)).data)';
+        % it's easier to see the numbers in the GUI if they are in a row
+        if size(temp,1) > 1
+            temp = temp';
+        end
+        trial_data.(['idx_' sig_data(idx(i)).name]) = temp;
     end
 end
 
@@ -346,19 +366,32 @@ binned_spikes = binned_spikes';
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function binned_emg = process_emg(data,samprate,params)
+function binned_emg = process_emg(data,params)
 % Process EMG (high pass, rectify, low pass)
 %   default: high pass at 10 Hz, rectify, low pass at 20 Hz
 % filter
-emg_LPF_cutoff  =  20;    % for EMG butterworth filter
-emg_HPF_cutoff  =  10;    % for EMG butterworth filter
+emg_LPF_cutoff  =  10;    % for EMG butterworth filter
+emg_HPF_cutoff  =  [10 800];    % for EMG butterworth filter
 emg_n_poles     =  4;     % for EMG butterworth filter
+samprate        =  [];
+bin_size        =  0.01;
 if ~isempty(params), assignParams(who,params); end
 
-[blow,alow] = butter(emg_n_poles,emg_LPF_cutoff/samprate);
-[bhigh,ahigh] = butter(emg_n_poles,emg_HPF_cutoff/samprate,'high');
+
+[blow,alow] = butter(emg_n_poles,emg_LPF_cutoff/(samprate/2));
+if length(emg_HPF_cutoff) > 1
+    [bhigh,ahigh] = butter(emg_n_poles,emg_HPF_cutoff/(samprate/2));
+else
+    [bhigh,ahigh] = butter(emg_n_poles,emg_HPF_cutoff/(samprate/2),'high');
+end
+
 % !!! note the rectification step in the following command:
-data = filtfilt(blow,alow,abs(filtfilt(bhigh,ahigh,double(data))));
+% data = filtfilt(blow,alow,abs(filtfilt(bhigh,ahigh,double(data))));
+
+data = filtfilt(bhigh,ahigh,double(data));
+data = 2*data.*data;
+data = filtfilt(blow,alow,data);
+data = abs(sqrt(data));
 
 binned_emg = zeros(ceil(size(data,1)/round(bin_size*samprate)),size(data,2));
 for i = 1:size(data,2)
@@ -377,15 +410,24 @@ function binned_events = bin_events(data,t_bin)
 % note that histcounts outputs rows
 binned_events = zeros(length(data),length(t_bin));
 
-% histcounts works weirdly and needs an extra bin
-t_bin = [t_bin; t_bin(end)+mode(diff(t_bin))];
+disp('MATT! You never fixed this bin_events hack! Please reconsider to make more efficient code.');
 
 for e = 1:length(data)
+    binned_events(e,:) = data{e};
+end
+
+if 0
+% histcounts works weirdly and needs an extra bin
+t_bin_temp = [t_bin; t_bin(end)+mode(diff(t_bin))];
+
+for e = 1:length(data)
+    data_ts = t_bin(find(data{e}));
     % get the event times for that cell in the current time window
-    binned_events(e,:) = histcounts(data{e},t_bin);
+    binned_events(e,:) = histcounts(data_ts,t_bin_temp);
 end
 % must transform to have same dimensions as kinematics etc
 binned_events = binned_events';
+end
 
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
