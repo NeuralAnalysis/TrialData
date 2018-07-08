@@ -52,10 +52,20 @@ if rem(length(varargin),2) ~= 0
     error('Inputs must be provided in pairs stating ...'' VARIABLE '',''VALUE'',...');
 end
 
+% code assumes trial_data is a row!!! maybe someday make it so it can be a
+% column but for now just transpose if necessary
+if size(trial_data,1) > 1
+    if size(trial_data,2) > 1
+        error('trial_data must be a vector! The code does not understand matrices at this time.');
+    else % make it a row vector
+        trial_data = trial_data';
+    end
+end
+
 fn = varargin(1:2:length(varargin));
 fv = varargin(2:2:length(varargin));
 
-idx = ones(size(trial_data));
+idx = ones(1,length(trial_data));
 
 % Check for the trials that match each criterion
 for i = 1:length(fn)
