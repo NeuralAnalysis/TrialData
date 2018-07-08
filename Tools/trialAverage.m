@@ -13,13 +13,15 @@
 %
 % INPUTS:
 %   trial_data : the struct
-%   params     : struct with parameters
-%     .conditions : (string or cell array) the field name(s) in trial_data
+%   conditions : (string or cell array) the field name(s) in trial_data
 %                       avg_data will have an entry for each unique combo
 %                       Hint: use 'all' to just do all of trial_data
+%   params     : struct with parameters
 %     .do_stretch : (bool) whether to stretch/shrink trials to uniform length
 %                       if false, all trials must have same number of points
 %     .num_samp   : (int) how many time points to use for interpolation
+%     .add_std    : (bool) whether to add a field with the standard dev at
+%                       each time point. it will be trial_data.SIGNALNAME_std
 %
 % OUTPUTS:
 %   avg_data : struct representing average across trials for each condition
@@ -36,9 +38,10 @@ function [avg_data,cond_idx] = trialAverage(trial_data, conditions, params)
 % DEFAULT PARAMETER VALUES
 do_stretch  =  false;
 num_samp    =  1000;
+add_std     =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
-record_flag = true; % will add a flag field saying it's trial-averaged
+avg_flag = true; % will add a flag field saying it's trial-averaged
 if nargin > 2, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin == 1, error('Conditions not provided as input.'); end
@@ -51,12 +54,7 @@ if strcmpi(conditions,'all'), error('all not implemented yet...'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Time warp each trial to the same number of points, if desired
 if do_stretch
-    for trial = 1:length(trial_data)
-        for iVar = 1:length(time_vars)
-            temp = trial_data(trial).(time_vars{iVar});
-            trial_data(trial).(time_vars{iVar}) = interp1(1:size(temp,1),temp,linspace(1,size(temp,1),num_samp));
-        end
-    end
+    trial_data = stretchSignals(trial_data,struct('num_samp',num_samp));
 end
 
 fn_time = getTDfields(trial_data,'time');
@@ -120,20 +118,23 @@ for i = 1:num_conds
     % now loop along time signals to average
     for v = 1:length(time_vars)
         avg_data(i).(time_vars{v}) = mean(cat(3,trial_data(cond_idx{i}).(time_vars{v})),3);
+        avg_data(i).([time_vars{v} '_std']) = std(cat(3,trial_data(cond_idx{i}).(time_vars{v})),[],3);
     end
-    if record_flag
+    if avg_flag
         avg_data(i).is_average = true;
     end
-    % add idx fields if it wasn't time stretched
-    if ~do_stretch
-        fn_idx = getTDfields(trial_data,'idx');
+    % add idx fields
+    fn_idx = getTDfields(trial_data,'idx');
+    
         for f = 1:length(fn_idx)
             if length(unique([trial_data(cond_idx{i}).(fn_idx{f})])) == 1
                 avg_data(i).(fn_idx{f}) = trial_data(cond_idx{i}(1)).(fn_idx{f});
             end
         end
-    end
+
 end
 
 % restore logical order
 avg_data = reorderTDfields(avg_data);
+
+
