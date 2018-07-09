@@ -130,8 +130,15 @@ for iFile = 1:length(signal_info)
                     idx = ismember(file_data_temp.labels,which_label);
                 end
                 if isempty(idx), error(['No label found! Here is the list: ' file_data_temp.labels]); end
-            elseif length(which_label) == 1 % it's not a char, so it must be an array of numbers
-                idx = which_label{1};
+            elseif length(which_label) == 1 
+                temp_label = which_label{1};
+                if iscell(temp_label) && ischar(temp_label{1}) % it's multiple text entries
+                    idx = ismember(file_data_temp.labels,temp_label);
+                elseif isnumeric(temp_label) % it's not a char, so it must be an array of numbers
+                    idx = temp_label;
+                else
+                    error('No idea what to do with this label');
+                end
             else
                 error('Cannot parse label. It appears to be a cell array of numbers. It should either be an array of numbers or a cell array of strings.');
             end
