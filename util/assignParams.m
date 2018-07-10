@@ -25,9 +25,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function assignParams(opts,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 if ~isstruct(params), error('Params is not a struct.'); end
-if length(params) > 1, error('Params has multiple entries.'); end
+if length(params) > 1, error('Params has multiple entries. Often this is caused by neglecting to wrap cell arrays in extra {} when defining a struct().'); end
 
 % get all parameters
 vars = fieldnames(params);

@@ -92,6 +92,10 @@ if isempty(w)
     end
     clear td;
     
+    if size(data,1) < size(data,2)
+        warning('Number of total datapoints across trials is smaller than the total degrees of freedom! Be careful...');
+    end
+
     % compute PCA
     [w, scores, eigen,~,~,mu] = pca(data,'Algorithm',pca_algorithm,'Centered',pca_centered,'Economy',pca_economy);
     
