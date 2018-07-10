@@ -60,6 +60,8 @@ fn_meta = setdiff(fn_meta,linked_fields);
 
 if length(trial_data) == 1
     is_continuous = true;
+else
+    is_continuous = false;
 end
 count = 0;
 for trial = 1:length(trial_data)

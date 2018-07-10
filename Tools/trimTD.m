@@ -72,10 +72,24 @@ for trial = 1:length(trial_data)
         error('End input not formatted properly.');
     end
     
+        
+    % if there are multiple, assume the start needs the first idx and the
+    % end needs the last idx
+    if length(t_start) > 1
+        disp('Multiple starting indices found. Using first...');
+        t_start = t_start(1);
+    end
+    if length(t_end) > 1
+        disp('Multiple ending indices found. Using last...');
+        t_end = t_end(end);
+    end
+    
+    
     if t_end > t(end)
         warning('Requested end time went beyond trial time...')
         t_end = length(t);
     end
+    t_start = t_start(1);
     if isnan(t_start) || isnan(t_end)
         error('Cannot trim, because some necessary indices are NaN.');
     end

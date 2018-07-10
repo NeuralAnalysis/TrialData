@@ -25,7 +25,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function fn = getTDfields(trial_data,which_type,cont_var_ref)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-cont_vars = {'pos','vel','speed','acc','force','emg','t','x','y','z','M1_spikes'}; % hard coded list of options
+cont_vars = {'pos','vel','speed','acc','force','emg','t','x','y','z','M1_spikes','DRG_spikes'}; % hard coded list of options
 % these vars are common and known to be meta. Useful for edge case outlined below in time
 meta_vars = {'trial_id','target_direction','target_center','bin_size','perturbation_info'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
