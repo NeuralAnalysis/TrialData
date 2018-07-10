@@ -29,6 +29,7 @@ cont_vars = {'pos','vel','speed','acc','force','emg','t','x','y','z','M1_spikes'
 % these vars are common and known to be meta. Useful for edge case outlined below in time
 meta_vars = {'trial_id','target_direction','target_center','bin_size','perturbation_info'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 
 if nargin < 3
     cont_var_ref = cont_vars;

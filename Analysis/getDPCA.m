@@ -69,6 +69,7 @@ dpca_plot_fcn  =  @dpca_plot_td;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 assignParams(who,params);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 signals        = check_signals(trial_data(1),signals);
 % make sure all trials are same length in time
 if length(unique(cellfun(@(x) size(x,1),{trial_data.(signals{1,1})}))) > 1

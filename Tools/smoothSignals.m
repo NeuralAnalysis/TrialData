@@ -32,6 +32,7 @@ sqrt_transform  =  false;
 do_smoothing    =  true; % will just return trial_data if this is false
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 if isempty(signals), error('Must provide one or more signals to smooth.'); end
 if ~iscell(signals), signals = {signals}; end
 bin_size = trial_data(1).bin_size;

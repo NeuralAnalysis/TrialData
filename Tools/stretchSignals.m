@@ -17,6 +17,7 @@ num_samp    =  1000;
 stretch_flag = true; % will add a flag field saying it's stretched
 if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 % get list of time-varying signals that we will average over
 time_vars = getTDfields(trial_data,'time');
 idx_vars = getTDfields(trial_data,'idx');

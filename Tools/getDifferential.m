@@ -31,6 +31,8 @@ else
     error('No parameters provided. Need to specify signal, at least.');    
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+
 if isempty(alias)
     alias = ['d' signal];
 end

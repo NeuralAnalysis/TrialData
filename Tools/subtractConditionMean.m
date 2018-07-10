@@ -25,6 +25,7 @@ cond_idx  =  1:length(trial_data);
 record_flag = true; % will add a flag field
 if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 
 fn = getTDfields(trial_data,'time');
 

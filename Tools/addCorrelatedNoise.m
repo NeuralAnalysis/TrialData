@@ -34,6 +34,7 @@ do_plot         =  false;
 % none
 if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 % Process inputs
 td = trial_data(use_trials);
 if isempty(signals)

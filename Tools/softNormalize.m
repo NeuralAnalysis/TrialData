@@ -24,6 +24,7 @@ signals  =  getTDfields(trial_data,'spikes');
 alpha    =  5;
 if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 
 for i = 1:length(signals)
     % compute normalization factors

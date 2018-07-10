@@ -52,6 +52,7 @@ if nargin > 1, assignParams(who,params); end % overwrite parameters
 possible_metrics = {'pr2','vaf','r2','r'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Process inputs
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 if isempty(td_fn_prefix), td_fn_prefix = model_type; end
 if isempty(model_type), error('Unknown model type.'); end
 if isempty(out_signals), error('Need to provide output signal'); end
