@@ -25,29 +25,32 @@ trial_data = removeBadNeurons(trial_data);
 
 %% getMoveOnsetAndPeak: adds new idx heading for movement-onset and peak
 % speed
-trial_data = getMoveOnsetAndPeak(trial_data);
+trial_data = getMoveOnsetAndPeak(trial_data, params);
 
 
 %% getSpeed: adds new 'speed' column
+
 trial_data = getSpeed(trial_data);
 
 
 %% trimTD: cut the data from your trial_data into sections
 trial_data_movement = trimTD(trial_data, {'idx_movement_on', 0}, {'idx_movement_on', 6});
-trial_data_premovement = trimTD(trial_data, {'idx_movement_on', -5}, {'idx_movement_on', 2});
+trial_data_premovement = trimTD(trial_data, {'idx_movement_on', -5}, {'idx_movement_on', -2});
 
 %% getVars: get the data out of all trials of trial_data structure
 velocity = get_vars(trial_data_movement, {'vel',1:2});
 % alternatively:
 velocity2 = cat(1, trial_data_movement.vel);
+speed1 = cat(2, trial_data_movement.speed);
+
 
 %% Trial data analysis functions:
 %% getModel: fits a model between chosen inputs. This model is general, and
 % can be neural nets, glm, linear regression. Can be expanded to fit new
 % models
 
-params.model_type    =  'glm';
-params.model_name    =  'movementGLM';
+params.model_type    =  'nn';
+params.model_name    =  'movementNN';
 params.in_signals    =  {'S1_spikes'};% {'name',idx; 'name',idx};
 params.out_signals   =  {'vel'};% {'name',idx};
 params.train_idx     =  1:length(trial_data_movement);
@@ -55,17 +58,19 @@ params.train_idx     =  1:length(trial_data_movement);
 params.do_lasso      =  false;
 params.lasso_lambda  =  0;
 params.lasso_alpha   =  0;
+params.nn_params = [10,20];
+
 params.glm_distribution     =  'normal';
 [trial_data_glm, model_info] = getModel(trial_data_movement, params);
-
-params.eval_metric      =  'r2';
+%%
+params.eval_metric      =  'vaf';
 params.num_boots        =  1000;
 r2_glm = evalModel(trial_data_glm, params);
 
 figure
 plot(cat(1,trial_data_glm.vel))
 yyaxis right
-plot(cat(1,trial_data_glm.glm_movementGLM))
+plot(cat(1,trial_data_glm.nn_movementNN))
 xlim([1000,2000])
 
 %% getPCA: perform PCA on a signal in your trial_data struct
@@ -86,8 +91,6 @@ s1PCAUp = cat(1, upMove.S1_pca);
 s1PCALeft =cat(1,leftMove.S1_pca);
 s1PCADown = cat(1,downMove.S1_pca);
 colors = linspecer(4);
-
-
 
 figure
 plot3(s1PCARight(:,1), s1PCARight(:,2), s1PCARight(:,3), 'Color', colors(1,:))

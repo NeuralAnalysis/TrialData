@@ -125,14 +125,15 @@ if ~isempty(cds.units)
         if include_naming
             chanNames = cds.units(~cellfun(@isempty,([strfind({cds.units.array},arrays{array})])));
             sortedUnits = chanNames([chanNames.ID]>0 & [chanNames.ID]<255);
-            elecNames = unique([sortedUnits.chan]);
+            elecNames = unique([sortedUnits.chan], 'stable');
             screenNames = {sortedUnits.label};
             labelNames = zeros(length(sortedUnits),1);
             for i= 1:length(sortedUnits)
                labelNames(i) = str2num(screenNames{i}(5:end)); 
             end
-            labels = unique(labelNames, 'stable');
-            conversion{array} = [elecNames', labels];
+            labels = unique(labelNames,'stable')
+            
+	    conversion{array} = [elecNames', labels];
         end
     end
 end
