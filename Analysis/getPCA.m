@@ -59,6 +59,7 @@ sqrt_transform  = false; % square root transform before PCA (projections don't h
 do_smoothing    = false; % will smooth before PCA  (trial_data projections are unsmoothed)
 kernel_SD       = 0.05;  %   gaussian kernel s.d. for smoothing
 pca_algorithm   = 'svd'; % algorithm for PCA
+pca_economy     = false; % if num samples < degrees of freedom, will pad with zeros to keep output same size as degrees of freedom
 pca_centered    = true;  % whether to center data
 add_proj_to_td  = true;  % whether to add PCA projections
 pca_recenter_for_proj = false; % whether to recenter data before projecting into PC space
@@ -67,6 +68,7 @@ mu              = [];    % mu is the mean from fitting a pca, only filled if pca
 if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % process and prepare inputs
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 signals = check_signals(trial_data(1),signals);
 if iscell(use_trials) % likely to be meta info
     use_trials = getTDidx(trial_data,use_trials{:});
@@ -91,7 +93,7 @@ if isempty(w)
     clear td;
     
     % compute PCA
-    [w, scores, eigen,~,~,mu] = pca(data,'Algorithm',pca_algorithm,'Centered',pca_centered);
+    [w, scores, eigen,~,~,mu] = pca(data,'Algorithm',pca_algorithm,'Centered',pca_centered,'Economy',pca_economy);
     
     if do_plot
         figure,
