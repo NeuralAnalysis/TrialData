@@ -27,6 +27,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = dupeAndShift(trial_data,varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 
 if length(varargin) == 1 && iscell(varargin)
     varargin = varargin{1};

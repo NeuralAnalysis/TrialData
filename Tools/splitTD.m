@@ -40,6 +40,7 @@ end_name           =  'idx_trial_end';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1, assignParams(who,params); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 if ~iscell(linked_fields), linked_fields = {linked_fields}; end
 if any(extra_bins < 0)
     disp('Extra bins must be positive: [BINS_BEFORE, BINS_AFTER]. Taking absolute value...');

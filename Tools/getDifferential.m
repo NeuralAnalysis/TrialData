@@ -22,7 +22,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = getDifferential(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-initial_value = 0;  % value for t = 0
 signal   = ''; % signal to process
 alias    = ''; % what to call the differentiated field
 if nargin > 1
@@ -31,6 +30,8 @@ else
     error('No parameters provided. Need to specify signal, at least.');    
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+
 if isempty(alias)
     alias = ['d' signal];
 end
@@ -47,7 +48,7 @@ end
 % loop along trials and differentiate
 for trial = 1:length(trial_data)
     data = trial_data(trial).(signal);
-    trial_data(trial).(alias) = [initial_value*ones(1,size(data,2)); diff(data)];
+    [~,trial_data(trial).(alias)] = gradient(data,trial_data(trial).bin_size);
 end
 
 % restore logical order

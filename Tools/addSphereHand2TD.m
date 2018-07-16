@@ -19,6 +19,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = addSphereHand2TD(trial_data)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+
 cart_prefix = {'X','Y','Z'};
 cart_postfix = {'_handPos','_handVel','_handAcc'};
 sphere_postfix = {'pos','vel','acc'};

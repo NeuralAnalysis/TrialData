@@ -15,6 +15,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = sqrtTransform(trial_data,signals)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 if nargin < 2
     disp('No signals provided, square root transforming spikes');
     signals = getTDfields(trial_data,'spikes');

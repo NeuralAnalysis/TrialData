@@ -29,6 +29,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function combined = appendTDs(varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~all(cellfun(@isstruct,varargin))
+    error('All inputs must be trial_data struct!');
+end
 
 combined = varargin{1};
 for trial = 1:length(combined)

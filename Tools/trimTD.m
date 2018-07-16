@@ -18,6 +18,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = trimTD(trial_data,idx_start,idx_end)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 if nargin < 3, error('Must provide start and end points for trimming.'); end
 if ~iscell(idx_start), idx_start = {idx_start}; end
 if ~iscell(idx_end), idx_end = {idx_end}; end

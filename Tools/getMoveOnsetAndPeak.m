@@ -44,6 +44,7 @@ onset_name    =  'movement_on';
 peak_name     =  'peak_speed';
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 
 % some pre-processing
 td = getSpeed(trial_data);

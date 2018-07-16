@@ -25,10 +25,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function fn = getTDfields(trial_data,which_type,cont_var_ref)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-cont_vars = {'pos','vel','speed','acc','force','emg','t','x','y','z','M1_spikes','DRG_spikes'}; % hard coded list of options
+cont_vars = {'pos','vel','speed','acc','force','emg','t','x','y','z'}; % hard coded list of options
+% NOTE! This cont_vars list is only used if the struct has no _spikes field
 % these vars are common and known to be meta. Useful for edge case outlined below in time
-meta_vars = {'trial_id','target_direction','target_center','bin_size','perturbation_info'};
+meta_vars = {'monkey','date','task','perturbation','trial_id','target_direction','target_center','bin_size','perturbation_info'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 
 if nargin < 3
     cont_var_ref = cont_vars;
@@ -41,16 +43,21 @@ end
 fn = fieldnames(trial_data);
 switch lower(which_type)
     case 'time' % all fields that are time-varying
-        % find any signal that is KNOWN to be time-varying (defined above)
-        % then find all signals that have the same number of rows
-        % kinda hack-y but it works
-        %   note: assumes rows are time and columns are variables
-        cont_vars_here = fn(ismember(fn,cont_var_ref));
+        % first, check for any _spikes field. This should always be there
+        cont_vars_here = getTDfields(trial_data,'spikes');
+        if isempty(cont_vars_here)
+            % find any signal that is KNOWN to be time-varying (defined above)
+            % then find all signals that have the same number of rows
+            % kinda hack-y but it works
+            %   note: assumes rows are time and columns are variables
+            cont_vars_here = fn(ismember(fn,cont_var_ref));
+        end
+        
         % use the max over all trials so we have the lowest chance of
         % getting zero or one
         [t,trial_idx] = max(cellfun(@(x) size(x,1),{trial_data.(cont_vars_here{1})}));
         if t == 0
-            error('Time variables have zero bins.');
+            error('Time variables appear to have zero bins.');
         elseif t > 1
             idx = false(length(fn),1);
             for ifn = 1:length(fn)
@@ -68,25 +75,24 @@ switch lower(which_type)
             fn_idx = getTDfields(trial_data,'idx');
             fn_ug  = getTDfields(trial_data,'unit_guides');
             fn_spikes = getTDfields(trial_data,'spikes');
-            bad_idx = zeros(length(fn),1);
+            [bad_idx,good_idx] = deal(false(length(fn),1));
             for i = 1:length(fn)
                 if ischar(trial_data(1).(fn{i}))
                     % character fields are not time-varying
-                    bad_idx(i) = 1;
-                elseif size(trial_data(1).(fn{i}),2) == 1
-                    % probably not time varying if it's only one point
-                    bad_idx(i) = 1;
+                    bad_idx(i) = true;
+                elseif ~isempty(regexp(fn{i},'_pca','ONCE')) % probably is time-varying if it's had PCA done to it
+                    good_idx(i) = true;
                 elseif size(trial_data(1).(fn{i}),1) ~= t
-                    bad_idx(i) = 1;
+                    bad_idx(i) = true;
                 end
             end
             bad_idx = bad_idx | ismember(fn,fn_idx) | ismember(fn,fn_ug) | ismember(fn,meta_vars);
-            good_idx = zeros(length(fn),1);
+            
             for i = 1:length(cont_var_ref)
                 good_idx = good_idx | cellfun(@(x) ~isempty(x),strfind(fn,cont_var_ref{i}));
             end
             good_idx = good_idx | ismember(fn,fn_spikes);
-            fn = fn(good_idx | ~bad_idx);
+            fn = fn(good_idx & ~bad_idx);
         end
         
     case 'meta'% all fields that are NOT time-varying or idx_

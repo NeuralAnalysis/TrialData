@@ -46,6 +46,8 @@ do_plot         =  false;
 if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Process inputs
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+
 if isempty(actual_signals) || isempty(modeled_signals)
     error('actual/modeled info must be provided');
 end

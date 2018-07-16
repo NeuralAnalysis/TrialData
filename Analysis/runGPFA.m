@@ -45,6 +45,7 @@ kernSD      =  0.03;
 bin_w       =  0.02;
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 
 if ~iscell(arrays), arrays = {arrays}; end
 % get the desired spikes

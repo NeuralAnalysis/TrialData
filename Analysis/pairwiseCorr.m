@@ -33,6 +33,7 @@ do_norm          =  false;
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Process inputs
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 signals = check_signals(trial_data(1),signals);
 trial_data = trial_data(trial_idx);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

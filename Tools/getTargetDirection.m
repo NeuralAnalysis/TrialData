@@ -26,6 +26,8 @@ reach_distance  =  8; % cm
 hold_time       =  0.5; % s
 dt              =  0.01; % s
 if nargin > 1, assignParams(who,params); end % overwrite defaults
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 
 for i = 1:length(trial_data)
     tgt_pos = repmat([reach_distance*cos(trial_data(i).target_direction), reach_distance*sin(trial_data(i).target_direction)],size(trial_data(i).pos,1),1);
