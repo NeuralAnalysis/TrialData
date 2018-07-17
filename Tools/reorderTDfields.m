@@ -75,15 +75,14 @@ if ~isempty(shift_idx_all)
         
         fn_cont_new = fn_cont_new(reorder_idx);
     end
+    % now map this new order onto the master fieldname list
+    cont_idx_new = zeros(size(cont_idx));
+    for i = 1:length(fn_cont)
+        temp_idx = strcmpi(fn_cont,fn_cont_new{i});
+        cont_idx_new(i) = cont_idx(temp_idx);
+    end
+    cont_idx = cont_idx_new;
 end
-% now map this new order onto the master fieldname list
-cont_idx_new = zeros(size(cont_idx));
-for i = 1:length(fn_cont)
-    temp_idx = strcmpi(fn_cont,fn_cont_new{i});
-    cont_idx_new(i) = cont_idx(temp_idx);
-end
-cont_idx = cont_idx_new;
-
 
 % put EMG at end of continuous
 %   Because, aesthetically, I like having emg_names after the rest
