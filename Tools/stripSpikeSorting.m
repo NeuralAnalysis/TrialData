@@ -6,6 +6,10 @@
 % of the spiking arrays. Essentially, summing all of the spike counts in
 % each bin for all units identified on a single electrode.
 %
+% WARNING! This code will break if trials have different unit_guides. It
+% assumes that the whole struct is coming from the same array(s). This can
+% maybe be fixed in the future.
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = stripSpikeSorting(trial_data)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
