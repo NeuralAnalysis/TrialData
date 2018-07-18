@@ -85,12 +85,16 @@ for trial = 1:length(trial_data)
         t_end = t_end(end);
     end
     
+    if t_start < 1
+        warning('Requested start time is < 1. Defaulting to first index...');
+        t_start = 1;
+    end
     
     if t_end > t(end)
         warning('Requested end time went beyond trial time...')
         t_end = length(t);
     end
-    t_start = t_start(1);
+    
     if isnan(t_start) || isnan(t_end)
         error('Cannot trim, because some necessary indices are NaN.');
     end

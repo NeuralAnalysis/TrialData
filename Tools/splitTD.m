@@ -7,6 +7,10 @@
 %
 % Will also add idx_trial_start and idx_trial_end fields
 %
+% Note that you can just a string in as params which refers to the split
+% idx, saving the need to define a struct, and it will just use the default
+% params for everything else.
+%
 % INPUTS:
 %   trial_data : the struct
 %   params     : parameter struct
@@ -38,7 +42,15 @@ extra_bins         =  [0 0];
 start_name         =  'idx_trial_start';
 end_name           =  'idx_trial_end';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if nargin > 1, assignParams(who,params); end
+if nargin > 1
+    if ischar(params) % someone just passed in a string name. Very convenient
+        split_idx_name = params;
+    elseif isstruct(params)
+        assignParams(who,params);
+    else
+        error('Not sure what to do with this params input.');
+    end
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 if ~iscell(linked_fields), linked_fields = {linked_fields}; end
