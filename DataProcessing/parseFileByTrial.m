@@ -125,7 +125,7 @@ if ~isempty(cds.units)
         unit_idx{array} = find(~ismember([cds.units.ID],exclude_units) & strcmpi({cds.units.array},arrays{array}));
         if include_naming
             chanNames = cds.units(~cellfun(@isempty,([strfind({cds.units.array},arrays{array})])));
-            sortedUnits = chanNames(find(~ismember([cds.units.ID],exclude_units) & strcmpi({cds.units.array},arrays{array})));
+            sortedUnits = chanNames(find(~ismember([chanNames.ID],exclude_units) & strcmpi({chanNames.array},arrays{array})));
             elecNames = unique([sortedUnits.chan], 'stable');
             screenNames = {sortedUnits.label};
             labelNames = zeros(length(sortedUnits),1);
