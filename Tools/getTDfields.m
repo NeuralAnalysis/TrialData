@@ -55,7 +55,12 @@ switch lower(which_type)
         
         % use the max over all trials so we have the lowest chance of
         % getting zero or one
-        [t,trial_idx] = max(cellfun(@(x) size(x,1),{trial_data.(cont_vars_here{1})}));
+        t = 0;
+        iVar = 0;
+        while t == 0 && iVar < length(cont_vars_here)
+            iVar = iVar + 1;
+            [t,trial_idx] = max(cellfun(@(x) size(x,1),{trial_data.(cont_vars_here{iVar})}));
+        end
         if t == 0
             error('Time variables appear to have zero bins.');
         elseif t > 1
