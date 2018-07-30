@@ -92,6 +92,7 @@ pos_offset     =  [0,0];
 include_ts     =  false;
 include_naming =  false;
 marker_data    =  [];
+noTrials       = false;
 if ~isfield(params,'meta'), disp('WARNING: no meta information provided.'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some parameters that CAN be overwritten, but are mostly intended to be
@@ -124,7 +125,7 @@ if ~isempty(cds.units)
         unit_idx{array} = find(~ismember([cds.units.ID],exclude_units) & strcmpi({cds.units.array},arrays{array}));
         if include_naming
             chanNames = cds.units(~cellfun(@isempty,([strfind({cds.units.array},arrays{array})])));
-            sortedUnits = chanNames(find(~ismember([cds.units.ID],exclude_units) & strcmpi({cds.units.array},arrays{array})));
+            sortedUnits = chanNames(find(~ismember([chanNames.ID],exclude_units) & strcmpi({chanNames.array},arrays{array})));
             elecNames = unique([sortedUnits.chan], 'stable');
             screenNames = {sortedUnits.label};
             labelNames = zeros(length(sortedUnits),1);
@@ -141,7 +142,16 @@ end
 
 % process some of the trial information
 fn = cds.trials.Properties.VariableNames;
-if ~all(ismember({'startTime','endTime'},fn)), error('Must have start and end times in CDS.'); end
+trials = cds.trials;
+if ~noTrials
+    if ~all(ismember({'startTime','endTime'},fn)), error('Must have start and end times in CDS.'); end
+else
+    trials.start_time(1) = 0;
+    trials.startTime(1) = 0;
+    trials.endTime(1) = cds.meta.duration;
+    trials.end_time(1) = cds.meta.duration;
+    trials.result(1) = 'R';
+end
 event_list = union({'startTime';'endTime'},event_list);
 if ismember({'goCueTime'},fn), event_list = union({'goCueTime'},event_list); end
 if ismember({'tgtOnTime'},fn), event_list = union({'tgtOnTime'},event_list); end
@@ -155,14 +165,14 @@ time_event_exc_idx = false(size(fn));
 for exc = 1:length(time_event_exceptions)
     time_event_exc_idx = time_event_exc_idx | contains(fn,time_event_exceptions{exc});
 end
-extra_time_events = fn( strcmpi(cds.trials.Properties.VariableUnits,'s') & ~time_event_exc_idx );
+extra_time_events = fn( ~isempty(strcmpi(trials.Properties.VariableUnits,'s')) & ~time_event_exc_idx );
 time_events = union({'startTime','endTime'},extra_time_events);
 
 % get trial list and initialize
 if all_points % we want everything
-    idx_trials = 1:length(cds.trials.result);
+    idx_trials = 1:length(trials.result);
 else
-    idx_trials = find(ismember(cds.trials.result,trial_results));
+    idx_trials = find(ismember(trials.result,trial_results));
 end
 trial_data = repmat(struct(),1,length(idx_trials));
 
@@ -172,6 +182,7 @@ if ~isempty(cds.kin)
 else
     bin_size = .01;
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Add basic data and metadata
 for i = 1:length(idx_trials)
@@ -187,28 +198,28 @@ for i = 1:length(idx_trials)
             % this assumes there are exactly eight targets!!!
             % some CDS trials have wrong vals which is a bug likely
             targ_angs = [pi/2, pi/4, 0, -pi/4, -pi/2, -3*pi/4, pi, 3*pi/4];
-            if ~isnan(cds.trials.tgtID(iTrial)) && cds.trials.tgtID(iTrial) < length(targ_angs)
-                trial_data(i).target_direction = targ_angs(cds.trials.tgtID(iTrial)+1);
+            if ~isnan(trials.tgtID(iTrial)) && trials.tgtID(iTrial) < length(targ_angs)
+                trial_data(i).target_direction = targ_angs(trials.tgtID(iTrial)+1);
             else
                 disp('This CO trial had a bad target ID...');
                 trial_data(i).target_direction = NaN;
             end
         case 'rw' % In random walk, target_direction doesn't make sense
-            trial_data(i).target_center = reshape(cds.trials.tgtCtr(iTrial,:),size(cds.trials.tgtCtr(iTrial,:),2)/2,2);
+            trial_data(i).target_center = reshape(trials.tgtCtr(iTrial,:),size(trials.tgtCtr(iTrial,:),2)/2,2);
         case 'trt' % TRT denotes targets in the same way as random walk
-            trial_data(i).target_center = reshape(cds.trials.tgtCtr(iTrial,:),2,size(cds.trials.tgtCtr(iTrial,:),2)/2)';
+            trial_data(i).target_center = reshape(trials.tgtCtr(iTrial,:),2,size(trials.tgtCtr(iTrial,:),2)/2)';
         otherwise
-            if any(strcmp('tgtDir', cds.trials.Properties.VariableNames))
-                if any(abs(cds.trials.tgtDir) > 2*pi) % good assumption that it's deg
-                    trial_data(i).target_direction = pi/180*cds.trials.tgtDir(iTrial);
+            if any(strcmp('tgtDir', trials.Properties.VariableNames))
+                if any(abs(trials.tgtDir) > 2*pi) % good assumption that it's deg
+                    trial_data(i).target_direction = pi/180*trials.tgtDir(iTrial);
                 else % should be rad
-                    trial_data(i).target_direction = minusPi2Pi(cds.trials.tgtDir(iTrial));
+                    trial_data(i).target_direction = minusPi2Pi(trials.tgtDir(iTrial));
                 end
             end
     end
     
     trial_data(i).trial_id = iTrial;
-    trial_data(i).result = cds.trials.result(iTrial);
+    trial_data(i).result = trials.result(iTrial);
     trial_data(i).bin_size = bin_size;
     
     % if it's all_points, add a flag for later use
@@ -347,12 +358,12 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % convert events in trial table into bin indices
-cds_bin.trials = bin_events(cds.trials,intersect(event_list,time_events),cds_bin.t);
+cds_bin.trials = bin_events(trials,intersect(event_list,time_events),cds_bin.t);
 param_events = setdiff(event_list,time_events);
 % add in the non-time events
 for var = 1:length(param_events)
-    if ismember(param_events{var},cds.trials.Properties.VariableNames)
-        cds_bin.trials.(param_events{var}) = cds.trials.(param_events{var});
+    if ismember(param_events{var},trials.Properties.VariableNames)
+        cds_bin.trials.(param_events{var}) = trials.(param_events{var});
     else
         warning(['Requested event ' param_events{var} ' not found in CDS.']);
     end
