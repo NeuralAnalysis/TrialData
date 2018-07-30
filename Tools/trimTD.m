@@ -1,4 +1,4 @@
-lin%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function trial_data = trimTD(trial_data, idx_start, idx_end)
 %
 %   Will truncate all of the time-signals of each trial_data trial.
