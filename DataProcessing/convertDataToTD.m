@@ -377,7 +377,7 @@ function binned_emg = process_emg(data,params)
 % Process EMG (high pass, rectify, low pass)
 %   default: high pass at 10 Hz, rectify, low pass at 20 Hz
 % filter
-emg_LPF_cutoff  =  10;    % for EMG butterworth filter
+emg_LPF_cutoff  =  20;    % for EMG butterworth filter
 emg_HPF_cutoff  =  [10 800];    % for EMG butterworth filter
 emg_n_poles     =  4;     % for EMG butterworth filter
 samprate        =  [];
