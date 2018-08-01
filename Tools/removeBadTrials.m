@@ -25,9 +25,17 @@ function [trial_data,bad_trials] = removeBadTrials(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ranges         = [];
 remove_nan_idx = true;
+nan_idx_names = 'all';
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+if ~iscell(nan_idx_names), nan_idx_names = {nan_idx_names}; end
+
+if strcmpi(nan_idx_names,'all')
+    fn_idx = getTDfields(trial_data,'idx');
+else
+    fn_idx = nan_idx_names;
+end
 
 bad_idx = false(1,length(trial_data));
 for trial = 1:length(trial_data)
@@ -36,9 +44,8 @@ for trial = 1:length(trial_data)
     td = trial_data(trial);
     
     % loop along all indices and make sure they aren't NaN
-    fn = getTDfields(td,'idx');
     if remove_nan_idx
-        if any(cell2mat(cellfun(@(x) all(isnan(td.(x))),fn,'uni',0)))
+        if any(cell2mat(cellfun(@(x) all(isnan(td.(x))),fn_idx,'uni',0)))
             err = true;
         end
     end
@@ -73,7 +80,7 @@ for trial = 1:length(trial_data)
             if isempty(td.(ranges{i,1})) || isempty(td.(ranges{i,2}))
                 error('idx references are outside trial range.');
             end
-                
+            
             if td.(ranges{i,2}) - td.(ranges{i,1}) < ranges{i,3}(1) || ...
                     td.(ranges{i,2}) - td.(ranges{i,1}) > ranges{i,3}(2)
                 err = true;
