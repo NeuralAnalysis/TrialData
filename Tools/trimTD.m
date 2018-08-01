@@ -1,7 +1,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function trial_data = trimTD(trial_data, idx_start, idx_end)
+% function trial_data = trimTD(trial_data, varargin)
 %
 %   Will truncate all of the time-signals of each trial_data trial.
+%
+%   trial_data = trimTD(trial_data, params)
+%       OR
+%   trial_data = trimTD(trial_data, idx_start, idx_end)
+%
+%   With struct input, must define both idx_start and idx_end parameters.
 %
 % INPUTS:
 %   trial_data : (struct) trial_data struct
@@ -16,12 +22,25 @@
 % Written by Matt Perich. Updated March 2017.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function trial_data = trimTD(trial_data,idx_start,idx_end)
+function trial_data = trimTD(trial_data,varargin)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+idx_start = {};
+idx_end   = {};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
-if nargin < 3, error('Must provide start and end points for trimming.'); end
+if nargin == 2 && ~isstruct(varargin{1}), error('Must provide start and end points for trimming.'); end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if nargin == 2 % it's a struct
+    assignParams(who,varargin{1});
+elseif nargin == 3 % start and end were defined
+    idx_start = varargin{2};
+    idx_end   = varargin{3};
+else
+    error('Too many input arguments.');
+end
 if ~iscell(idx_start), idx_start = {idx_start}; end
 if ~iscell(idx_end), idx_end = {idx_end}; end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 fn_time = getTDfields(trial_data,'time');
 fn_idx = getTDfields(trial_data,'idx');
