@@ -46,7 +46,7 @@ if all(~ismember(which_fields,fn)), error('Field not recognized'); end
 which_fields = which_fields(sort_idx);
 
 % get the max, as all signals will be truncated to this
-max_shift = max(the_shifts);
+max_shift = max(abs(the_shifts));
 
 % get names of the kinematic and spiking fields
 fn_time = getTDfields(trial_data,'time');
@@ -67,8 +67,19 @@ if ~isfield(trial_data,'is_continuous') || ~any([trial_data.is_continuous]) % no
                 % remove padding
                 temp_shift = temp_shift(max_shift+1:end-max_shift,:);
                 trial_data(trial).([which_fields{j} '_shift']) = temp_shift(:,size(temp,2)+1:end);
+            elseif the_shifts(j) < 0
+                temp = trial_data(trial).(which_fields{j});
+                
+                temp_shift = NaN(size(temp,1)+max_shift,size(temp,2)*(-the_shifts(j)));
+                for k = 0:-the_shifts(j)-1
+                    temp_shift(max_shift+1-k:end-k,1+size(temp,2)*k:size(temp,2)*(k+1)) = temp;
+                end
+                
+                % remove padding
+                temp_shift = temp_shift(max_shift+1:end-max_shift,:);
+                trial_data(trial).([which_fields{j} '_shift']) = temp_shift;
             else
-                warning('You gave me a shift <= 0...');
+                warning('You gave me a shift = 0...');
             end
         end
         
