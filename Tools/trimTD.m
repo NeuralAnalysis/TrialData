@@ -33,8 +33,8 @@ if nargin == 2 && ~isstruct(varargin{1}), error('Must provide start and end poin
 if nargin == 2 % it's a struct
     assignParams(who,varargin{1});
 elseif nargin == 3 % start and end were defined
-    idx_start = varargin{2};
-    idx_end   = varargin{3};
+    idx_start = varargin{1};
+    idx_end   = varargin{2};
 else
     error('Too many input arguments.');
 end
