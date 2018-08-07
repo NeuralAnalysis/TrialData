@@ -18,9 +18,14 @@
 %   'pca'   : vanilla PCA, based on Matlab's built-in pca function
 %   'ppca   : probabalistc PCA, based on Matlab's built-in ppca function
 %   'fa'    : factor analysis, based on Matlab's factoran
+%       NOTE: for PPCA/FA, must provide num_dims as input
 %
 % NOTE: centers data by default! Thus to reconstruct scores you need the
 %       means of each signal.
+%
+% A hint: if you want the default parameters, you can pass in just the
+% signals that you want instead of a params struct.
+%   e.g., trial_data = dimReduce(trial_data,'M1_spikes');
 %
 % INPUTS:
 %   trial_data : the struct
@@ -78,7 +83,15 @@ add_proj_to_td   = true;  % whether to add projections
 recenter_for_proj = false; % whether to recenter data before projecting into PC space
 w                 = [];    % w is used to know if params was info_out (e.g. whether to recompute space)
 mu                = [];    % mu is the mean from fitting, only filled if info_out is passed in
-if nargin > 1, assignParams(who,params); end % overwrite parameters
+
+if nargin > 1
+    if ~isstruct(params)
+        % assume the signals were provided
+        signals = params;
+    else
+        assignParams(who,params); % overwrite parameters
+    end
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % process and prepare inputs
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
