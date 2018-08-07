@@ -43,10 +43,12 @@ out_dims     =  [];
 use_trials   =  1:length(trial_data);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % other undocumented PCA parameters
+algorithm          =  'pca';
 do_dim_estimate    =  false;   % whether to attempt Machens method to estimate dimensionality
 trim_idx           =  {};     % can trim in Machens method ONLY
 pca_centered       =  true;   % whether to center data
 pca_algorithm      =  'svd';  % which PCA algorithm
+fa_orthogonalize   =  true;
 add_proj_to_td     =  true;   % add projections to trial data
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -88,7 +90,13 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get input PC space
 pca_params.signals = in_signals;
-[~,pca_info_in] = getPCA(trial_data,pca_params);
+
+% these are necessary for FA and PPCA
+pca_params.num_dims = in_dims;
+pca_params.fa_orthogonalize = fa_orthogonalize; % this is just a flag whether or not to orthogonalize in the func.
+[~,pca_info_in] = dimReduce(trial_data,pca_params);
+
+
 w_in = pca_info_in.w;
 score_in = pca_info_in.scores;
 eigen_in = pca_info_in.eigen;
@@ -97,7 +105,11 @@ mu_in = pca_info_in.mu;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get output PC space
 pca_params.signals = out_signals;
-[~,pca_info_out] = getPCA(trial_data,pca_params);
+
+pca_params.num_dims = out_dims;
+pca_params.fa_orthogonalize = fa_orthogonalize;
+[~,pca_info_out] = dimReduce(trial_data,pca_params);
+
 w_out = pca_info_out.w;
 score_out = pca_info_out.scores;
 eigen_out = pca_info_out.eigen;
@@ -126,18 +138,18 @@ if ~strcmpi([sig_name_in{:}],[sig_name_out{:}])
         b(:,i) = b_pc;
     end
     
-% % %     %%% A little plotting thing
-% % %     figure;
-% % %     subplot1(size(y,2),1)
-% % %     n = 1000;
-% % %     for i = 1:size(y,2)
-% % %         subplot1(i); hold all;
-% % %         plot(y(1:n,i),'k');
-% % %         plot(x(1:n,:)*W(i,:)','r');
-% % %         axis('tight');
-% % %         set(gca,'Box','off','TickDir','out','FontSize',14,'YLim',[-1 1]);
-% % %         title(fit_r2(i));
-% % %     end
+    % % %     %%% A little plotting thing
+    % % %     figure;
+    % % %     subplot1(size(y,2),1)
+    % % %     n = 1000;
+    % % %     for i = 1:size(y,2)
+    % % %         subplot1(i); hold all;
+    % % %         plot(y(1:n,i),'k');
+    % % %         plot(x(1:n,:)*W(i,:)','r');
+    % % %         axis('tight');
+    % % %         set(gca,'Box','off','TickDir','out','FontSize',14,'YLim',[-1 1]);
+    % % %         title(fit_r2(i));
+    % % %     end
     
     % do SVD of weights to get potent/null spaces
     [U, S, V]                   = svd( W );
