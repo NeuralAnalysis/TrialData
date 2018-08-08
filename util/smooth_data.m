@@ -3,7 +3,7 @@
 %
 %   Convolves spike counts or firing rates with a Guassian kernel to smooth
 % the responses. Made for spikes but works well with other signals as well.
-% Used by getPCA. Based on gaussian_smoothing code from Juan's proc folder.
+% Used by smoothSignals. Based on gaussian_smoothing code from Juan's proc folder.
 %
 % INPUTS:
 %   data      : array of data (rows: time, columns: signals)

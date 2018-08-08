@@ -7,7 +7,7 @@
 % INPUTS:
 %   trial_data : the struct
 %   params     : parameter struct
-%     .signals        : which signals (format as in getPCA or getModel)
+%     .signals        : which signals (format as in getModel etc)
 %     .method         : which method (default @corr, could do @cov for ex)
 %     .trial_idx      : which trials to use (default: all)
 %     .cluster_order  : flag to reorder cells to show structure (default: false)

@@ -2,7 +2,8 @@
 % function [trial_data, pca_info] = getPotentSpace(trial_data, params)
 %
 %   This will compute the geometry of the potent and null spaces for two
-% sets of signals. Calls getPCA for neural data processing.
+% sets of signals. Calls dimReduce for neural data processing, so it can
+% use PCA, PPCA, and FA as 'algorithm' inputs
 %
 % TO DO:
 %   - allow for multiple input signals (e.g. M1+PMd arrays onto vel)
@@ -12,17 +13,17 @@
 %   params    : struct containing parameters
 %     .in_signals  : (string) name of input signal
 %     .out_signals : (string) name of output signal
-%                       See getPCA for formatting. Can include column idx.
+%                       See dimReduce for formatting. Can include column idx.
 %     .in_dims     : dimensionality of input space
 %     .out_dims    : dimensionality of output space
 %     .use_trials  : vector list of trial indices to use for spaces
 %         NOTE: if adds scores to trial_data, will add scores for all, not only use_trials
-%     (Also include any parameters desired for getPCA, as params gets
+%     (Also include any parameters desired for dimReduce, as params gets
 %     passed to that function call as well)
 %
 % OUTPUTS:
 %   trial_data : the struct with potent/null fields added
-%                NOTE: processed by getPCA too (e.g. trial averaging, etc)
+%                NOTE: processed by dimReduce too (e.g. trial averaging, etc)
 %   pca_info   : struct with PCA output
 %       .V_potent : potent space basis vectors
 %       .V_null   : null space basis vectors

@@ -88,7 +88,7 @@ if size(cat(1,td.(signal)),1) < size(cat(1,td.(signal)),2)
     warning('Number of total datapoints across trials is smaller than the total degrees of freedom! Be careful...');
 end
 
-[~,pca_info] = getPCA(td,struct('signals',signal,'pca_economy',pca_economy,'pca_algorithm',pca_algorithm,'pca_centered',pca_centered));
+[~,pca_info] = dimReduce(td,struct('signals',signal,'algorithm','pca','pca_economy',pca_economy,'pca_algorithm',pca_algorithm,'pca_centered',pca_centered));
 
 noise_eigen = cell(1,num_iter);
 [n1,n2] = size(trial_data(1).(signal));

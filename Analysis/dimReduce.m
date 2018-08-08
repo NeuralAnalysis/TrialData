@@ -79,11 +79,12 @@ pca_algorithm    = 'svd'; % algorithm for PCA
 pca_economy      = false; % if num samples < degrees of freedom, will pad with zeros to keep output same size as degrees of freedom
 pca_centered     = true;  % whether to center data
 fa_orthogonalize = true; % whether to orthogonalize the projections
+fa_rotate        = 'varimax';
 add_proj_to_td   = true;  % whether to add projections
 recenter_for_proj = false; % whether to recenter data before projecting into PC space
 w                 = [];    % w is used to know if params was info_out (e.g. whether to recompute space)
 mu                = [];    % mu is the mean from fitting, only filled if info_out is passed in
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1
     if ~isstruct(params)
         % assume the signals were provided
@@ -134,7 +135,7 @@ if isempty(w)
             stats = [];
         case 'fa'
             if isempty(num_dims), error('Must specify number of dimensions when using FA'); end
-            [w, eigen, ~, stats, scores] = factoran(data,num_dims);
+            [w, eigen, ~, stats, scores] = factoran(data,num_dims,'Rotate',fa_rotate);
             mu = zeros(1,size(data,2));
     end
     

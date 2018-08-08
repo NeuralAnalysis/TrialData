@@ -3,8 +3,8 @@
 %
 %   Boring utility subfunction used by things like getModel to turn a
 % signals input into a matrix of data. The signals parameter is the
-% standard {'NAME',idx; etc} format used by getPCA and getModel, so this
-% could be a generally useful function to you...
+% standard {'NAME',idx; etc} format used by e.g. dimReduce and getModel, so
+% this could be a generally useful function to you...
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function x = get_vars(trial_data, signals)

@@ -1,6 +1,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function [trial_data,pca_info] = getPCA(trial_data, params)
 %
+% NOTE: getPCA is now deprecated. It has been replaced by dimReduce, which
+% can function with the same inputs/outputs exactly the same as getPCA.
+% Currently this code just directly calls dimReduce to ensure that
+% development does not occur on these functions in parallel. The function
+% getPCA will be removed from the repo eventually.
+%
 % [trial_data,pca_info] = getPCA(trial_data, params);
 %   Computes PCA projection for time-varying data. Will add scores to each trial
 % for use later. Must pass in 'signals' field for struct. Note that this can
@@ -47,112 +53,116 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [trial_data,pca_info] = getPCA(trial_data, params)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% DEFAULT PARAMETER VALUES
-use_trials      =  1:length(trial_data);
-signals         =  getTDfields(trial_data,'spikes');
-do_plot         =  false;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Some extra parameters you can change that aren't described in header
-sig_name        = '';    % output will be in field "SIG_NAMES_pca". Defaults to concatenated names of signals
-sqrt_transform  = false; % square root transform before PCA (projections don't have it) 
-do_smoothing    = false; % will smooth before PCA  (trial_data projections are unsmoothed)
-kernel_SD       = 0.05;  %   gaussian kernel s.d. for smoothing
-pca_algorithm   = 'svd'; % algorithm for PCA
-pca_economy     = false; % if num samples < degrees of freedom, will pad with zeros to keep output same size as degrees of freedom
-pca_centered    = true;  % whether to center data
-add_proj_to_td  = true;  % whether to add PCA projections
-pca_recenter_for_proj = false; % whether to recenter data before projecting into PC space
-w               = [];    % w is used to know if params was pca_info
-mu              = [];    % mu is the mean from fitting a pca, only filled if pca_info is passed in
-if nargin > 1, assignParams(who,params); end % overwrite parameters
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% process and prepare inputs
-if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
-signals = check_signals(trial_data(1),signals);
-if iscell(use_trials) % likely to be meta info
-    use_trials = getTDidx(trial_data,use_trials{:});
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% if pca_info not already sent in...build PCA model
-if isempty(w)
-    td = trial_data(use_trials);
-    if sqrt_transform
-        td = sqrtTransform(td,signals);
-    end
-    if do_smoothing
-        td = smoothSignals(td,struct('signals',{signals},'kernel_SD',kernel_SD));
-    end
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % concatenate specified trials
-    data = [];
-    for i = 1:size(signals,1)
-        temp_data = cat(1,td.(signals{i,1}));
-        data = [data, temp_data(:,signals{i,2})];
-    end
-    clear td;
-    
-    if size(data,1) < size(data,2)
-        warning('Number of total datapoints across trials is smaller than the total degrees of freedom! Be careful...');
-    end
 
-    % compute PCA
-    [w, scores, eigen,~,~,mu] = pca(data,'Algorithm',pca_algorithm,'Centered',pca_centered,'Economy',pca_economy);
-    
-    if do_plot
-        figure,
-        subplot(2,1,1);
-        bar(eigen/sum(eigen));
-        axis('tight');
-        xlabel('eigenvalue nbr.','FontSize',14),ylabel('explained variance','FontSize',14)
-        set(gca,'Box','off','TickDir','out','FontSize',14);
-        xlim([0 size(data,2)+1])
-        
-        subplot(2,1,2);
-        plot(cumsum(eigen/sum(eigen)),'linewidth',3,'marker','d'),
-        xlabel('eigenvalue nbr.','FontSize',14),ylabel('explained variance','FontSize',14)
-        set(gca,'Box','off','TickDir','out','FontSize',14);
-        xlim([0 size(data,2)+1])
-        ylim([0 1])
-    end
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Package up outputs
-    pca_params = struct( ...
-        'signals',{signals}, ...
-        'trial_idx',use_trials);
-    pca_info = struct('w',w,'scores',scores,'eigen',eigen,'mu',mu,'signals',{signals},'params',pca_params,'sig_name',sig_name);
-else
-    pca_info = params;
-end
+warning('getPCA is now deprecated... please convert your getPCA calls to dimReduce, because getPCA will be removed soon. You even do not need to change the inputs or formatting at all!');
+[trial_data,pca_info] = dimReduce(trial_data,params);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Add scores to trial_data
-if add_proj_to_td
-    if isempty(sig_name)
-        sig_name = cellfun(@(x) strrep(x,'_spikes',''),signals(:,1),'uni',0);
-    else
-        if ~iscell(sig_name), sig_name = {sig_name}; end
-    end
-    n_signals = cellfun(@(x) length(x),signals(:,2));
-    
-    if pca_recenter_for_proj
-        if pca_centered
-            mu = mean(get_vars(trial_data,signals),1);
-        else
-            mu = zeros(1,sum(n_signals));
-        end
-    end
-    
-    for trial = 1:length(trial_data)
-        data = zeros(size(trial_data(trial).(signals{1,1}),1),sum(n_signals));
-        count = 0;
-        for i = 1:size(signals,1)
-            temp_data = cat(1,trial_data(trial).(signals{i,1}));
-            data(:,count+(1:n_signals(i))) = temp_data(:,signals{i,2});
-            count = count + n_signals(i);
-        end
-        
-        trial_data(trial).([[sig_name{:}] '_pca']) = (data - repmat(mu,size(data,1),1)) * w;
-    end
-end
+% % % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % % % DEFAULT PARAMETER VALUES
+% % % use_trials      =  1:length(trial_data);
+% % % signals         =  getTDfields(trial_data,'spikes');
+% % % do_plot         =  false;
+% % % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % % % Some extra parameters you can change that aren't described in header
+% % % sig_name        = '';    % output will be in field "SIG_NAMES_pca". Defaults to concatenated names of signals
+% % % sqrt_transform  = false; % square root transform before PCA (projections don't have it) 
+% % % do_smoothing    = false; % will smooth before PCA  (trial_data projections are unsmoothed)
+% % % kernel_SD       = 0.05;  %   gaussian kernel s.d. for smoothing
+% % % pca_algorithm   = 'svd'; % algorithm for PCA
+% % % pca_economy     = false; % if num samples < degrees of freedom, will pad with zeros to keep output same size as degrees of freedom
+% % % pca_centered    = true;  % whether to center data
+% % % add_proj_to_td  = true;  % whether to add PCA projections
+% % % pca_recenter_for_proj = false; % whether to recenter data before projecting into PC space
+% % % w               = [];    % w is used to know if params was pca_info
+% % % mu              = [];    % mu is the mean from fitting a pca, only filled if pca_info is passed in
+% % % if nargin > 1, assignParams(who,params); end % overwrite parameters
+% % % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % % % process and prepare inputs
+% % % if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+% % % signals = check_signals(trial_data(1),signals);
+% % % if iscell(use_trials) % likely to be meta info
+% % %     use_trials = getTDidx(trial_data,use_trials{:});
+% % % end
+% % % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % % % if pca_info not already sent in...build PCA model
+% % % if isempty(w)
+% % %     td = trial_data(use_trials);
+% % %     if sqrt_transform
+% % %         td = sqrtTransform(td,signals);
+% % %     end
+% % %     if do_smoothing
+% % %         td = smoothSignals(td,struct('signals',{signals},'kernel_SD',kernel_SD));
+% % %     end
+% % %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % %     % concatenate specified trials
+% % %     data = [];
+% % %     for i = 1:size(signals,1)
+% % %         temp_data = cat(1,td.(signals{i,1}));
+% % %         data = [data, temp_data(:,signals{i,2})];
+% % %     end
+% % %     clear td;
+% % %     
+% % %     if size(data,1) < size(data,2)
+% % %         warning('Number of total datapoints across trials is smaller than the total degrees of freedom! Be careful...');
+% % %     end
+% % % 
+% % %     % compute PCA
+% % %     [w, scores, eigen,~,~,mu] = pca(data,'Algorithm',pca_algorithm,'Centered',pca_centered,'Economy',pca_economy);
+% % %     
+% % %     if do_plot
+% % %         figure,
+% % %         subplot(2,1,1);
+% % %         bar(eigen/sum(eigen));
+% % %         axis('tight');
+% % %         xlabel('eigenvalue nbr.','FontSize',14),ylabel('explained variance','FontSize',14)
+% % %         set(gca,'Box','off','TickDir','out','FontSize',14);
+% % %         xlim([0 size(data,2)+1])
+% % %         
+% % %         subplot(2,1,2);
+% % %         plot(cumsum(eigen/sum(eigen)),'linewidth',3,'marker','d'),
+% % %         xlabel('eigenvalue nbr.','FontSize',14),ylabel('explained variance','FontSize',14)
+% % %         set(gca,'Box','off','TickDir','out','FontSize',14);
+% % %         xlim([0 size(data,2)+1])
+% % %         ylim([0 1])
+% % %     end
+% % %     
+% % %     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % %     % Package up outputs
+% % %     pca_params = struct( ...
+% % %         'signals',{signals}, ...
+% % %         'trial_idx',use_trials);
+% % %     pca_info = struct('w',w,'scores',scores,'eigen',eigen,'mu',mu,'signals',{signals},'params',pca_params,'sig_name',sig_name);
+% % % else
+% % %     pca_info = params;
+% % % end
+% % % 
+% % % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % % % Add scores to trial_data
+% % % if add_proj_to_td
+% % %     if isempty(sig_name)
+% % %         sig_name = cellfun(@(x) strrep(x,'_spikes',''),signals(:,1),'uni',0);
+% % %     else
+% % %         if ~iscell(sig_name), sig_name = {sig_name}; end
+% % %     end
+% % %     n_signals = cellfun(@(x) length(x),signals(:,2));
+% % %     
+% % %     if pca_recenter_for_proj
+% % %         if pca_centered
+% % %             mu = mean(get_vars(trial_data,signals),1);
+% % %         else
+% % %             mu = zeros(1,sum(n_signals));
+% % %         end
+% % %     end
+% % %     
+% % %     for trial = 1:length(trial_data)
+% % %         data = zeros(size(trial_data(trial).(signals{1,1}),1),sum(n_signals));
+% % %         count = 0;
+% % %         for i = 1:size(signals,1)
+% % %             temp_data = cat(1,trial_data(trial).(signals{i,1}));
+% % %             data(:,count+(1:n_signals(i))) = temp_data(:,signals{i,2});
+% % %             count = count + n_signals(i);
+% % %         end
+% % %         
+% % %         trial_data(trial).([[sig_name{:}] '_pca']) = (data - repmat(mu,size(data,1),1)) * w;
+% % %     end
+% % % end

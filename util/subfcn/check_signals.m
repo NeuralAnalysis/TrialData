@@ -2,8 +2,8 @@
 % function signals = check_signals(trial_data,signals)
 %
 %   Basic utility function to parse out the "signals" parameters typically
-% used for getPCA, getModel, etc, and return something that the function is
-% sure to accept.
+% used for dimReduce, getModel, etc, and return something that the function
+% is sure to accept.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function signals = check_signals(trial_data,signals)
