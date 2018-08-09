@@ -93,6 +93,7 @@ end
 pca_params.signals = in_signals;
 
 % these are necessary for FA and PPCA
+pca_params.algorithm = algorithm;
 pca_params.num_dims = in_dims;
 pca_params.fa_orthogonalize = fa_orthogonalize; % this is just a flag whether or not to orthogonalize in the func.
 [~,pca_info_in] = dimReduce(trial_data,pca_params);

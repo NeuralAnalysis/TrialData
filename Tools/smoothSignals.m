@@ -1,7 +1,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function trial_data = smoothSignals(trial_data,params)
 %
-% This function will smooth and/or square root transform spikes
+% This function will smooth any signal.
+%
+% HINT: instead of params struct, can just pass SIGNALS input if you are
+% okay just using the default parameters.
 %
 % INPUTS:
 %   trial_data : the struct
@@ -26,11 +29,16 @@ function trial_data = smoothSignals(trial_data,params)
 signals         =  []; 
 kernel_SD       =  0.05;
 calc_rate       =  false;
-sqrt_transform  =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some extra parameters that aren't documented in the header
 do_smoothing    =  true; % will just return trial_data if this is false
-if nargin > 1, assignParams(who,params); end % overwrite defaults
+if nargin > 1
+    if ~isstruct(params) % must be a signals input
+        signals = params;
+    else % overwrite defaults
+        assignParams(who,params);
+    end
+end 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 if isempty(signals), error('Must provide one or more signals to smooth.'); end
@@ -41,18 +49,10 @@ signals = check_signals(trial_data(1),signals);
 signals = signals(:,1); % don't need the idx if they exist
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if sqrt_transform
-    trial_data = sqrtTransform(trial_data,signals);
-end
-
 if do_smoothing
     for trial = 1:length(trial_data)
         for i = 1:length(signals)
             data = trial_data(trial).(signals{i});
-            if sqrt_transform
-                if any(data < 0), warning('Negative values in signals. Sqrt_transform will be imaginary.'); end
-                data = sqrt(data);
-            end
             if calc_rate, data = data./bin_size; end
             if do_smoothing
                 data = smooth_data(data,bin_size,kernel_SD);
