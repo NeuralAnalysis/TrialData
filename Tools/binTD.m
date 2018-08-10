@@ -3,11 +3,19 @@
 %
 %   Will adjust bin size of trial_data struct.
 %
+%   Can provide num_bins as a char input for some special functionality.
+% Currently it's only implemented to do 'average', which  will return a
+% single bin representing the average
+%
 % INPUTS:
 %   trial_data : (struct) trial_data struct
 %   num_bins   : (int) how many bins to group together
-%   idx_start  : (cell) {'idx_to_align_start',num_bins_after}
-%   idx_end    : (cell) {'idx_to_align_end',num_bins_after}
+%                       OR
+%                (char) 'average': reduces to a single bin by averaging for
+%                                   continuous signals and counting for
+%                                   discrete signals (e.g. spikes). In this
+%                                   case bin_size now contains the total
+%                                   time for each trial. Adds a flag too!
 %
 % Note bin number for alignment can be negative to go before idx
 % Also note that start is assumed to always come before end
@@ -15,14 +23,22 @@
 % EXAMPLE:
 %   trial_data = binTD(trial_data, 5);
 %
-% Written by Matt Perich. Updated March 2017.
+% Written by Matt Perich. Updated August 2018.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = binTD(trial_data,num_bins)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
-
 if nargin < 2, num_bins = 1; end
+if ischar(num_bins)
+    switch lower(num_bins)
+        case 'average'
+            disp('Returning single bin representing average (or sum for spikes)');
+            do_avg =  true;
+    end
+else
+    do_avg = false;
+end
 
 fn_spikes = getTDfields(trial_data,'spikes');
 fn_time = getTDfields(trial_data,'time');
@@ -32,7 +48,12 @@ if ~isfield(trial_data,'is_continuous') || ~any([trial_data.is_continuous])
     for trial = 1:length(trial_data)
         % get the time vectors for this trial
         t = 1:size(trial_data(trial).(fn_time{1}),1);
-        t_bin = 1:num_bins:t(end);
+        if do_avg % make it a single big bin
+            t_bin = [1 t(end)];
+            num_bins = t(end); % this will tell you how  many
+        else
+            t_bin = 1:num_bins:t(end);
+        end
         
         % update entry to new bin size
         trial_data(trial).bin_size = num_bins * trial_data(trial).bin_size;
@@ -88,7 +109,7 @@ if ~isfield(trial_data,'is_continuous') || ~any([trial_data.is_continuous])
         end
     end
     
-elseif isfield(trial_data,'is_continuous') && all([trial_data.is_continuous]) % preserve continuous data
+elseif isfield(trial_data,'is_continuous') && all([trial_data.is_continuous]) && ~do_avg % preserve continuous data
     % code here is very similar to above, but I use a global time vector
     % instead of per trial
     t = 1:size(cat(1,trial_data.(fn_time{1})),1);
@@ -173,9 +194,18 @@ elseif isfield(trial_data,'is_continuous') && all([trial_data.is_continuous]) % 
         trial_data(trial).bin_size = num_bins * trial_data(trial).bin_size;
     end
     
-    
+    % put in a flag if it's an average
+    if do_avg
+        for trial = 1:length(trial_data)
+            trial_data(trial).is_time_averaged = true;
+        end
+    end
 else
     error('Some trials are from continuous data, some are not. binTD is confused.');
 end
+
+
+
+
 
 
