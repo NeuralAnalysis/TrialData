@@ -195,12 +195,14 @@ if add_proj_to_td
     for trial = 1:length(trial_data)
         % get signals to recreate output PCA
         data = get_vars(trial_data(trial),out_signals);
-        trial_data(trial).([sig_name_out{:} '_pca']) = (data - repmat(mu_out,size(data,1),1)) * w_out;
+        data = (data - repmat(mu_out,size(data,1),1)) * w_out;
+        trial_data(trial).([sig_name_out{:} '_pca']) = data(:,1:out_dims);
         
         if ~strcmpi(sig_name_in{:},sig_name_out{:}) % if they aren't the same
             % now add input PCA
             data = get_vars(trial_data(trial),in_signals);
-            trial_data(trial).([sig_name_in{:} '_pca']) = (data - repmat(mu_in,size(data,1),1)) * w_in;
+            data = (data - repmat(mu_in,size(data,1),1)) * w_in;
+            trial_data(trial).([sig_name_in{:} '_pca']) = data(:,1:in_dims);
             
             % now do null/potent
             data = trial_data(trial).([sig_name_in{:} '_pca']);
