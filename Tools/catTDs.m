@@ -13,12 +13,27 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function master_td = catTDs(varargin)
-% do some checks of varargin (e.g. are they structs)
-for iTD = 1:length(varargin)
-    if ~isstruct(varargin{iTD})
-        error('Must provide only trial_data structs as input');
+% Check the inputs
+if isempty(varargin)
+    error('No inputs provided!');
+end
+% check for any empty inputs
+idx_empty = false(size(varargin));
+for i = 1:length(varargin)
+    if isempty(varargin{i})
+        disp(['appendTDs: Input ' num2str(i) ' is empty. Skipping.']);
+        idx_empty(i) = true;
     end
 end
+varargin = varargin(~idx_empty);
+if isempty(varargin)
+    error('All inputs were empty!')
+end
+% make sure they're all trial_data structs
+if ~all(cellfun(@isstruct,varargin))
+    error('All inputs must be trial_data struct!');
+end
+
 
 % start the concatenation
 if length(varargin) > 1
