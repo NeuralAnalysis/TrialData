@@ -29,10 +29,28 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function combined = appendTDs(varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Check the inputs
+if isempty(varargin)
+    error('No inputs provided!');
+end
+% check for any empty inputs
+idx_empty = false(size(varargin));
+for i = 1:length(varargin)
+    if isempty(varargin{i})
+        disp(['appendTDs: Input ' num2str(i) ' is empty. Skipping.']);
+        idx_empty(i) = true;
+    end
+end
+varargin = varargin(~idx_empty);
+if isempty(varargin)
+    error('All inputs were empty!')
+end
+% make sure they're all trial_data structs
 if ~all(cellfun(@isstruct,varargin))
     error('All inputs must be trial_data struct!');
 end
 
+% now combine the  structs
 combined = varargin{1};
 for trial = 1:length(combined)
     combined(trial).stitch_marks = 1;
@@ -66,7 +84,7 @@ if length(varargin) > 1
         end
     end
 else
-    warning('Only one trial_data struct provided. Nothing to append.');
+    disp('appendTDs: only one trial_data struct provided. Nothing to append.');
 end
 
 % ensure logical order
