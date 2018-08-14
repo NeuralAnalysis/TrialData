@@ -45,13 +45,15 @@ avg_flag = true; % will add a flag field saying it's trial-averaged
 if nargin > 2, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
-if nargin == 1, error('Conditions not provided as input.'); end
+if nargin == 1
+    disp('trialAverage: No conditions provided. Averaging all!');
+    conditions = {'all'};
+end
 if ~iscell(conditions), conditions = {conditions}; end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get list of time-varying signals that we will average over
 time_vars = getTDfields(trial_data,'time');
 
-if strcmpi(conditions,'all'), error('all not implemented yet...'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Time warp each trial to the same number of points, if desired
 if do_stretch
@@ -63,21 +65,26 @@ if length(unique(cellfun(@(x) size(x,1),{trial_data.(fn_time{1})}))) ~= 1
     error('Trials are not uniform length. Do this with time stretching option or trimTD.');
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% loop along conditions and get unique values for each
-cond_vals = cell(1,length(conditions));
-for iCond = 1:length(conditions)
-    % unique doesn't work on numeric cell arrays for some reason
-    if ischar(trial_data(1).(conditions{iCond}))
-        uc = unique({trial_data.(conditions{iCond})});
-    elseif isnumeric(trial_data(1).(conditions{iCond})) || islogical(trial_data(1).(conditions{iCond}))
-        uc = num2cell(unique([trial_data.(conditions{iCond})]));
+if strcmpi(conditions{1},'all')
+    all_conds = {'all'};
+    num_conds = 1;
+else
+    % loop along conditions and get unique values for each
+    cond_vals = cell(1,length(conditions));
+    for iCond = 1:length(conditions)
+        % unique doesn't work on numeric cell arrays for some reason
+        if ischar(trial_data(1).(conditions{iCond}))
+            uc = unique({trial_data.(conditions{iCond})});
+        elseif isnumeric(trial_data(1).(conditions{iCond})) || islogical(trial_data(1).(conditions{iCond}))
+            uc = num2cell(unique([trial_data.(conditions{iCond})]));
+        end
+        cond_vals{iCond} = uc;
     end
-    cond_vals{iCond} = uc;
+    % build a list of all possible combinations of values
+    temp=cellfun(@(x) 1:length(x),cond_vals,'Uni',0);
+    all_conds = combvec(temp{:})';
+    num_conds = size(all_conds,1);
 end
-% build a list of all possible combinations of values
-temp=cellfun(@(x) 1:length(x),cond_vals,'Uni',0);
-all_conds = combvec(temp{:})';
-num_conds = size(all_conds,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get indices for trials meeting each unique combination
@@ -87,13 +94,17 @@ fn_meta = getTDfields(trial_data,'meta');
 cond_idx = cell(1,num_conds);
 avg_data = repmat(struct(),1,num_conds);
 for i = 1:num_conds
-    func_in = cell(1,2*size(all_conds,2));
-    for iCond = 1:size(all_conds,2)
-        func_in{2*(iCond-1)+1}   = conditions{iCond};
-        func_in{2*(iCond-1)+2} = cond_vals{iCond}{all_conds(i,iCond)};
-        avg_data(i).(conditions{iCond}) = cond_vals{iCond}{all_conds(i,iCond)};
+    if strcmpi(conditions{1},'all')
+        cond_idx{i} = 1:length(trial_data);
+    else
+        func_in = cell(1,2*size(all_conds,2));
+        for iCond = 1:size(all_conds,2)
+            func_in{2*(iCond-1)+1}   = conditions{iCond};
+            func_in{2*(iCond-1)+2} = cond_vals{iCond}{all_conds(i,iCond)};
+            avg_data(i).(conditions{iCond}) = cond_vals{iCond}{all_conds(i,iCond)};
+        end
+        cond_idx{i}=getTDidx(trial_data,func_in);
     end
-    cond_idx{i}=getTDidx(trial_data,func_in);
     
     % populate meta fields
     for f = 1:length(fn_meta)
@@ -129,12 +140,12 @@ for i = 1:num_conds
     % add idx fields
     fn_idx = getTDfields(trial_data,'idx');
     
-        for f = 1:length(fn_idx)
-            if length(unique([trial_data(cond_idx{i}).(fn_idx{f})])) == 1
-                avg_data(i).(fn_idx{f}) = trial_data(cond_idx{i}(1)).(fn_idx{f});
-            end
+    for f = 1:length(fn_idx)
+        if length(unique([trial_data(cond_idx{i}).(fn_idx{f})])) == 1
+            avg_data(i).(fn_idx{f}) = trial_data(cond_idx{i}(1)).(fn_idx{f});
         end
-
+    end
+    
 end
 
 % restore logical order
