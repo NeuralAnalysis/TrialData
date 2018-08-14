@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function trial_data = catTD(varargin)
+% function trial_data = catTDs(varargin)
 %
 %   Concatenates the TD structs, even if they don't have the same fields
 %
@@ -7,12 +7,12 @@
 %   varargin : any number of trial_data structs to be concatenated
 %
 % EXAMPLE:
-%   all_the_tds = binTD(td1,td2,td3);
+%   all_the_tds = catTDs(td1,td2,td3);
 %
 % Written by Matt Perich. Updated August 2018.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function master_td = catTD(varargin)
+function master_td = catTDs(varargin)
 % do some checks of varargin (e.g. are they structs)
 for iTD = 1:length(varargin)
     if ~isstruct(varargin{iTD})
