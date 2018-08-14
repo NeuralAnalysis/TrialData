@@ -126,7 +126,7 @@ for trial = 1:length(trial_data)
             end
             
             td_s(count).(start_name) = extra_bins(1)+1;
-            td_s(count).(end_name)   = idx_end - extra_bins(2) - split_idx(idx)+1;
+            td_s(count).(end_name)   = idx_end - extra_bins(2) - split_idx(idx) + extra_bins(1) + 1;
             
             % now add array information
             for i = 1:length(fn_array)
