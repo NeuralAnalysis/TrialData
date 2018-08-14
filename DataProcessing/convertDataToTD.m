@@ -69,7 +69,7 @@ count = 1;
 for iFile = 1:length(signal_info)
     which_file    = signal_info{iFile}.filename;
     which_routine = signal_info{iFile}.routine;
-        
+    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % process using specified routine
     if ~isempty(which_routine)
@@ -130,7 +130,7 @@ for iFile = 1:length(signal_info)
                     idx = ismember(file_data_temp.labels,which_label);
                 end
                 if isempty(idx), error(['No label found! Here is the list: ' file_data_temp.labels]); end
-            elseif length(which_label) == 1 
+            elseif length(which_label) == 1
                 temp_label = which_label{1};
                 if iscell(temp_label) && ischar(temp_label{1}) % it's multiple text entries
                     idx = ismember(file_data_temp.labels,temp_label);
@@ -419,21 +419,28 @@ binned_events = zeros(length(data),length(t_bin));
 
 disp('MATT! You never fixed this bin_events hack! Please reconsider to make more efficient code.');
 
-for e = 1:length(data)
-    binned_events(e,:) = data{e};
-end
-
-if 0
-% histcounts works weirdly and needs an extra bin
-t_bin_temp = [t_bin; t_bin(end)+mode(diff(t_bin))];
-
-for e = 1:length(data)
-    data_ts = t_bin(find(data{e}));
-    % get the event times for that cell in the current time window
-    binned_events(e,:) = histcounts(data_ts,t_bin_temp);
-end
-% must transform to have same dimensions as kinematics etc
-binned_events = binned_events';
+if ~isempty(data)
+    if length(data{1}) == length(t_bin) % these are already bin idx
+        for e = 1:length(data)
+            if ~isempty(data{e})
+                binned_events(e,:) = data{e};
+            end
+        end
+        
+    else % it's a timestamp and we need to bin it
+        % histcounts works weirdly and needs an extra bin
+        t_bin_temp = [t_bin; t_bin(end)+mode(diff(t_bin))];
+        
+        for e = 1:length(data)
+            if ~isempty(data{e})
+                data_ts = t_bin(find(data{e}));
+                % get the event times for that cell in the current time window
+                binned_events(e,:) = histcounts(data_ts,t_bin_temp);
+            end
+        end
+        % must transform to have same dimensions as kinematics etc
+        binned_events = binned_events';
+    end
 end
 
 end
