@@ -163,14 +163,17 @@ for iFile = 1:length(signal_info)
         end
         
         % remove negative time values, thus aligning all signals
-        if iscell(data) % it's a spike or event, so time
-            for i = 1:length(data)
-                idx_keep = data{i} >= 0;
-                data{i} = data{i}(idx_keep);
-            end
-        else
-            idx_keep = file_data_temp.t >= 0;
-            data = data(idx_keep,:);
+        switch sig_data(count).type
+            case 'spikes' % it's a spike, so time
+                for i = 1:length(data)
+                    % shift them back in time by the amount post-sync
+                    data{i} = data{i} + file_data_temp.t(1);
+                    idx_keep = data{i} >= 0;
+                    data{i} = data{i}(idx_keep);
+                end
+            otherwise
+                idx_keep = file_data_temp.t >= 0;
+                data = data(idx_keep,:);
         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -286,8 +289,9 @@ end
 % trim the loaded data to be the shortest time vector
 %   Note: right now assumes that all signals are on a unified bin_size
 %   timeframe and that they all start in sync at 1
+%   Also note: we do this before turning the events into bin counts. Here
+%   they are still on a binned time vector
 trial_data = trim_time(trial_data);
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % find indices for trigger times to turn them into events
@@ -302,6 +306,7 @@ if ismember('trigger',file_types) || ismember('event',file_types) % triggers wil
         trial_data.(['idx_' sig_data(idx(i)).name]) = temp;
     end
 end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % now add in meta data from the sig_data entries
