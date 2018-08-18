@@ -49,10 +49,10 @@ if ~isfield(trial_data,'is_continuous') || ~any([trial_data.is_continuous])
         % get the time vectors for this trial
         t = 1:size(trial_data(trial).(fn_time{1}),1);
         if do_avg % make it a single big bin
-            t_bin = [1 t(end)];
+            t_bin = [1 t(end)+1];
             num_bins = t(end); % this will tell you how  many
         else
-            t_bin = 1:num_bins:t(end);
+            t_bin = 1:num_bins:t(end)+1;
         end
         
         % update entry to new bin size
@@ -113,7 +113,7 @@ elseif isfield(trial_data,'is_continuous') && all([trial_data.is_continuous]) &&
     % code here is very similar to above, but I use a global time vector
     % instead of per trial
     t = 1:size(cat(1,trial_data.(fn_time{1})),1);
-    t_bin = 1:num_bins:t(end);
+    t_bin = 1:num_bins:t(end)+1;
     trial_starts = cumsum([1,cellfun(@(x) size(x,1),{trial_data.(fn_time{1})})]);
     trial_starts_bin = zeros(size(trial_starts));
     for trial = 1:length(trial_starts)
