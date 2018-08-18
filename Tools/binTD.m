@@ -49,7 +49,7 @@ if ~isfield(trial_data,'is_continuous') || ~any([trial_data.is_continuous])
         % get the time vectors for this trial
         t = 1:size(trial_data(trial).(fn_time{1}),1);
         if do_avg % make it a single big bin
-            t_bin = [1 t(end)];
+            t_bin = [1 t(end)+1];
             num_bins = t(end); % this will tell you how  many
         else
             t_bin = 1:num_bins:t(end);
@@ -106,6 +106,13 @@ if ~isfield(trial_data,'is_continuous') || ~any([trial_data.is_continuous])
                 trial_data(trial).(fn_idx{iIdx}) = NaN; % Should this be NaN or []?
             end
             
+        end
+    end
+
+    % put in a flag if it's an average
+    if do_avg
+        for trial = 1:length(trial_data)
+            trial_data(trial).is_time_averaged = true;
         end
     end
     
