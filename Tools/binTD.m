@@ -108,6 +108,13 @@ if ~isfield(trial_data,'is_continuous') || ~any([trial_data.is_continuous])
             
         end
     end
+
+    % put in a flag if it's an average
+    if do_avg
+        for trial = 1:length(trial_data)
+            trial_data(trial).is_time_averaged = true;
+        end
+    end
     
 elseif isfield(trial_data,'is_continuous') && all([trial_data.is_continuous]) && ~do_avg % preserve continuous data
     % code here is very similar to above, but I use a global time vector

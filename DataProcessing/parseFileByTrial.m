@@ -165,7 +165,11 @@ time_event_exc_idx = false(size(fn));
 for exc = 1:length(time_event_exceptions)
     time_event_exc_idx = time_event_exc_idx | contains(fn,time_event_exceptions{exc});
 end
-extra_time_events = fn( ~isempty(strcmpi(trials.Properties.VariableUnits,'s')) & ~time_event_exc_idx );
+if ~noTrials
+    extra_time_events = fn( strcmpi(trials.Properties.VariableUnits,'s') & ~time_event_exc_idx );
+else
+    error('Chris, I''m not sure what you tried to do here before, but it wasn''t right... -Raeed')
+end
 time_events = union({'startTime','endTime'},extra_time_events);
 
 % get trial list and initialize
