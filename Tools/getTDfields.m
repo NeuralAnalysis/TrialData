@@ -76,7 +76,7 @@ switch lower(which_type)
             % there is an edge case where if there is only one time bin it
             % returns everything. So, try and eliminate things through
             % process of elimination
-            warning('Only one time bin for time-varying signals. getTDfields may be unreliable.');
+            warning('TrialData:getTDfields:one_time_bin','Only one time bin for time-varying signals. getTDfields may be unreliable.');
             fn_idx = getTDfields(trial_data,'idx');
             fn_ug  = getTDfields(trial_data,'unit_guides');
             fn_spikes = getTDfields(trial_data,'spikes');
@@ -142,3 +142,4 @@ switch lower(which_type)
         disp('Category not recognized.')
         fn = {};
 end
+
