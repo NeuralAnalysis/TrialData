@@ -17,7 +17,6 @@
 %   trial_data : (struct) obvious
 %   varargin   : pairs of ...'field',SHIFT,...
 %       SHIFT is given in number of bins
-%       List of possible variables are hard coded for now for stability
 %
 % OUTPUTS:
 %   trial_data : original struct with added _shift fields
