@@ -32,7 +32,7 @@ for i = 1:size(signals,1)
     % if second entry is 'all', use all
     if ischar(signals{i,2})
         if strcmpi(signals{i,2},'all') % replace with all indices
-            signals{i,2} = 1:size(trial_data.(signals{i,1}),2);
+            signals{i,2} = 1:size(trial_data(1).(signals{i,1}),2);
         else, error('Not sure what this signal idx is...');
         end
     end
