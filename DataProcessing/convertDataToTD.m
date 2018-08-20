@@ -1,4 +1,4 @@
-function [trial_data,td_params] = convertDataToTD(varargin)
+function [trial_data,td_params,error_flag] = convertDataToTD(varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % This function provides a more flexible and experiment-agnostic framework
@@ -55,7 +55,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Set things up
 if ~iscell(signal_info), signal_info = {signal_info}; end
-
+if add_spike_times, error('Spike times not implemented yet'); end
+error_flag = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % loop along the files
@@ -87,9 +88,25 @@ for iFile = 1:length(signal_info)
         % Note that data for spikes is different: it's a cell array of
         %  spike times of the same length as labels, rather than a matrix.
         % Also, events functions in this same way.
+        %
+        % If there's an error, add an error_flag field to the output and
+        % this will all fail gracefully
         file_data = which_routine(which_file,signal_info{iFile});
     else
-        error('routine not specified!');
+        error_flag = true;
+        disp(['ERROR: ' mfilename ': routine not specified!']);
+    end
+    
+    if isfield(file_data,'error_flag'), error_flag = file_data.error_flag; end
+    
+    if error_flag
+        trial_data = [];
+        td_params = [];
+        if nargout == 3 % the user asked for the error flag so they probably will use it appropriately
+            return;
+        else
+            error('There was an error! See the description above.');
+        end
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -129,7 +146,10 @@ for iFile = 1:length(signal_info)
                 else
                     idx = ismember(file_data_temp.labels,which_label);
                 end
-                if isempty(idx), error(['No label found! Here is the list: ' file_data_temp.labels]); end
+                if isempty(idx)
+                    error_flag = true;
+                    disp(['ERROR: ' mfilename ': No label found! Here is the list: ' file_data_temp.labels]);
+                end
             elseif length(which_label) == 1
                 temp_label = which_label{1};
                 if iscell(temp_label) && ischar(temp_label{1}) % it's multiple text entries
@@ -137,14 +157,28 @@ for iFile = 1:length(signal_info)
                 elseif isnumeric(temp_label) % it's not a char, so it must be an array of numbers
                     idx = temp_label;
                 else
-                    error('No idea what to do with this label');
+                    error_flag = true;
+                    disp(['ERROR: ' mfilename ': no idea what to do with this label!']);
                 end
             else
-                error('Cannot parse label. It appears to be a cell array of numbers. It should either be an array of numbers or a cell array of strings.');
+                error_flag = true;
+                disp(['ERROR: ' mfilename ': Cannot parse label. It appears to be a cell array of numbers. It should either be an array of numbers or a cell array of strings.']);
             end
         else
             idx = 1:size(file_data_temp.data,2);
         end
+        
+        if error_flag
+            trial_data = [];
+            td_params = [];
+            if nargout == 3 % the user asked for the error flag so they probably will use it appropriately
+                return;
+            else
+                error('There was an error! See the description above.');
+            end
+        end
+        
+        
         data = file_data_temp.data(:,idx);
         if strcmpi(which_type,'spikes')
             sig_data(count).labels = file_data_temp.labels(idx,:);
@@ -170,6 +204,19 @@ for iFile = 1:length(signal_info)
                     data{i} = data{i} + file_data_temp.t(1);
                     idx_keep = data{i} >= 0;
                     data{i} = data{i}(idx_keep);
+                end
+            case 'event'
+                if iscell(data) % events are a time
+                    for i = 1:length(data)
+                        % shift them back in time by the amount post-sync
+                        data{i} = data{i} + file_data_temp.t(1);
+                        idx_keep = data{i} >= 0;
+                        data{i} = data{i}(idx_keep);
+                    end
+                else % events are binned
+                    
+                    idx_keep = file_data_temp.t >= 0;
+                    data = data(idx_keep,:);
                 end
             otherwise
                 idx_keep = file_data_temp.t >= 0;
@@ -220,7 +267,18 @@ for iFile = 1:length(signal_info)
                 end
                 
             otherwise
-                error('type not recognized');
+                error_flag = true;
+                disp(['ERROR: ' mfilename ': type not recognized']);
+        end
+        
+        if error_flag
+            trial_data = [];
+            td_params = [];
+            if nargout == 3 % the user asked for the error flag so they probably will use it appropriately
+                return;
+            else
+                error('There was an error! See the description above.');
+            end
         end
         
         % package up data and move on
@@ -438,9 +496,9 @@ if ~isempty(data)
         
         for e = 1:length(data)
             if ~isempty(data{e})
-                data_ts = t_bin(find(data{e}));
+                %data_ts = t_bin(find(data{e}));
                 % get the event times for that cell in the current time window
-                binned_events(e,:) = histcounts(data_ts,t_bin_temp);
+                binned_events(e,:) = histcounts(data{e},t_bin_temp);
             end
         end
         % must transform to have same dimensions as kinematics etc
