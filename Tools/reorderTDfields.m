@@ -20,6 +20,12 @@ fn_neural = [getTDfields(trial_data,'neural'); getTDfields(trial_data,'unit_guid
 fn_cont   = getTDfields(trial_data,'cont');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% do some checks for bad field names
+if ismember('all',fn)
+    warning('TD struct has a field named ''all''... this could break some things, and is not a very informative field anyway. Consider changing it.');
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get indices for everything
 
 % the easy ones
