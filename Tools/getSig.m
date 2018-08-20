@@ -40,13 +40,6 @@ signals = check_signals(trial_data,signals);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-% loop along signals and concatenate them
-%   not the most efficient since I don't allocate memory but it should be
-%   okay for reasonable file sizes
-out = [];
-for iSig = 1:size(signals,1)
-    temp = cat(1,trial_data.(signals{iSig,1}));
-    out = cat(2,out,temp(:,signals{iSig,2}));
-end
+out = get_vars(trial_data,signals);
 
 
