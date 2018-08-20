@@ -12,43 +12,58 @@
 %       .intial_value : value for signal at t = 0
 %
 % OUTPUTS:
-%   trial_data : the struct with differential field (reordered logically)
-%
-% TO DO:
-%   - support for multiple signals?
+%   trial_data : the struct with differential field
 %
 % Written by Matt Perich. Updated Feb 2018.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = getDifferential(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-signal   = ''; % signal to process
+signals   = ''; % signal to process
 alias    = ''; % what to call the differentiated field
 if nargin > 1
-    assignParams(who,params);
+    if isstruct(params)
+        assignParams(who,params);
+    else % it's just the signal name
+        signals = params;
+    end
 else
-    error('No parameters provided. Need to specify signal, at least.');    
+    error('No parameters provided. Need to specify signal, at least.');
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
-
+signals = check_signals(trial_data,signals);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isempty(alias)
-    alias = ['d' signal];
+    alias = cell(size(signals,1),1);
+    for iSig = 1:size(signals,1)
+        alias{iSig} = ['d' signals{iSig,1}];
+    end
 end
-%   Check to see if field exists
-if ~isfield(trial_data,signal)
-    error('Signal input is not a field of the trial_data struct.');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if length(alias) ~= size(signals,1)
+    error('Wrong number of aliases!');
 end
-%   Check to ensure that requested signal is a time-varying field
-fn = getTDfields(trial_data,'time');
-if ~ismember(signal,fn)
-    error('Signal input is not a time-varying field');
-end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% loop along trials and differentiate
-for trial = 1:length(trial_data)
-    data = trial_data(trial).(signal);
-    [~,trial_data(trial).(alias)] = gradient(data,trial_data(trial).bin_size);
+for iSig = 1:size(signals,1)
+    signal = signals{iSig,1};
+    
+    %   Check to see if field exists
+    if ~isfield(trial_data,signal)
+        error('Signal input is not a field of the trial_data struct.');
+    end
+    %   Check to ensure that requested signal is a time-varying field
+    fn = getTDfields(trial_data,'time');
+    if ~ismember(signal,fn)
+        error('Signal input is not a time-varying field');
+    end
+    
+    % loop along trials and differentiate
+    for trial = 1:length(trial_data)
+        data = trial_data(trial).(signal);
+        [~,trial_data(trial).(alias{iSig})] = gradient(data,trial_data(trial).bin_size);
+    end
 end
 
 % restore logical order
