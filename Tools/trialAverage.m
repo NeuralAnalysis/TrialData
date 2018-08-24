@@ -39,7 +39,6 @@ function [avg_data,cond_idx] = trialAverage(trial_data, conditions, params)
 do_stretch  =  false;
 num_samp    =  1000;
 add_std     =  false;
-conditions  =  {'all'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
 avg_flag = true; % will add a flag field saying it's trial-averaged
