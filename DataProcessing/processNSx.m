@@ -1,7 +1,11 @@
 function out = processNSx(filename,signal_info)
-% if isfield(signal_info,'params')
-%     warning('no parameters supported for processNSx now...')
-% end
+% NOTE: By default this returns mV. Alternative is to return the blackrock
+% digital values. Maybe someday make this more flexible
+
+convert_to_mv = true;
+if isfield(signal_info,'params')
+    assignParams(who,signal_info.params)
+end
 
 NSx = openNSx_td(filename,'read');
 
@@ -12,8 +16,13 @@ for i = 1:length(labels)
     labels{i} = labels{i}(temp ~= 0);
 end
 
+data = NSx.Data';
+if convert_to_mv
+    data = data/4e3;
+end
+
 out.t = 0:1/NSx.MetaTags.SamplingFreq:NSx.MetaTags.DataDurationSec-1/NSx.MetaTags.SamplingFreq;
-out.data = NSx.Data';
+out.data = data;
 out.labels = labels;
 
 end
