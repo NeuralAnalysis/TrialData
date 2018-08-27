@@ -42,7 +42,11 @@ add_std     =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
 avg_flag = true; % will add a flag field saying it's trial-averaged
-if nargin > 2, assignParams(who,params); end % overwrite parameters
+if nargin > 2 % overwrite parameters
+    assignParams(who,params);
+elseif nargin < 2 % do all
+    conditions = {'all'};
+end 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 if strcmpi(conditions,'all')
