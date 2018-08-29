@@ -39,11 +39,14 @@ function [avg_data,cond_idx] = trialAverage(trial_data, conditions, params)
 do_stretch  =  false;
 num_samp    =  1000;
 add_std     =  false;
-conditions  =  {'all'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
 avg_flag = true; % will add a flag field saying it's trial-averaged
-if nargin > 2, assignParams(who,params); end % overwrite parameters
+if nargin > 2 % overwrite parameters
+    assignParams(who,params);
+elseif nargin < 2 % do all
+    conditions = {'all'};
+end 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 if strcmpi(conditions,'all')
