@@ -39,6 +39,8 @@ if isempty(alias)
     for iSig = 1:size(signals,1)
         alias{iSig} = ['d' signals{iSig,1}];
     end
+elseif isstring(alias)
+    alias = {alias};
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if length(alias) ~= size(signals,1)
