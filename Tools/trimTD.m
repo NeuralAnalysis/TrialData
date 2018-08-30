@@ -16,6 +16,9 @@
 %                   For the above, can put just 'start' or 'end' to do
 %                   first or last bin available. Also, second entry isn't
 %                   necessary. Will default to 0 for num_bins_after.
+%   params:
+%       zero_pad : if true, will zero pad signals to make all trials the
+%           same length (default: false)
 %
 % Note bin number for alignment can be negative to go before idx
 %
@@ -26,6 +29,7 @@ function trial_data = trimTD(trial_data,varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 idx_start = {};
 idx_end   = {};
+zero_pad = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 if nargin == 2 && ~isstruct(varargin{1}), error('Must provide start and end points for trimming.'); end
@@ -111,7 +115,9 @@ for trial = 1:length(trial_data)
     
     if t_end > t(end)
         warning('Requested end time went beyond trial time...')
-        t_end = length(t);
+        if ~zero_pad
+            t_end = length(t);
+        end
     end
     
     if isnan(t_start) || isnan(t_end)
@@ -122,6 +128,16 @@ for trial = 1:length(trial_data)
     % process time fields
     for iSig = 1:length(fn_time)
         temp = trial_data(trial).(fn_time{iSig});
+        if length(temp)<t_end
+            if ~zero_pad
+                error('Something went wrong with the zero-pad thing Raeed added...')
+            else
+                % zero pad temp to full length
+                temp_padded = zeros(t_end,size(temp,2));
+                temp_padded(1:length(temp),:) = temp;
+                temp = temp_padded;
+            end
+        end
         trial_data(trial).(fn_time{iSig}) = temp(t_new,:);
     end
     
