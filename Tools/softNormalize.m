@@ -35,10 +35,12 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 
-for i = 1:length(signals)
+signals = check_signals(trial_data,signals);
+
+for i = 1:size(signals,1)
     % compute normalization factors
-    normfac = range(cat(1,trial_data.(signals{i}))) + alpha;
+    normfac = range(get_vars(trial_data,signals)) + alpha;
     for trial = 1:length(trial_data)
-        trial_data(trial).(signals{i}) = trial_data(trial).(signals{i})./normfac;
+        trial_data(trial).(signals{i,1}) = get_vars(trial_data(trial),signals)./normfac;
     end
 end
