@@ -57,11 +57,11 @@ elseif strcmpi(method,'markers')
     cyl_postfix = {'pos','vel','acc'};
     if ~isfield(trial_data,'marker_vel')
         trial_data = smoothSignals(trial_data,struct('signals','markers'));
-        trial_data = getDifferential(trial_data,struct('signal','markers','alias','marker_vel'));
+        trial_data = getDifferential(trial_data,struct('signals','markers','alias','marker_vel'));
     end
     if ~isfield(trial_data,'marker_acc')
         trial_data = smoothSignals(trial_data,struct('signals','marker_vel'));
-        trial_data = getDifferential(trial_data,struct('signal','marker_vel','alias','marker_acc'));
+        trial_data = getDifferential(trial_data,struct('signals','marker_vel','alias','marker_acc'));
     end
     cart_names = {'markers','marker_vel','marker_acc'};
     for trial = 1:length(trial_data)
