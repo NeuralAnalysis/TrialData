@@ -82,19 +82,18 @@ else
 end
 
 % loop over postfixes to finally calculate
+if strcmpi(coord,'sph')
+    wrap_func = @cart2sph_wrap;
+elseif strcmpi(coord,'cyl')
+    wrap_func = @cart2pol_wrap;
+else
+    error('Unrecognized coordinate system')
+end
 for postfix_ctr = 1:length(coord_postfix)
     % convert to new coordinate system
-    if strcmpi(coord,'sph')
-        trial_data = addProcessedSignal(trial_data,struct('in_signals',{{cart_names{postfix_ctr},point_idx{postfix_ctr}}},...
-            'out_signals_name',['sph_hand_' coord_postfix{postfix_ctr}],...
-            'processor',@cart2sph_wrap));
-    elseif strcmpi(coord,'cyl')
-        trial_data = addProcessedSignal(trial_data,struct('in_signals',{{cart_names{postfix_ctr},point_idx{postfix_ctr}}},...
-            'out_signals_name',['cyl_hand_' coord_postfix{postfix_ctr}],...
-            'processor',@cart2pol_wrap));
-    else
-        error('Unrecognized coordinate system')
-    end
+    trial_data = addProcessedSignal(trial_data,struct('in_signals',{{cart_names{postfix_ctr},point_idx{postfix_ctr}}},...
+        'out_signals_name',strcat(method,'_',coord,'_',point,'_',coord_postfix{postfix_ctr}),...
+        'processor',wrap_func));
 end
 
 % restore logical order
