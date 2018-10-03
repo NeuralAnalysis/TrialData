@@ -11,6 +11,8 @@
 % field for that condition with that value. Otherwise, adds cell array that
 % contains all unique values, largely for later reference.
 %
+% TO DO: add field that says the number of trials that were averaged over
+%
 % INPUTS:
 %   trial_data : the struct
 %   conditions : (string or cell array) the field name(s) in trial_data
@@ -46,9 +48,10 @@ if nargin > 2 % overwrite parameters
     assignParams(who,params);
 elseif nargin < 2 % do all
     conditions = {'all'};
-end 
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+if isempty(conditions), conditions = 'all'; end
 if strcmpi(conditions,'all')
     disp('trialAverage: No conditions provided. Averaging all!');
 end
@@ -135,7 +138,9 @@ for i = 1:num_conds
     % now loop along time signals to average
     for v = 1:length(time_vars)
         avg_data(i).(time_vars{v}) = mean(cat(3,trial_data(cond_idx{i}).(time_vars{v})),3);
-        avg_data(i).([time_vars{v} '_std']) = std(cat(3,trial_data(cond_idx{i}).(time_vars{v})),[],3);
+        if add_std
+            avg_data(i).([time_vars{v} '_std']) = std(cat(3,trial_data(cond_idx{i}).(time_vars{v})),[],3);
+        end
     end
     if avg_flag
         avg_data(i).is_average = true;

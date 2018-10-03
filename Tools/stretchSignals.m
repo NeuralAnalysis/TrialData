@@ -10,8 +10,7 @@
 function trial_data = stretchSignals(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETER VALUES
-do_stretch  =  false;
-num_samp    =  1000;
+num_samp    =  100;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters, e.g. in case you don't want the flag
 stretch_flag = true; % will add a flag field saying it's stretched
