@@ -130,7 +130,7 @@ for trial = 1:length(trial_data)
         temp = trial_data(trial).(fn_time{iSig});
         if length(temp)<t_end
             if ~zero_pad
-                error('Something went wrong with the zero-pad thing Raeed added...')
+                error('Something went wrong with the zero-pad thing Raeed added...Talk to him.')
             else
                 % zero pad temp to full length
                 temp_padded = zeros(t_end,size(temp,2));
