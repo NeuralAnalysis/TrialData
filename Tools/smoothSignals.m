@@ -11,11 +11,9 @@
 %   params     :
 %     .signals        : field names to smooth (single string or cell array)
 %                          Note: must be passed in
-%     .kernel_SD      : kernel s.d. for smoothing (default: 0.05)
+%     .width          : kernel width (std. dev) for smoothing (default: 0.05)
 %     .calc_rate      : flag to calculate rate (divide by bin size)
 %                           Mostly meant for spiking data (default: false)
-%     .sqrt_transform : flag to square root transform first (default: false)
-%                           Mostly meant for spiking data
 %
 % OUTPUTS:
 %   trial_data : the struct with all (signals{}) fields smoothed
@@ -27,7 +25,7 @@ function trial_data = smoothSignals(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETER VALUES
 signals         =  []; 
-kernel_SD       =  0.05;
+width           =  0.05;
 calc_rate       =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some extra parameters that aren't documented in the header
@@ -55,7 +53,7 @@ if do_smoothing
             data = trial_data(trial).(signals{i});
             if calc_rate, data = data./bin_size; end
             if do_smoothing
-                data = smooth_data(data,bin_size,kernel_SD);
+                data = smooth_data(data,bin_size,width);
             end
             trial_data(trial).(signals{i}) = data;
         end

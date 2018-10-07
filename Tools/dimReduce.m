@@ -74,7 +74,7 @@ do_plot         =  false;
 sig_name         = '';    % output will be in field "SIG_NAMES_ALGORITHM". Defaults to concatenated names of signals
 sqrt_transform   = false; % square root transform before reduction (projections don't have it) 
 do_smoothing     = false; % will smooth before dim reduction  (trial_data projections are unsmoothed)
-kernel_SD        = 0.05;  %   gaussian kernel s.d. for smoothing
+width            = 0.05;  %   gaussian kernel s.d. for smoothing
 pca_algorithm    = 'svd'; % algorithm for PCA
 pca_economy      = false; % if num samples < degrees of freedom, will pad with zeros to keep output same size as degrees of freedom
 pca_centered     = true;  % whether to center data
@@ -109,7 +109,7 @@ if isempty(w)
         td = sqrtTransform(td,signals);
     end
     if do_smoothing
-        td = smoothSignals(td,struct('signals',{signals},'kernel_SD',kernel_SD));
+        td = smoothSignals(td,struct('signals',{signals},'width',width));
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % concatenate specified trials
