@@ -5,11 +5,12 @@
 % before/after each go cue, but note that this will result in overlapping
 % time points across trials.
 %
-% Will also add idx_trial_start and idx_trial_end fields
+% Will also add idx_trial_start and idx_trial_end fields.  These names are
+% configurable though with extra params inputs.
 %
 % Note that you can just a string in as params which refers to the split
-% idx, saving the need to define a struct, and it will just use the default
-% params for everything else.
+% idx, saving the need to define a params struct, and it will just use the
+% default params for everything else.
 %
 % INPUTS:
 %   trial_data : the struct
@@ -28,7 +29,7 @@
 % OUTPUTS:
 %   td_s : the struct separated by movements
 %
-% Written by Matt Perich. Updated February 2018.
+% Written by Matt Perich. Updated October 2018.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function td_s = splitTD(trial_data,params)
