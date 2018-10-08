@@ -1,9 +1,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function [trial_data, dPCA_info] = getDPCA(trial_data,varargin)
+% function [trial_data, dPCA_info] = runDPCA(trial_data,varargin)
 %
 %   Finds dPCA for a dataset according to arbitrary conditions.
 %
-%   [trial_data, dPCA_info] = getDPCA(trial_data, ...conditions... params)
+%   [trial_data, dPCA_info] = runDPCA(trial_data, ...conditions... params)
 %       Input any number of conditions. The last input should always be
 % params struct. Conditions are strings (for fields, e.g. 'target_direction')
 % or cell arrays of trial indices.
@@ -40,7 +40,7 @@
 % Written by Matt Perich. Adapted from Juan's code. Updated Feb 2017.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [trial_data, dPCA_info] = getDPCA(trial_data,varargin)
+function [trial_data, dPCA_info] = runDPCA(trial_data,varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = varargin{end}; if ~isstruct(params), error('Last input must be params.'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
