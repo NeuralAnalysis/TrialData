@@ -4,9 +4,13 @@
 %   This will find a time bin representing movement onset and peak speed
 % Currently for kinematics but could be easily adapted to force, etc.
 %
+%   Constrains the looking to a window specified by start_idx and end_idx
+%
 % INPUTS:
 %   trial_data : (struct) trial_data struct
 %   params     : parameter struct
+%     .start_idx    : (string) field name of idx to use for start of window
+%     .end_idx      : (string) field name to use for end of window
 %     .which_method : (string) how to compute
 %                           'peak' : uses acceleration and peak speed
 %                           'thresh' : uses a basic velocity threshold
@@ -29,6 +33,8 @@
 function trial_data = getMoveOnsetAndPeak(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
+start_idx     =  'idx_go_cue';
+end_idx       =  'idx_trial_end';
 which_method  =  'peak';
 min_ds        =  1.9;
 s_thresh      =  10;
@@ -38,8 +44,6 @@ which_field = 'speed';
 field_idx = 1;
 % these parameters aren't documented because I expect them to not need to
 % change but you can overwrite them if you need to.
-start_idx     =  'idx_goCueTime';
-end_idx       =  'idx_endTime';
 onset_name    =  'movement_on';
 peak_name     =  'peak_speed';
 if nargin > 1, assignParams(who,params); end % overwrite defaults
