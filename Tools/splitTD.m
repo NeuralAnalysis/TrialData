@@ -22,10 +22,6 @@
 %                               tied to each TRIAL_START event)
 %       .extra_bins        : [TIME_BEFORE, TIME_AFTER] (in # bins, must be positive)
 %
-% Note: if the length(trial_data) == 1, it will add a "is_continuous" field
-% to each trial to signify that this was a single piece of data that was
-% split
-%
 % OUTPUTS:
 %   td_s : the struct separated by movements
 %
@@ -72,11 +68,6 @@ fn_meta = getTDfields(trial_data,'meta');
 % remove the linked fields from meta
 fn_meta = setdiff(fn_meta,linked_fields);
 
-if length(trial_data) == 1
-    is_continuous = true;
-else
-    is_continuous = false;
-end
 count = 0;
 for trial = 1:length(trial_data)
     td = trial_data(trial);
@@ -142,9 +133,6 @@ for trial = 1:length(trial_data)
             for i = 1:length(fn_time)
                 temp = td.(fn_time{i});
                 td_s(count).(fn_time{i}) = temp(idx_start:idx_end,:);
-            end
-            if is_continuous
-                td_s(count).is_continuous = true;
             end
         end
     end

@@ -12,8 +12,6 @@ function trial_data = stretchSignals(trial_data,params)
 % DEFAULT PARAMETER VALUES
 num_samp    =  100;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Some undocumented extra parameters, e.g. in case you don't want the flag
-stretch_flag = true; % will add a flag field saying it's stretched
 if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
@@ -31,9 +29,5 @@ for trial = 1:length(trial_data)
     for iVar = 1:length(time_vars)
         temp = trial_data(trial).(time_vars{iVar});
         trial_data(trial).(time_vars{iVar}) = interp1(1:size(temp,1),temp,linspace(1,size(temp,1),num_samp));
-    end
-
-    if stretch_flag
-        trial_data(trial).is_stretched = true;
     end
 end

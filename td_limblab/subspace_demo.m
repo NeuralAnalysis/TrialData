@@ -43,12 +43,12 @@ arrays = strrep(spiking_inputs,'_spikes','');
 pca_params = struct( ...
     'signals',{spiking_inputs});
 % get covariance matrices and means
-[~,pca_prep] = getPCA(td_prep,pca_params);
-[~,pca_move] = getPCA(td_move,pca_params);
+[~,pca_prep] = dimReduce(td_prep,pca_params);
+[~,pca_move] = dimReduce(td_move,pca_params);
 
 %% Project activity for whole trial into the different subspaces
-td_td_prep   = getPCA(td,setfield(pca_params,'w',pca_prep.w));
-td_td_move   = getPCA(td,setfield(pca_params,'w',pca_move.w));
+td_td_prep   = dimReduce(td,setfield(pca_params,'w',pca_prep.w));
+td_td_move   = dimReduce(td,setfield(pca_params,'w',pca_move.w));
 
 %%
 figure;
