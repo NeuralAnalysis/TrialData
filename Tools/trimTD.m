@@ -167,8 +167,3 @@ for trial = 1:length(trial_data)
     
 end
 
-% if you're trimming, it's no longer continuous
-if isfield(trial_data,'is_continuous')
-    trial_data = rmfield(trial_data,'is_continuous');
-end
-

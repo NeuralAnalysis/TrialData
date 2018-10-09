@@ -225,12 +225,7 @@ for i = 1:length(idx_trials)
     trial_data(i).trial_id = iTrial;
     trial_data(i).result = trials.result(iTrial);
     trial_data(i).bin_size = bin_size;
-    
-    % if it's all_points, add a flag for later use
-    if all_points
-        trial_data(i).is_continuous = true;
-    end
-    
+        
     % loop along all meta fields
     if isfield(params,'meta')
         fields = fieldnames(params.meta);

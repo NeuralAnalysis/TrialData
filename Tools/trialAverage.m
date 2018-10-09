@@ -2,9 +2,8 @@
 % function [avg_data, cond_idx] = trialAverage(trial_data, params)
 %
 %   Returns struct where each entry is an average for all time-varying
-% signals across trials for some condition. This function can interpolate
-% to stretch/shrink all trials to the same number of points, but it does
-% not trim data. This can be easily done with trimTD.
+% signals across trials for some condition. Requires every trial be the
+% same length. This can be easily done with trimTD or stretchSignals.
 %
 % Note: returns all fields, but for meta parameters, etc, you can average
 % across trials with different values. If they all are the same, fills in
@@ -40,7 +39,6 @@ add_std     =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
 conditions  =  {};
-avg_flag    =  true; % will add a flag field saying it's trial-averaged
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin == 2 && isstruct(params) % overwrite parameters
     assignParams(who,params);
@@ -136,9 +134,7 @@ for i = 1:num_conds
             avg_data(i).([time_vars{v} '_std']) = std(cat(3,trial_data(cond_idx{i}).(time_vars{v})),[],3);
         end
     end
-    if avg_flag
-        avg_data(i).is_average = true;
-    end
+    
     % add idx fields
     fn_idx = getTDfields(trial_data,'idx');
     
