@@ -26,7 +26,7 @@ function [trial_data,td_params,error_flag] = convertDataToTD(varargin)
 %       Or, do we limit bin_size to the lowest sample rate?
 %   - Implement read_waveforms and include_spike_times
 %
-% Written by Matt Perich. Updated April 2018.
+% Written by Matt Perich. Updated October 2018.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
@@ -328,7 +328,7 @@ if ismember('emg',file_types)
     trial_data.emg_t = sig_data(idx(1)).t_bin;
 end
 
-% group all EMG signals together
+% group all LFP signals together
 if ismember('lfp',file_types)
     error('lfp is not implemented yet');
 end
@@ -408,10 +408,9 @@ end
 
 
 
-
-
-
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SUB FUNCS
@@ -436,40 +435,6 @@ binned_spikes = binned_spikes';
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function binned_emg = process_emg(data,params)
-% Process EMG (high pass, rectify, low pass)
-%   default: high pass at 10 Hz, rectify, low pass at 20 Hz
-% filter
-emg_LPF_cutoff  =  50;    % for EMG butterworth filter
-emg_HPF_cutoff  =  [20 900];    % for EMG butterworth filter
-emg_n_poles     =  4;     % for EMG butterworth filter
-samprate        =  [];
-bin_size        =  0.01;
-if ~isempty(params), assignParams(who,params); end
-
-
-[blow,alow] = butter(emg_n_poles,emg_LPF_cutoff/(samprate/2));
-if length(emg_HPF_cutoff) > 1
-    [bhigh,ahigh] = butter(emg_n_poles,emg_HPF_cutoff/(samprate/2));
-else
-    [bhigh,ahigh] = butter(emg_n_poles,emg_HPF_cutoff/(samprate/2),'high');
-end
-
-% !!! note the rectification step in the following command:
-data = filtfilt(bhigh,ahigh,double(data));
-data = 2*data.*data;
-data = filtfilt(blow,alow,data);
-data = abs(sqrt(data));
-
-binned_emg = zeros(ceil(size(data,1)/round(bin_size*samprate)),size(data,2));
-for i = 1:size(data,2)
-    binned_emg(:,i) = decimate(data(:,i),round(bin_size*samprate))';
-end
-clear temp_data;
-end
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function binned_events = bin_events(data,t_bin)
 % here, the events start already as indices but we want to make sure they
 % align with the timeframe provided, so we put them in bins again. This
@@ -477,8 +442,6 @@ function binned_events = bin_events(data,t_bin)
 % processing on the data types, without a great hit to processing speed
 % note that histcounts outputs rows
 binned_events = zeros(length(data),length(t_bin));
-
-disp('MATT! You never fixed this bin_events hack! Please reconsider to make more efficient code.');
 
 if ~isempty(data)
     if length(data{1}) == length(t_bin) % these are already bin idx
