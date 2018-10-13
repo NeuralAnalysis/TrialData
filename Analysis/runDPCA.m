@@ -57,9 +57,9 @@ do_plot        =  true;
 % [2 3] - decision_var/time interaction
 % [1 2] - condition/decision_var interaction
 % [1 2 3] - rest
-combined_params = { {1}, {2,[1 2]}, {3,[1,3]}, {[2 3],[1 2 3]} };
-marg_names      = {'time','target','learning','target/learning interaction'};
-marg_colors     = [150 150 150; 23 100 171; 187 20 25; 114 97 171]/256; % blue, red, grey, purple
+add_interactions = true;
+marg_names       = {'time','target','learning','target/learning interaction'};
+marg_colors      = [150 150 150; 23 100 171; 187 20 25; 114 97 171]/256; % blue, red, grey, purple
 W = [];
 V = [];
 which_marg = [];
@@ -75,6 +75,7 @@ signals        = check_signals(trial_data(1),signals);
 if length(unique(cellfun(@(x) size(x,1),{trial_data.(signals{1,1})}))) > 1
     error('Trials are not all the same length.');
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Parse out condition inputs, build a cell array of cell arrays
 conditions = cell(1,length(varargin)-1);
@@ -96,6 +97,35 @@ for i = 1:length(varargin)-1
     end
 end
 if length(conditions) > 3, warning('This many conditions takes a while to run...'); end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% build out combined params input
+% EXAMPLE:
+% 1 - condition
+% 2 - decision_var
+% 3 - time
+% [1 3] - condition/time interaction
+% [2 3] - decision_var/time interaction
+% [1 2] - condition/decision_var interaction
+% [1 2 3] - rest
+% combined_params = { {1}, {2,[1 2]}, {3,[1,3]}, {[2 3],[1 2 3]} };
+combined_params = { {1} };
+for i = 1:length(conditions)
+    combined_params = [combined_params, {{i+1, [1 i+1]}}];
+end
+if add_interactions
+    if length(conditions) > 1
+        combs = nchoosek(1:length(conditions),2);
+        for i = 1:size(combs,1)
+            combined_params = [combined_params, {{combs(i,:)+1,[1 combs(i,:)+1]}}];
+        end
+    else
+        disp('Only one condition. No combinations');
+    end
+end
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Get the number of time points
 T = size(trial_data(1).(signals{1,1}),1);
@@ -178,92 +208,92 @@ end
 %  Will find the largest number of common trials for any arbitrary number
 % of condition inputs, using recursive loops
 function val = loops_all_the_way_down(val,varargin)
-    % get all of the trials that are common between the conditions
-    if all(cellfun(@isnumeric,varargin))
-        % we've reached the bottom of the hole. Find the common trials
-        if length(varargin) == 1
-            val = [val,length(varargin{1})];
-        else
-            for i = 1:length(varargin)-1
-                val = [val,length(intersect(varargin{i:i+1}))];
-            end
-        end
+% get all of the trials that are common between the conditions
+if all(cellfun(@isnumeric,varargin))
+    % we've reached the bottom of the hole. Find the common trials
+    if length(varargin) == 1
+        val = [val,length(varargin{1})];
     else
-        % still need to loop further. Find the next thing that is still a
-        % cell and start looping along it
-        cell_idx = find(cellfun(@iscell,varargin),1,'first');
-        iter_data = varargin{cell_idx};
-        for i = 1:length(iter_data)
-            temp = varargin;
-            temp{cell_idx} = iter_data{i};
-            val = loops_all_the_way_down(val,temp{:});
+        for i = 1:length(varargin)-1
+            val = [val,length(intersect(varargin{i:i+1}))];
         end
     end
+else
+    % still need to loop further. Find the next thing that is still a
+    % cell and start looping along it
+    cell_idx = find(cellfun(@iscell,varargin),1,'first');
+    iter_data = varargin{cell_idx};
+    for i = 1:length(iter_data)
+        temp = varargin;
+        temp{cell_idx} = iter_data{i};
+        val = loops_all_the_way_down(val,temp{:});
+    end
+end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Another crazy recursive function to split trial_data up by trials
 function [val,valIdx] = loops_for_fr(depthCount,valIdx,val,trial_data,signals,max_trial_num,varargin)
-    if all(cellfun(@isnumeric,varargin))
-        valIdx = [valIdx, depthCount];
-        % we've reached the bottom of the hole. Start computing
-        % NOTE currently hard coded assuming that each condition cell will be a
-        % 2-D array (one D for time and one D for the condition variable)
-        fr = [];
-        % find all common trials
-        all_trials = varargin{1};
-        for i = 2:length(varargin)
-            all_trials = intersect(all_trials,varargin{i});
-        end
-        for n = 1:size(signals,1)
-            temp_fr = cat(3,trial_data(all_trials).(signals{n,1}));
-            temp_fr = temp_fr(:,signals{n,2},:);
-            fr = cat(2,fr,temp_fr);
-        end
-        % if no trial matches, this will crash
-        if ~isempty(fr), fr = mean(fr,3); end
-        val = [val {fr'}];
+if all(cellfun(@isnumeric,varargin))
+    valIdx = [valIdx, depthCount];
+    % we've reached the bottom of the hole. Start computing
+    % NOTE currently hard coded assuming that each condition cell will be a
+    % 2-D array (one D for time and one D for the condition variable)
+    fr = [];
+    % find all common trials
+    all_trials = varargin{1};
+    for i = 2:length(varargin)
+        all_trials = intersect(all_trials,varargin{i});
+    end
+    for n = 1:size(signals,1)
+        temp_fr = cat(3,trial_data(all_trials).(signals{n,1}));
+        temp_fr = temp_fr(:,signals{n,2},:);
+        fr = cat(2,fr,temp_fr);
+    end
+    % if no trial matches, this will crash
+    if ~isempty(fr), fr = mean(fr,3); end
+    val = [val {fr'}];
+else
+    % still need to loop further. Find the next thing that is still a
+    % cell and start looping along it
+    cell_idx = find(cellfun(@iscell,varargin),1,'first');
+    iter_data = varargin{cell_idx};
+    for i = 1:length(iter_data)
+        temp = varargin;
+        temp{cell_idx} = iter_data{i};
+        [val,valIdx] = loops_for_fr([depthCount;i],valIdx,val,trial_data,signals,max_trial_num,temp{:});
+    end
+end
+
+% check to see if this is the end of the infinite loop
+if all(cellfun(@iscell,varargin)) && length(val) == prod(cellfun(@(x) length(cellfun(@numel,x)),varargin))
+    % now process everything and concatenate together
+    num_conds = size(valIdx,1);
+    idx_vals = cell(1,num_conds);
+    for i = 1:num_conds
+        idx_vals{i} = unique(valIdx(i,:));
+    end
+    if length(varargin) == 1 % only one input is easy
+        val = cat(3,val{:});
     else
-        % still need to loop further. Find the next thing that is still a
-        % cell and start looping along it
-        cell_idx = find(cellfun(@iscell,varargin),1,'first');
-        iter_data = varargin{cell_idx};
-        for i = 1:length(iter_data)
-            temp = varargin;
-            temp{cell_idx} = iter_data{i};
-            [val,valIdx] = loops_for_fr([depthCount;i],valIdx,val,trial_data,signals,max_trial_num,temp{:});
-        end
+        val = loop_me_twice(length(size(val{1})),[],val,valIdx,0,idx_vals{:});
     end
-    
-    % check to see if this is the end of the infinite loop
-    if all(cellfun(@iscell,varargin)) && length(val) == prod(cellfun(@(x) length(cellfun(@numel,x)),varargin))
-        % now process everything and concatenate together
-        num_conds = size(valIdx,1);
-        idx_vals = cell(1,num_conds);
-        for i = 1:num_conds
-            idx_vals{i} = unique(valIdx(i,:));
-        end
-        if length(varargin) == 1 % only one input is easy
-            val = cat(3,val{:});
-        else
-            val = loop_me_twice(length(size(val{1})),[],val,valIdx,0,idx_vals{:});
-        end
-    end
+end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % A recursive sub-function for my recursive fuction
 function valCat = loop_me_twice(dim,valCat,val,valIdx,depthCount,varargin)
-    depthCount=depthCount+1;
-    if length(varargin) == 1
-            temp = cat(dim,val{:});
-            valCat = cat(dim+1,temp,valCat);
-    else
-        for i = 1:length(varargin{1})
-            p = valIdx(depthCount,:)==i;
-            valCat = loop_me_twice(dim+1,valCat,val(p),valIdx(:,p),depthCount,varargin{2:end});
-        end
+depthCount=depthCount+1;
+if length(varargin) == 1
+    temp = cat(dim,val{:});
+    valCat = cat(dim+1,temp,valCat);
+else
+    for i = 1:length(varargin{1})
+        p = valIdx(depthCount,:)==i;
+        valCat = loop_me_twice(dim+1,valCat,val(p),valIdx(:,p),depthCount,varargin{2:end});
     end
+end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
