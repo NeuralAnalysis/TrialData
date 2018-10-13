@@ -86,10 +86,10 @@ for trial = 1:length(trial_data)
             trial_data(trial).([the_field '_shift']) = temp_shift(:,size(temp,2)+1:end);
             
         else % shift forward in time (i.e.add history)
-            temp_shift = NaN(size(temp,1)+max_shift,size(temp,2)*n_shifts);
-            the_shifts_new  = -the_shifts;
+            temp_shift = NaN(size(temp,1)+max_shift,size(temp,2)*(1+n_shifts));
+            the_shifts_new  = sort(-the_shifts);
             for k = 1:length(the_shifts_new)
-                temp_shift(the_shifts_new(k)+1:end-the_shifts_new(k),1+size(temp,2)*k:size(temp,2)*(k+1)) = temp(1:end-the_shifts_new(k),:);
+                temp_shift(the_shifts_new(k)+1:size(temp,1),1+size(temp,2)*k:size(temp,2)*(k+1)) = temp(1:end-the_shifts_new(k),:);
             end
             
             % remove padding
