@@ -80,6 +80,11 @@ for trial = 1:length(trial_data)
         if ~isnan(split_idx(idx)) && split_idx(idx) <= t_max
             count = count + 1;
             
+            % copy over the meta data
+            for i = 1:length(fn_meta)
+                td_s(count).(fn_meta{i}) = td.(fn_meta{i});
+            end
+            
             % first split up attached fields
             if ~isempty(linked_fields)
                 for i = 1:length(linked_fields)
@@ -90,11 +95,6 @@ for trial = 1:length(trial_data)
                         td_s(count).(linked_fields{i}) = temp;
                     end
                 end
-            end
-            
-            % copy over the meta data
-            for i = 1:length(fn_meta)
-                td_s(count).(fn_meta{i}) = td.(fn_meta{i});
             end
             
             % get the start and end indices
@@ -114,7 +114,14 @@ for trial = 1:length(trial_data)
             for i = 1:length(fn_idx)
                 % find idx that are within idx_start and idx_end
                 temp = td.(fn_idx{i});
-                td_s(count).(fn_idx{i}) = temp(temp >= idx_start & temp < idx_end) - idx_start;
+                temp = temp(temp >= idx_start & temp < idx_end) - idx_start + 1;
+
+                % if empty, set NaN
+                if isempty(temp)
+                    temp = NaN;
+                end
+
+                td_s(count).(fn_idx{i}) = temp;
             end
             
             td_s(count).(start_name) = extra_bins(1)+1;

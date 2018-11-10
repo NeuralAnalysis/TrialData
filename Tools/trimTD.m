@@ -114,7 +114,7 @@ for trial = 1:length(trial_data)
     end
     
     if t_end > t(end)
-        warning('Requested end time went beyond trial time...')
+        warning('Trial %d: Requested end time went beyond trial time...',trial)
         if ~zero_pad
             t_end = length(t);
         end
