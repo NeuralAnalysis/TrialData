@@ -60,6 +60,7 @@ do_plot        =  true;
 add_interactions = true;
 marg_names       = {'time','target','learning','target/learning interaction'};
 marg_colors      = [150 150 150; 23 100 171; 187 20 25; 114 97 171]/256; % blue, red, grey, purple
+combined_params  = {};
 W = [];
 V = [];
 which_marg = [];
@@ -110,6 +111,7 @@ if length(conditions) > 3, warning('This many conditions takes a while to run...
 % [1 2] - condition/decision_var interaction
 % [1 2 3] - rest
 % combined_params = { {1}, {2,[1 2]}, {3,[1,3]}, {[2 3],[1 2 3]} };
+if isempty(combined_params)
 combined_params = { {1} };
 for i = 1:length(conditions)
     combined_params = [combined_params, {{i+1, [1 i+1]}}];
@@ -123,6 +125,7 @@ if add_interactions
     else
         disp('Only one condition. No combinations');
     end
+end
 end
 
 

@@ -43,7 +43,7 @@ model_name       =  [];
 trial_idx        =  [1,length(trial_data)];
 eval_metric      =  '';
 block_trials     =  false;
-num_boots        =  1000;
+num_boots        =  0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented parameters
 td_fn_prefix     =  '';    % prefix for fieldname
@@ -162,5 +162,6 @@ end
 % no need to repeat
 if num_bootstraps > 1
     metric = prctile(metric,[2.5,97.5]);
+    metric = [mean(metric) - std(metric); mean(metric) + std(metric)];
 end
 end

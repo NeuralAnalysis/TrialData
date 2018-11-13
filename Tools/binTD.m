@@ -44,6 +44,12 @@ fn_spikes = getTDfields(trial_data,'spikes');
 fn_time = getTDfields(trial_data,'time');
 fn_idx = getTDfields(trial_data,'idx');
 
+% see if spikes are spikes or if they have been messed with
+spikes_are_spikes = true(1,length(fn_spikes));
+for iArray = 1:length(fn_spikes)
+    spikes_are_spikes(iArray) = all(all(mod(getSig(trial_data,fn_spikes{iArray}),1) == 0));
+end
+
 for trial = 1:length(trial_data)
     % get the time vectors for this trial
     t = 1:size(trial_data(trial).(fn_time{1}),1);
@@ -63,7 +69,12 @@ for trial = 1:length(trial_data)
         % fr is size bins x neurons
         fr = zeros(length(t_bin)-1,size(temp,2));
         for iBin = 1:length(t_bin)-1
-            fr(iBin,:) = sum(temp(t_bin(iBin):t_bin(iBin+1)-1,:),1);
+            % if we think it's a  spike, do a sum
+            if spikes_are_spikes
+                fr(iBin,:) = sum(temp(t_bin(iBin):t_bin(iBin+1)-1,:),1);
+            else % if we think it's not, do a mean
+                fr(iBin,:) = mean(temp(t_bin(iBin):t_bin(iBin+1)-1,:),1);
+            end
         end
         trial_data(trial).(fn_spikes{iArray}) = fr;
     end
