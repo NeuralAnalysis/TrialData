@@ -51,7 +51,7 @@ if nargin > 1, assignParams(who,params); end % overwrite defaults
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 
 % some pre-processing
-td = getSpeed(trial_data);
+td = getNorm(trial_data,struct('signals','vel','norm_name','speed'));
 
 for trial = 1:length(trial_data)
     % use velocity to find bin corresponding to movement onset, movement offset, and peak speed
