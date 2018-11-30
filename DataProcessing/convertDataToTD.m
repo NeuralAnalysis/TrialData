@@ -226,31 +226,35 @@ for iFile = 1:length(signal_info)
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % Make all of these generic based on routine, and put this code in a
         % subfunc maybe?
+        
+        % first get new time vector
+        [P,Q] = rat((1/bin_size)/sig_data(count).samprate,1e-7); % get integers for resampling ratio
+        t_bin = file_data_temp.t;
+        resample_vector = true(length(t_bin),1);
+        t_bin = downsample(upsample(t_bin,P),Q);
+        resample_vector = downsample(upsample(resample_vector,P),Q);
+        t_bin = interp1(find(resample_vector),t_bin(resample_vector),(1:length(t_bin))');
+        
+        % now resample/bin the actual data
         switch lower(which_type)
-            case 'spikes'
-                % for binning we need an extra on the end
-                t_bin = (0:bin_size:sig_data(count).duration+bin_size)';
+            case 'spikes' % these are timestamps of spikes in seconds
                 data_bin = bin_spikes(data,1:length(data),t_bin);
                 
             case 'emg' % filter appropriately and downsample
-                t_bin = (0:bin_size:sig_data(count).duration)';
                 temp_params = params;
                 temp_params.bin_size = bin_size;
                 temp_params.samprate = sig_data(count).samprate;
                 data_bin = process_emg(data,temp_params);
                 
             case 'lfp' % filter into requested bands and downsample
-                t_bin = (0:bin_size:sig_data(count).duration)';
                 error('LFP not supported yet.');
                 
             case 'trigger' % look for threshold crossing and call it an event
-                t_bin = (0:bin_size:sig_data(count).duration)';
                 % turn trigger into a timestamp
                 trig_ts = find([0; diff(data > trigger_thresh) > 0])/sig_data(count).samprate;
                 data_bin = histcounts(trig_ts,t_bin)'; % bin
                 
             case 'event' % these are timestamps (in seconds)
-                t_bin = (0:bin_size:sig_data(count).duration)';
                 % will be cell if it's multiple labels, but otherwise
                 if ~iscell(data), data = {data}; end
                 data_bin = bin_events(data,t_bin);
@@ -259,12 +263,9 @@ for iFile = 1:length(signal_info)
                 t_bin = [];
                 data_bin = data;
                 
-            case 'generic' % just downsample and call it a day
-                t_bin = (0:bin_size:sig_data(count).duration)';
-                data_bin = zeros(ceil(size(data,1)/round(bin_size*sig_data(count).samprate)),size(data,2));
-                for i = 1:size(data,2)
-                    data_bin(:,i) = decimate(double(data(:,i)),round(bin_size*sig_data(count).samprate));
-                end
+            case 'generic'
+                % resample signals at new sampling rate
+                data_bin = rebin_signals(data,struct('bin_size',bin_size,'samprate',sig_data(count).samprate));
                 
             otherwise
                 error_flag = true;

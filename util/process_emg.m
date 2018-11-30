@@ -27,9 +27,7 @@ data = 2*data.*data;
 data = filtfilt(blow,alow,data);
 data = abs(sqrt(data));
 
-binned_emg = zeros(ceil(size(data,1)/round(bin_size*samprate)),size(data,2));
-for i = 1:size(data,2)
-    binned_emg(:,i) = decimate(data(:,i),round(bin_size*samprate))';
-end
-clear temp_data;
+% rebin the signals at the new sampling rate (given by bin_size)
+binned_emg = rebin_signals(data,struct('bin_size',bin_size,'samprate',samprate));
+
 end
