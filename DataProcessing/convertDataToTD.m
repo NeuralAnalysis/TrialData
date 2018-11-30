@@ -91,7 +91,7 @@ for iFile = 1:length(signal_info)
         %
         % If there's an error, add an error_flag field to the output and
         % this will all fail gracefully
-        file_data = which_routine(which_file,signal_info{iFile});
+        file_data = which_routine(which_file,signal_info{iFile}.params);
     else
         error_flag = true;
         disp(['ERROR: ' mfilename ': routine not specified!']);
@@ -128,7 +128,7 @@ for iFile = 1:length(signal_info)
         sig_data(count).name = which_name;
         sig_data(count).type = which_type;
         sig_data(count).duration = file_data_temp.t(end);
-        sig_data(count).samprate = 1/mode(diff(file_data_temp.t));
+        sig_data(count).samprate = 1/mode(diff(file_data_temp.t)); % assumption: time vectors have uniform sampling
         
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
