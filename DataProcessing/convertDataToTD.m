@@ -20,13 +20,10 @@ function [trial_data,td_params,error_flag] = convertDataToTD(varargin)
 %   td_params  : contains all parameters, including inputs
 %
 % Things to do:
-%   - implement LFP. It's important to ensure indices match up with spikes!
-%   - deal with case where signals have lower sampling rate than bin_size.
-%       Do we upsample those signals or increase the bin_size?
-%       Or, do we limit bin_size to the lowest sample rate?
+%   - implement LFP
 %   - Implement read_waveforms and include_spike_times
 %
-% Written by Matt Perich. Updated October 2018.
+% Written by Matt Perich. Updated December 2018.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
@@ -76,18 +73,24 @@ for iFile = 1:length(signal_info)
     if ~isempty(which_routine)
         % Inputs to function must be 1) filename, 2) params struct
         % Output needs format of struct with fields:
-        %   t        : time vector. All signals will be aligned at 0! To
-        %               account for sync signals your code should make the
-        %               final sync/start time 0, and any time before should
-        %               be negative. Signals will be truncated to shortest
-        %               time duration
-        %   data     : (rows are time, cols are signals)
-        %   labels   : (cell array, one entry for each col of data)
-        %   meta     : (optional field, a struct holding any info to add)
+        %   t            : time vector. All signals will be aligned at 0! To
+        %                  account for sync signals your code should make the
+        %                  final sync/start time 0, and any time before should
+        %                  be negative. Signals will be truncated to shortest
+        %                  time duration
+        %   cont_data    : rows are time, cols are signals)
+        %   event_data   : cell array of event times
+        %   cont_labels  : cell array, one entry for each col of cont_data
+        %   event_labels : cell array, one entry for each cell of event_data
+        %   meta         : optional field, a struct holding any info to add
         %
         % Note that data for spikes is different: it's a cell array of
         %  spike times of the same length as labels, rather than a matrix.
         % Also, events functions in this same way.
+        %
+        % If there is not simultaneous continuous and event, you can just
+        % have the struct contain 'data' and 'labels' and it will determine
+        % the correct way to use them based on the data type.
         %
         % If there's an error, add an error_flag field to the output and
         % this will all fail gracefully
@@ -122,6 +125,52 @@ for iFile = 1:length(signal_info)
         % copy to make sure everything we do won't destroy the original
         file_data_temp = file_data;
         
+        
+        %%%%%%%%%%%%%%%%%%%%%%%
+        % parse out the data contents if needed
+        if isfield(file_data_temp,'cont_data') || isfield(file_data_temp,'event_data')
+            if isfield(file_data_temp,'data')
+                warning('The file data struct contains possibly redundant data fields. Ignoring ''data'' and using ''cont_data'' or ''event_data''.');
+            end
+            % determine if we are looking at continuous or event data and
+            % reassigning things appropriately
+            if strcmpi(which_type,'spikes') || strcmpi(which_type,'event')
+                                disp('hi');
+                % it's an event type, so use event_data
+                if isfield(file_data_temp,'event_data') && isfield(file_data_temp,'event_labels')
+                    file_data_temp.data = file_data_temp.event_data;
+                    file_data_temp.labels = file_data_temp.event_labels;
+                    file_data_temp = rmfield(file_data_temp,{'event_data','event_labels'});
+                else
+                    error_flag = true;
+                    disp('ERROR: File data struct was missing event_data or event_labels');
+                end
+            else % it's continuous
+                % check to make sure the right fields are present
+                if isfield(file_data_temp,'cont_data') && isfield(file_data_temp,'cont_labels')
+                    file_data_temp.data = file_data_temp.cont_data;
+                    file_data_temp.labels = file_data_temp.cont_labels;
+                    file_data_temp = rmfield(file_data_temp,{'cont_data','cont_labels'});
+                else
+                    error_flag = true;
+                    disp('ERROR: File data struct was missing cont_data or cont_labels');
+                end
+                
+            end
+            % if there was an error, end it all
+            if error_flag
+                trial_data = [];
+                td_params = [];
+                if nargout == 3 % the user asked for the error flag so they probably will use it appropriately
+                    return;
+                else
+                    error('There was an error! See the description above.');
+                end
+            end
+        end
+        
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         if isfield(file_data_temp,'meta')
             sig_data(count).meta = file_data_temp.meta;
         end
@@ -258,11 +307,7 @@ for iFile = 1:length(signal_info)
                 % will be cell if it's multiple labels, but otherwise
                 if ~iscell(data), data = {data}; end
                 data_bin = bin_events(data,t_bin);
-                
-            case 'meta' % it's a bit of a hack but meta goes in as if it's a signal
-                t_bin = [];
-                data_bin = data;
-                
+
             case 'generic'
                 % resample signals at new sampling rate
                 data_bin = rebin_signals(data,struct('bin_size',bin_size,'samprate',sig_data(count).samprate));
