@@ -9,8 +9,8 @@
 % Actually has two modes:
 %
 %   [trial_data,model_info] = getModel(trial_data,params);
-%       This mode will fit a model and return the struct with GLM predictions
-%       added as a field, as well as GLM parameters.
+%       This mode will fit a model and return the struct with predictions
+%       added as a field, as well as a struct with the parameters.
 %
 %   trial_data            = getModel(trial_data,model_info)
 %       This mode will take the model_info from a previous getModel call and
@@ -111,7 +111,7 @@ if isempty(b) && isempty(net)  % fit a new model
     b = zeros(size(x,2)+1,size(y,2));
     for iVar = 1:size(y,2) % loop along outputs to predict
         switch lower(model_type)
-            case 'glm'
+            case 'glm' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 if do_lasso % not quite implemented yet
                     % NOTE: Z-scores here!
                     [b_temp,s_temp] = lassoglm(zscore(x),y(:,iVar),glm_distribution,'lambda',lasso_lambda,'alpha',lasso_alpha);
@@ -127,13 +127,19 @@ if isempty(b) && isempty(net)  % fit a new model
                 else
                     s(iVar) = s_temp;
                 end
-            case 'linmodel'
+                
+            case 'linmodel' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 b(:,iVar) = [ones(size(x,1),1), x]\y(:,iVar);
                 yfit = [ones(size(x,1),1), x]*b(:,iVar);
-            case 'nn'
+                
+            case 'nn' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 net = feedforwardnet(layer_sizes, train_func);
                 net = train(net, x', y');
                 yfit = net(x')';
+                
+            case 'kalman' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                kf_model = train_kalman(x,y);
+                yfit = predict_kalman(kf_model,x,y(1,:),zeros(size(y,2)));
         end
         
         % cascade with a polynomial
@@ -151,21 +157,30 @@ end
 if add_pred_to_td
     for trial = 1:length(trial_data)
         x  = get_vars(trial_data(trial),in_signals);
+        y  = get_vars(trial_data(trial),out_signals);
         
         yfit = zeros(size(x,1),size(b,2));
         for iVar = 1:size(b,2)
             switch lower(model_type)
-                case 'glm'
+                case 'glm' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     if do_lasso
                         yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
                     else
                         yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
                     end
-                case 'linmodel'
+                    
+                case 'linmodel' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     yfit(:,iVar) = [ones(size(x,1),1), x]*b(:,iVar);
-                case 'nn'
+                    
+                case 'nn' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     warning('neural net is not implemented properly for re-testing. Code cycles along predicted variables but the neural net predicts all at once.');
                     yfit = net(x')';
+                    
+                case 'kalman' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    if trial == 1
+                        V = zeros(size(y,2));
+                    end
+                    [yfit,V] = predict_kalman(kf_model,x,y(1,:),squeeze(V(:,:,1)));
             end
         end
         
@@ -180,7 +195,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Package up outputs
 switch lower(model_type)
-    case 'glm'
+    case 'glm' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         if strcmpi(model_type,'glm') && ~do_lasso
             if isfield(s,'resid')
                 s = rmfield(s,{'resid','residp','residd','resida','wts'});
@@ -199,7 +214,7 @@ switch lower(model_type)
             'lasso_alpha',  lasso_alpha, ...
             'P',   P);
         
-    case 'linmodel'
+    case 'linmodel' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         model_info = struct( ...
             'model_type',   model_type, ...
             'model_name',   model_name, ...
@@ -208,7 +223,8 @@ switch lower(model_type)
             'train_idx',    train_idx, ...
             'b',            b, ...
             'P',   P);
-    case 'nn'
+        
+    case 'nn' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         model_info = struct(...
             'model_type',   model_type, ...
             'model_name',   model_name, ...
@@ -217,4 +233,15 @@ switch lower(model_type)
             'train_idx',    train_idx, ...
             'b',            net, ...
             'P',   P);
+        
+    case 'kalman' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        model_info = struct(...
+            'model_type',   model_type, ...
+            'model_name',   model_name, ...
+            'in_signals',   {in_signals}, ...
+            'out_signals',  {out_signals}, ...
+            'train_idx',    train_idx, ...
+            'b',            kf_model, ...
+            'P',   P);
+        
 end
