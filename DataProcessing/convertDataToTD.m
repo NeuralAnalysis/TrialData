@@ -135,7 +135,6 @@ for iFile = 1:length(signal_info)
             % determine if we are looking at continuous or event data and
             % reassigning things appropriately
             if strcmpi(which_type,'spikes') || strcmpi(which_type,'event')
-                                disp('hi');
                 % it's an event type, so use event_data
                 if isfield(file_data_temp,'event_data') && isfield(file_data_temp,'event_labels')
                     file_data_temp.data = file_data_temp.event_data;
@@ -195,7 +194,7 @@ for iFile = 1:length(signal_info)
                 else
                     idx = ismember(file_data_temp.labels,which_label);
                 end
-                if isempty(idx)
+                if ~any(idx)
                     error_flag = true;
                     disp(['ERROR: ' mfilename ': No label found! Here is the list: ' file_data_temp.labels]);
                 end
@@ -250,7 +249,6 @@ for iFile = 1:length(signal_info)
             case 'spikes' % it's a spike, so time
                 for i = 1:length(data)
                     % shift them back in time by the amount post-sync
-                    data{i} = data{i} + file_data_temp.t(1);
                     idx_keep = data{i} >= 0;
                     data{i} = data{i}(idx_keep);
                 end
@@ -258,12 +256,10 @@ for iFile = 1:length(signal_info)
                 if iscell(data) % events are a time
                     for i = 1:length(data)
                         % shift them back in time by the amount post-sync
-                        data{i} = data{i} + file_data_temp.t(1);
                         idx_keep = data{i} >= 0;
                         data{i} = data{i}(idx_keep);
                     end
                 else % events are binned
-                    
                     idx_keep = file_data_temp.t >= 0;
                     data = data(idx_keep,:);
                 end
