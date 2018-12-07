@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function binned_emg = process_emg(data,params)
+function emg_data = process_emg(data,params)
 % Process EMG - computes envelope of emg signal and then bins it. Written
 % to work with convertDataToTD.
 %
@@ -10,7 +10,6 @@ emg_LPF_cutoff  =  50;    % for EMG butterworth filter
 emg_HPF_cutoff  =  [10 900];    % for EMG butterworth filter
 emg_n_poles     =  4;     % for EMG butterworth filter
 samprate        =  [];
-bin_size        =  0.01;
 if ~isempty(params), assignParams(who,params); end
 
 
@@ -27,7 +26,6 @@ data = 2*data.*data;
 data = filtfilt(blow,alow,data);
 data = abs(sqrt(data));
 
-% rebin the signals at the new sampling rate (given by bin_size)
-binned_emg = rebin_signals(data,struct('bin_size',bin_size,'samprate',samprate));
+emg_data = data;
 
 end

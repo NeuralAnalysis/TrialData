@@ -272,24 +272,23 @@ for iFile = 1:length(signal_info)
         % Make all of these generic based on routine, and put this code in a
         % subfunc maybe?
         
-        % first get new time vector
-        [P,Q] = rat((1/bin_size)/sig_data(count).samprate,1e-7); % get integers for resampling ratio
-        t_bin = file_data_temp.t;
-        resample_vector = true(length(t_bin),1);
-        t_bin = downsample(upsample(t_bin,P),Q);
-        resample_vector = downsample(upsample(resample_vector,P),Q);
-        t_bin = interp1(find(resample_vector),t_bin(resample_vector),(1:length(t_bin))');
+        % first get new unified time vector
+        t_bin = (0:bin_size:sig_data(count).duration)';
         
         % now resample/bin the actual data
         switch lower(which_type)
             case 'spikes' % these are timestamps of spikes in seconds
                 data_bin = bin_spikes(data,1:length(data),t_bin);
                 
-            case 'emg' % filter appropriately and downsample
+            case 'emg' % filter appropriately and resample/interpolate
                 temp_params = params;
-                temp_params.bin_size = bin_size;
                 temp_params.samprate = sig_data(count).samprate;
-                data_bin = process_emg(data,temp_params);
+                data = process_emg(data,temp_params);
+                
+                % rebin the signals at the new sampling rate (given by bin_size)
+                data_resampled = resample_signals(data,file_data_temp.t,struct('bin_size',bin_size,'samprate',sig_data(count).samprate));
+                % then interpolate to unified time vector
+                data_bin = interp1(t_resamp,data_resampled,t_bin);
                 
             case 'lfp' % filter into requested bands and downsample
                 error('LFP not supported yet.');
@@ -304,9 +303,11 @@ for iFile = 1:length(signal_info)
                 if ~iscell(data), data = {data}; end
                 data_bin = bin_events(data,t_bin);
 
-            case 'generic'
+            case 'generic' % resample/interpolate
                 % resample signals at new sampling rate
-                data_bin = rebin_signals(data,struct('bin_size',bin_size,'samprate',sig_data(count).samprate));
+                [data_resampled,t_resamp] = resample_signals(data,file_data_temp.t,struct('bin_size',bin_size,'samprate',sig_data(count).samprate));
+                % then interpolate to unified time vector
+                data_bin = interp1(t_resamp,data_resampled,t_bin);
                 
             otherwise
                 error_flag = true;
