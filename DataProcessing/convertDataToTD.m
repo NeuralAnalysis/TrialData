@@ -94,7 +94,7 @@ for iFile = 1:length(signal_info)
         %
         % If there's an error, add an error_flag field to the output and
         % this will all fail gracefully
-        file_data = which_routine(which_file,signal_info{iFile}.params);
+        file_data = which_routine(which_file,signal_info{iFile});
     else
         error_flag = true;
         disp(['ERROR: ' mfilename ': routine not specified!']);
