@@ -21,10 +21,20 @@ else
 end
 
 % !!! note the rectification step in the following command:
-data = filtfilt(bhigh,ahigh,double(data));
-data = 2*data.*data;
-data = filtfilt(blow,alow,data);
-data = abs(sqrt(data));
+% only run operations on non-nan samples (since there might be nans at
+% beginning and end if data doesn't exist at those points)
+data_idx = ~any(isnan(data),2);
+
+% check data to see if there are any random NaNs in the middle
+block_starts = find(diff([0;data_idx;0])>0);
+block_ends = find(diff([0;data_idx;0])<0);
+assert(numel(block_starts)==1 && numel(block_ends)==1,'EMG data block is not continuous')
+
+temp = filtfilt(bhigh,ahigh,double(data(data_idx,:)));
+temp = 2*temp.*temp;
+temp = filtfilt(blow,alow,temp);
+data(data_idx,:) = abs(sqrt(temp));
+data(~data_idx,:) = NaN;
 
 emg_data = data;
 
