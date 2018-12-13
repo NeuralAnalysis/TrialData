@@ -81,7 +81,7 @@ pca_centered     = true;  % whether to center data
 fa_orthogonalize = true; % whether to orthogonalize the projections
 fa_rotate        = 'none';
 add_proj_to_td   = true;  % whether to add projections
-recenter_for_proj = false; % whether to recenter data before projecting into PC space
+recenter_for_proj = true; % whether to recenter data before projecting into PC space
 w                 = [];    % w is used to know if params was info_out (e.g. whether to recompute space)
 mu                = [];    % mu is the mean from fitting, only filled if info_out is passed in
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -187,6 +187,8 @@ if add_proj_to_td
         else
             mu = zeros(1,sum(n_signals));
         end
+    else
+        mu = zeros(1,sum(n_signals));
     end
     
     for trial = 1:length(trial_data)
