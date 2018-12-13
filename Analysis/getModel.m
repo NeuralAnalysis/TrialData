@@ -113,15 +113,16 @@ if isempty(b) && isempty(net)  % fit a new model
     
     switch lower(model_type)
         case 'glm' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            yfit = zeros(size(y));
             for iVar = 1:size(y,2) % loop along outputs to predict
                 if do_lasso % not quite implemented yet
                     % NOTE: Z-scores here!
                     [b_temp,s_temp] = lassoglm(zscore(x),y(:,iVar),glm_distribution,'lambda',lasso_lambda,'alpha',lasso_alpha);
                     b(:,iVar) = [s_temp.Intercept; b_temp];
-                    yfit = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
+                    yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
                 else
                     [b(:,iVar),~,s_temp] = glmfit(x,y(:,iVar),glm_distribution);
-                    yfit = exp([ones(size(x,1),1), x]*b(:,iVar));
+                    yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
                 end
                 
                 if isempty(s)
@@ -132,9 +133,10 @@ if isempty(b) && isempty(net)  % fit a new model
             end
             
         case 'linmodel' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            yfit = zeros(size(y));
             for iVar = 1:size(y,2) % loop along outputs to predict
                 b(:,iVar) = [ones(size(x,1),1), x]\y(:,iVar);
-                yfit = [ones(size(x,1),1), x]*b(:,iVar);
+                yfit(:,iVar) = [ones(size(x,1),1), x]*b(:,iVar);
             end
             
         case 'nn' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
