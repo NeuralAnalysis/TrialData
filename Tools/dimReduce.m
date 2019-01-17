@@ -35,9 +35,9 @@
 %                           2) {'NAME1',idx; 'NAME2',idx; etc}
 %                                   Here idx is which columns to use
 %                                   Note: can use 'all' as idx for all
-%     .trial_idx      : which trials to use for computing the low-D space (default: all)
+%     .use_trials     : which trials to use for computing the low-D space (default: all)
 %                         Note: when adding projections, does so for all
-%                         trials in trial_data, not just trial_idx
+%                         trials in trial_data, not just use_trials
 %     .num_dims       : how many dimensions (e.g. for PPCA, FA). For PCA,
 %                        do nothing and it returns same dimensionality as
 %                        input, or specify a value if you like.
@@ -58,7 +58,7 @@
 %   e.g. to add scores to trial_data later using the above output
 %       trial_data = dimReduce(trial_data, params);
 %
-% Written by Matt Perich. Updated Feb 2017.
+% Written by Matt Perich. Updated Jan 2018.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [trial_data,info_out] = dimReduce(trial_data, params)
@@ -90,6 +90,9 @@ if nargin > 1
         % assume the signals were provided
         signals = params;
     else
+        if isfield(params,'trial_idx')
+            warning('''trial_idx'' input has been changed to ''use_trials''... FYI.');
+        end
         assignParams(who,params); % overwrite parameters
     end
 end
