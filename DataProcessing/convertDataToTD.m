@@ -192,16 +192,20 @@ for iFile = 1:length(signal_info)
                 if strcmpi(which_type,'spikes')
                     idx = 1:size(file_data_temp.labels,1);
                 else
-                    idx = ismember(file_data_temp.labels,which_label);
+                    [~,idx] = ismember(which_label,file_data_temp.labels);
                 end
-                if ~any(idx)
+                if any(idx==0)
                     error_flag = true;
                     disp(['ERROR: ' mfilename ': No label found! Here is the list: ' file_data_temp.labels]);
                 end
             elseif length(which_label) == 1
                 temp_label = which_label{1};
                 if iscell(temp_label) && ischar(temp_label{1}) % it's multiple text entries
-                    idx = ismember(file_data_temp.labels,temp_label);
+                    [~,idx] = ismember(temp_label,file_data_temp.labels);
+                    if any(idx==0)
+                        error_flag = true;
+                        disp(['ERROR: ' mfilename ': No label found! Here is the list: ' file_data_temp.labels]);
+                    end
                 elseif isnumeric(temp_label) % it's not a char, so it must be an array of numbers
                     idx = temp_label;
                 else
