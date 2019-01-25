@@ -40,6 +40,7 @@ else
         assignParams(who,params);
     end
 end
+if isempty(signals), error('Must  define signals!'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 signals = check_signals(trial_data,signals);

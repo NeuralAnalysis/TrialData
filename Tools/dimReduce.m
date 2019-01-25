@@ -35,9 +35,9 @@
 %                           2) {'NAME1',idx; 'NAME2',idx; etc}
 %                                   Here idx is which columns to use
 %                                   Note: can use 'all' as idx for all
-%     .trial_idx      : which trials to use for computing the low-D space (default: all)
+%     .use_trials     : which trials to use for computing the low-D space (default: all)
 %                         Note: when adding projections, does so for all
-%                         trials in trial_data, not just trial_idx
+%                         trials in trial_data, not just use_trials
 %     .num_dims       : how many dimensions (e.g. for PPCA, FA). For PCA,
 %                        do nothing and it returns same dimensionality as
 %                        input, or specify a value if you like.
@@ -58,7 +58,7 @@
 %   e.g. to add scores to trial_data later using the above output
 %       trial_data = dimReduce(trial_data, params);
 %
-% Written by Matt Perich. Updated Feb 2017.
+% Written by Matt Perich. Updated Jan 2018.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [trial_data,info_out] = dimReduce(trial_data, params)
@@ -81,7 +81,7 @@ pca_centered     = true;  % whether to center data
 fa_orthogonalize = true; % whether to orthogonalize the projections
 fa_rotate        = 'none';
 add_proj_to_td   = true;  % whether to add projections
-recenter_for_proj = false; % whether to recenter data before projecting into PC space
+recenter_for_proj = true; % whether to recenter data before projecting into PC space
 w                 = [];    % w is used to know if params was info_out (e.g. whether to recompute space)
 mu                = [];    % mu is the mean from fitting, only filled if info_out is passed in
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -90,6 +90,9 @@ if nargin > 1
         % assume the signals were provided
         signals = params;
     else
+        if isfield(params,'trial_idx')
+            warning('''trial_idx'' input has been changed to ''use_trials''... FYI.');
+        end
         assignParams(who,params); % overwrite parameters
     end
 end
@@ -187,6 +190,8 @@ if add_proj_to_td
         else
             mu = zeros(1,sum(n_signals));
         end
+    else
+        mu = zeros(1,sum(n_signals));
     end
     
     for trial = 1:length(trial_data)
