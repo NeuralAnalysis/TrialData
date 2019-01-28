@@ -9,10 +9,14 @@
 %
 % INPUTS:
 %   trial_data : trial data struct
-%   params     : (struct) has parameter values
+%   params      : (struct) has parameter values
 %       .ranges : {'idx_START','idx_END',[MIN_#BINS,MAX_#BINS]; etc...}
 %                 ex: {'idx_go_cue','idx_movement_on',[5 30]} to remove
 %                     reaction times smaller than 5 and larger than 30 bins
+%       .remove_nan_idx : (bool; default: false) removes trials any idx_
+%                         with NaN values.
+%       .nan_idx_names : (string or cell array of strings) which fields for 
+%                        remove_nan_idx. Default is to do 'all'
 %
 % OUTPUTS:
 %   trial_data : struct with bad trials removed
@@ -24,7 +28,7 @@
 function [trial_data,bad_trials] = removeBadTrials(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ranges         = [];
-remove_nan_idx = true;
+remove_nan_idx = false;
 nan_idx_names = 'all';
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
