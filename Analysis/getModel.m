@@ -161,6 +161,10 @@ if isempty(b) && isempty(net)  % fit a new model
 else % use an old GLM
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % these parameters should already be assigned from assignParams
+    switch lower(model_type)
+        case 'kalman' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            kf_model = b;
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
