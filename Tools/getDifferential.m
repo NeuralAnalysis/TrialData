@@ -1,7 +1,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function trial_data = getDifferential(trial_data,signal,alias)
 %
-%   Differentiates a signal (e.g. get velocity from position)
+%   Differentiates a signal (e.g. get velocity from position). Uses the
+% GRADIENT function to compute the derivative.
 %
 % INPUTS:
 %   trial_data : the struct
@@ -9,7 +10,6 @@
 %       .signal       : (string) which signal (field) to use
 %       .alias        : (string, optional) what name to use in struct
 %                           Default is to add a 'd' in front of signal name
-%       .intial_value : value for signal at t = 0
 %
 % OUTPUTS:
 %   trial_data : the struct with differential field
