@@ -31,6 +31,8 @@ if nargin > 1, assignParams(who,params); end % overwrite defaults
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 if ~iscell(nan_idx_names), nan_idx_names = {nan_idx_names}; end
 
+fn_time = getTDfields(trial_data,'time');
+
 if strcmpi(nan_idx_names,'all')
     fn_idx = getTDfields(trial_data,'idx');
 else
@@ -76,13 +78,33 @@ for trial = 1:length(trial_data)
         for i = 1:size(ranges,1)
             % define index values so I can check to make sure it's okay
             
-            % If your requested values don't exist...
-            if isempty(td.(ranges{i,1})) || isempty(td.(ranges{i,2}))
-                error('idx references are outside trial range.');
+            [idx1,idx2] = deal([]);
+            if strcmpi(ranges{i,1},'start')
+                idx1 = 1;
+            end
+            if strcmpi(ranges{i,2},'end')
+                idx2 = size(td.(fn_time{1}),1);
             end
             
-            if td.(ranges{i,2}) - td.(ranges{i,1}) < ranges{i,3}(1) || ...
-                    td.(ranges{i,2}) - td.(ranges{i,1}) > ranges{i,3}(2)
+            % If your requested values don't exist...
+            if isempty(idx1)
+                if isempty(td.(ranges{i,1}))
+                    error('idx references are outside trial range.');
+                else
+                    idx1 = td.(ranges{i,1});
+                end
+            end
+            
+            if isempty(idx2)
+                if isempty(td.(ranges{i,2}))
+                    error('idx references are outside trial range.');
+                else
+                    idx2 = td.(ranges{i,2});
+                end
+            end
+            
+            if idx2 - idx1 < ranges{i,3}(1) || ...
+                    idx2 - idx1 > ranges{i,3}(2)
                 err = true;
             end
         end
