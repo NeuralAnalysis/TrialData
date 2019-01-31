@@ -37,6 +37,11 @@ if nargin > 1
         assignParams(who,params);
     end
 end 
+
+if isfield(params,'kernel_SD')
+    warning('smoothSignals changed!!! the kernel_SD input is now called width. it looks like you passed in kernel_SD. This means it will do nothing! Change it to width.');
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 if isempty(signals), error('Must provide one or more signals to smooth.'); end
