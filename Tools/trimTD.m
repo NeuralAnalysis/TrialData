@@ -16,6 +16,7 @@
 %                   For the above, can put just 'start' or 'end' to do
 %                   first or last bin available. Also, second entry isn't
 %                   necessary. Will default to 0 for num_bins_after.
+%
 %   params:
 %       zero_pad : if true, will zero pad signals to make all trials the
 %           same length (default: false)
@@ -72,7 +73,7 @@ for trial = 1:length(trial_data)
         end
         
     else
-        error('End input not formatted properly.');
+        error('Start input not formatted properly.');
     end
     
     % parse the input to get the end idx
