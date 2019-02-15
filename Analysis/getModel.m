@@ -45,11 +45,11 @@
 %
 % EXAMPLES:
 %   e.g. to fit a GLM
-%       [trial_data,glm_info] = getGLM(trial_data(train_trials),params);
+%       [trial_data,glm_info] = getModel(trial_data(train_trials),params);
 %   e.g. to use a previous model make predictions for new data
-%       trial_data            = getGLM(trial_data(new_trials),glm_info)
+%       trial_data            = getModel(trial_data(new_trials),glm_info)
 %
-% Written by Matt Perich. Updated Feb 2017.
+% Written by Matt Perich. Updated Feb 2019.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [trial_data,model_info] = getModel(trial_data,params)
