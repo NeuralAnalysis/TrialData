@@ -29,7 +29,7 @@
 function trial_data  = getNorm(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 signals    =  ''; % which signals to use
-norm_name  =  {''}; % the name of the normalized signal
+norm_name  =  ''; % the name of the normalized signal
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin < 2
     error('Must define signals!');
@@ -49,15 +49,15 @@ signals = check_signals(trial_data,signals);
 if ~iscell(norm_name), norm_name = {norm_name}; end
 
 % define all of the names to use
-if isempty(norm_name) ||  ( length(norm_name) == 1 && isempty(norm_name{1}) )
-    all_norm_names = signals;
+if isempty(norm_name{1}) ||  ( length(norm_name) == 1 && isempty(norm_name{1}) )
+    all_norm_names = signals(:,1);
     for iSig = 1:size(signals,1)
         all_norm_names{iSig} = [all_norm_names{iSig} '_norm'];
     end
 end
 
 %  check to make sure we have all the names
-if length(norm_name) ~= size(signals,1)
+if length(all_norm_names) ~= size(signals,1)
     error('Not enough names for the fields! Need one per signal.');
 end
 
@@ -71,6 +71,6 @@ for trial = 1:length(trial_data)
             new_sig(t) = norm(sig(t,signals{iSig,2}));
         end
         
-        trial_data(trial).(norm_name{iSig}) = new_sig;
+        trial_data(trial).(all_norm_names{iSig}) = new_sig;
     end
 end
