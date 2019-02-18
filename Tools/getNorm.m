@@ -54,6 +54,8 @@ if isempty(norm_name{1}) ||  ( length(norm_name) == 1 && isempty(norm_name{1}) )
     for iSig = 1:size(signals,1)
         all_norm_names{iSig} = [all_norm_names{iSig} '_norm'];
     end
+else
+    all_norm_names = norm_name;
 end
 
 %  check to make sure we have all the names
