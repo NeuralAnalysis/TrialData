@@ -132,6 +132,10 @@ for trial = 1:length(trial_data)
                 td_s(count).([fn_array{i}, '_unit_guide']) = trial_data(1).([fn_array{i}, '_unit_guide']);
             end
             % check that the index won't crash
+            if idx_start < 1
+                disp('Requested time begins before trial begins (negative value). Defaulting to first bin.');
+                idx_start = 1;
+            end
             if idx_end > size(td.(fn_time{1}),1)
                 disp('Requested time extended beyond available trial data. Defaulting to last bin.');
                 idx_end = size(td.(fn_time{1}),1);
