@@ -26,7 +26,7 @@
 %                               'linmodel' : a simple linear filter
 %                               'glm'      : a generalized linear model
 %                               'nn'       : a feedforward neural net
-%            .nonlinearity : (int) order of nonlinearity (if nonexistent or
+%            .polynomial   : (int) order of poly nonlinearity (if nonexistent or
 %                               0, it won't add the nonlinearity)
 %            .model_name   : (string) unique name for this model fit
 %            .in_signals   : (cell) GLM inputs in form {'name',idx; 'name',idx};
