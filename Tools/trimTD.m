@@ -126,6 +126,10 @@ for trial = 1:length(trial_data)
     end
     t_new = t_start:t_end;
     
+    if t_start > t_end
+        error('Start time is after end time. Cannot trim!');
+    end
+    
     % process time fields
     for iSig = 1:length(fn_time)
         temp = trial_data(trial).(fn_time{iSig});
