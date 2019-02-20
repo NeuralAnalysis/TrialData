@@ -9,10 +9,14 @@
 %
 % INPUTS:
 %   trial_data : trial data struct
-%   params     : (struct) has parameter values
+%   params      : (struct) has parameter values
 %       .ranges : {'idx_START','idx_END',[MIN_#BINS,MAX_#BINS]; etc...}
 %                 ex: {'idx_go_cue','idx_movement_on',[5 30]} to remove
 %                     reaction times smaller than 5 and larger than 30 bins
+%       .remove_nan_idx : (bool; default: false) removes trials any idx_
+%                         with NaN values.
+%       .nan_idx_names : (string or cell array of strings) which fields for 
+%                        remove_nan_idx. Default is to do 'all'
 %
 % OUTPUTS:
 %   trial_data : struct with bad trials removed
@@ -24,12 +28,14 @@
 function [trial_data,bad_trials] = removeBadTrials(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ranges         = [];
-remove_nan_idx = true;
+remove_nan_idx = false;
 nan_idx_names = 'all';
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 if ~iscell(nan_idx_names), nan_idx_names = {nan_idx_names}; end
+
+fn_time = getTDfields(trial_data,'time');
 
 if strcmpi(nan_idx_names,'all')
     fn_idx = getTDfields(trial_data,'idx');
@@ -76,13 +82,33 @@ for trial = 1:length(trial_data)
         for i = 1:size(ranges,1)
             % define index values so I can check to make sure it's okay
             
-            % If your requested values don't exist...
-            if isempty(td.(ranges{i,1})) || isempty(td.(ranges{i,2}))
-                error('idx references are outside trial range.');
+            [idx1,idx2] = deal([]);
+            if strcmpi(ranges{i,1},'start')
+                idx1 = 1;
+            end
+            if strcmpi(ranges{i,2},'end')
+                idx2 = size(td.(fn_time{1}),1);
             end
             
-            if td.(ranges{i,2}) - td.(ranges{i,1}) < ranges{i,3}(1) || ...
-                    td.(ranges{i,2}) - td.(ranges{i,1}) > ranges{i,3}(2)
+            % If your requested values don't exist...
+            if isempty(idx1)
+                if isempty(td.(ranges{i,1}))
+                    error('idx references are outside trial range.');
+                else
+                    idx1 = td.(ranges{i,1});
+                end
+            end
+            
+            if isempty(idx2)
+                if isempty(td.(ranges{i,2}))
+                    error('idx references are outside trial range.');
+                else
+                    idx2 = td.(ranges{i,2});
+                end
+            end
+            
+            if idx2 - idx1 < ranges{i,3}(1) || ...
+                    idx2 - idx1 > ranges{i,3}(2)
                 err = true;
             end
         end

@@ -1,33 +1,30 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function [avg_data, cond_idx] = trialAverage(trial_data, conditions, params)
+% function [avg_data, cond_idx] = trialAverage(trial_data, params)
 %
 %   Returns struct where each entry is an average for all time-varying
-% signals across trials for some condition. This function can interpolate
-% to stretch/shrink all trials to the same number of points, but it does
-% not trim data. This can be easily done with trimTD.
+% signals across trials for some condition. Requires every trial be the
+% same length. This can be easily done with trimTD or stretchSignals.
 %
 % Note: returns all fields, but for meta parameters, etc, you can average
 % across trials with different values. If they all are the same, fills in
 % field for that condition with that value. Otherwise, adds cell array that
 % contains all unique values, largely for later reference.
 %
-% TO DO: add field that says the number of trials that were averaged over
-%
 % INPUTS:
 %   trial_data : the struct
-%   conditions : (string or cell array) the field name(s) in trial_data
+%   params     : struct with parameters
+%     .conditions : (string or cell array) the field name(s) in trial_data
 %                       avg_data will have an entry for each unique combo
 %                       Hint: use 'all' to just do all of trial_data
-%   params     : struct with parameters
-%     .do_stretch : (bool) whether to stretch/shrink trials to uniform length
-%                       if false, all trials must have same number of points
-%     .num_samp   : (int) how many time points to use for interpolation
 %     .add_std    : (bool) whether to add a field with the standard dev at
 %                       each time point. it will be trial_data.SIGNALNAME_std
 %
+%    NOTE: can pass conditions (string/cell) as second input instead of
+%          params struct.
+%
 % OUTPUTS:
-%   avg_data : struct representing average across trials for each condition
-%   cond_idx : cell array containing indices for each condition
+%   avg_data   : struct representing average across trials for each condition
+%   cond_idx   : cell array containing indices for each condition
 %
 % EXAMPLES:
 %   e.g. to average over all target directions and task epochs
@@ -35,17 +32,18 @@
 %       Note: gives a struct of size #_TARGETS * #_EPOCHS
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [avg_data,cond_idx] = trialAverage(trial_data, conditions, params)
+function [avg_data,cond_idx] = trialAverage(trial_data, params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETER VALUES
-do_stretch  =  false;
-num_samp    =  1000;
 add_std     =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
-avg_flag = true; % will add a flag field saying it's trial-averaged
-if nargin > 2 % overwrite parameters
+conditions  =  {};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if nargin == 2 && isstruct(params) % overwrite parameters
     assignParams(who,params);
+elseif nargin == 2 % conditions is passed in
+    conditions = params;
 elseif nargin < 2 % do all
     conditions = {'all'};
 end
@@ -59,12 +57,6 @@ if ~iscell(conditions), conditions = {conditions}; end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get list of time-varying signals that we will average over
 time_vars = getTDfields(trial_data,'time');
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Time warp each trial to the same number of points, if desired
-if do_stretch
-    trial_data = stretchSignals(trial_data,struct('num_samp',num_samp));
-end
 
 fn_time = getTDfields(trial_data,'time');
 if length(unique(cellfun(@(x) size(x,1),{trial_data.(fn_time{1})}))) ~= 1
@@ -142,9 +134,7 @@ for i = 1:num_conds
             avg_data(i).([time_vars{v} '_std']) = std(cat(3,trial_data(cond_idx{i}).(time_vars{v})),[],3);
         end
     end
-    if avg_flag
-        avg_data(i).is_average = true;
-    end
+    
     % add idx fields
     fn_idx = getTDfields(trial_data,'idx');
     

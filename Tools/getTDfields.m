@@ -68,9 +68,6 @@ switch lower(which_type)
             for ifn = 1:length(fn)
                 idx(ifn) = size(trial_data(trial_idx).(fn{ifn}),1)==t;
             end
-            % in RW, the target center field has rows equal to the number
-            % of targets, so hard code in an exclusion here
-            idx = idx & ~ismember(fn,'target_center');
             fn = fn(idx);
         elseif t == 1
             % there is an edge case where if there is only one time bin it
@@ -120,8 +117,9 @@ switch lower(which_type)
     case 'unit_guides'
         fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_unit_guide')));
     case 'labels'
-        fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_unit_guide')) | ...
-            cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_names')));
+        % fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_unit_guide')) | ...
+        %     cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_names')));
+        fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_names')));
     case 'arrays' % same as spikes but I only return the array name, and I exclude "shift"
         fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_spikes')) & ...
             ~cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_shift')));

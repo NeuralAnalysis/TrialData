@@ -40,10 +40,10 @@ function metric = evalModel(trial_data,params)
 model_type       =  '';
 out_signals      =  [];
 model_name       =  [];
-trial_idx        =  [1,length(trial_data)];
+trial_idx        =  [1 length(trial_data)];
 eval_metric      =  '';
 block_trials     =  false;
-num_boots        =  1000;
+num_boots        =  0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented parameters
 td_fn_prefix     =  '';    % prefix for fieldname
@@ -75,8 +75,10 @@ out_signals = check_signals(trial_data(1),out_signals);
 % Calculate pr2
 if block_trials
     metric = NaN(sum(cellfun(@(x) length(x),out_signals(:,2))),2);
-    y = get_vars(trial_data(trial_idx),out_signals);
-    yhat1 = cat(1,trial_data(trial_idx).([td_fn_prefix '_' model_name{1}]));
+    
+    y = getSig(trial_data(trial_idx),out_signals);
+    yhat1 = getSig(trial_data(trial_idx),[td_fn_prefix '_' model_name{1}]);
+    
     if length(model_name) == 1
         for iVar = 1:size(y,2)
             metric(iVar,:) = get_metric(y(:,iVar),yhat1(:,iVar),eval_metric,num_boots);
@@ -93,7 +95,9 @@ if block_trials
 else
     % quick hack here for when we aren't binning and want single trials
     if unique(diff(trial_idx)) == 1, trial_idx = [trial_idx, trial_idx(end)+1]; end
+    
     metric = NaN(length(trial_idx)-1,sum(cellfun(@(x) length(x),out_signals(:,2))),2);
+    
     for i = 1:length(trial_idx)-1
         trials = trial_idx(i):trial_idx(i+1)-1;
         
@@ -162,5 +166,6 @@ end
 % no need to repeat
 if num_bootstraps > 1
     metric = prctile(metric,[2.5,97.5]);
+    metric = [mean(metric) - std(metric); mean(metric) + std(metric)];
 end
 end

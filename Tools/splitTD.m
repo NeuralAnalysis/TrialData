@@ -5,11 +5,12 @@
 % before/after each go cue, but note that this will result in overlapping
 % time points across trials.
 %
-% Will also add idx_trial_start and idx_trial_end fields
+% Will also add idx_trial_start and idx_trial_end fields.  These names are
+% configurable though with extra params inputs.
 %
 % Note that you can just a string in as params which refers to the split
-% idx, saving the need to define a struct, and it will just use the default
-% params for everything else.
+% idx, saving the need to define a params struct, and it will just use the
+% default params for everything else.
 %
 % INPUTS:
 %   trial_data : the struct
@@ -21,14 +22,10 @@
 %                               tied to each TRIAL_START event)
 %       .extra_bins        : [TIME_BEFORE, TIME_AFTER] (in # bins, must be positive)
 %
-% Note: if the length(trial_data) == 1, it will add a "is_continuous" field
-% to each trial to signify that this was a single piece of data that was
-% split
-%
 % OUTPUTS:
 %   td_s : the struct separated by movements
 %
-% Written by Matt Perich. Updated February 2018.
+% Written by Matt Perich. Updated October 2018.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function td_s = splitTD(trial_data,params)
@@ -71,11 +68,6 @@ fn_meta = getTDfields(trial_data,'meta');
 % remove the linked fields from meta
 fn_meta = setdiff(fn_meta,linked_fields);
 
-if length(trial_data) == 1
-    is_continuous = true;
-else
-    is_continuous = false;
-end
 count = 0;
 for trial = 1:length(trial_data)
     td = trial_data(trial);
@@ -88,6 +80,11 @@ for trial = 1:length(trial_data)
         if ~isnan(split_idx(idx)) && split_idx(idx) <= t_max
             count = count + 1;
             
+            % copy over the meta data
+            for i = 1:length(fn_meta)
+                td_s(count).(fn_meta{i}) = td.(fn_meta{i});
+            end
+            
             % first split up attached fields
             if ~isempty(linked_fields)
                 for i = 1:length(linked_fields)
@@ -98,11 +95,6 @@ for trial = 1:length(trial_data)
                         td_s(count).(linked_fields{i}) = temp;
                     end
                 end
-            end
-            
-            % copy over the meta data
-            for i = 1:length(fn_meta)
-                td_s(count).(fn_meta{i}) = td.(fn_meta{i});
             end
             
             % get the start and end indices
@@ -122,7 +114,14 @@ for trial = 1:length(trial_data)
             for i = 1:length(fn_idx)
                 % find idx that are within idx_start and idx_end
                 temp = td.(fn_idx{i});
-                td_s(count).(fn_idx{i}) = temp(temp >= idx_start & temp < idx_end) - idx_start;
+                temp = temp(temp >= idx_start & temp < idx_end) - idx_start + 1;
+
+                % if empty, set NaN
+                if isempty(temp)
+                    temp = NaN;
+                end
+
+                td_s(count).(fn_idx{i}) = temp;
             end
             
             td_s(count).(start_name) = extra_bins(1)+1;
@@ -133,6 +132,10 @@ for trial = 1:length(trial_data)
                 td_s(count).([fn_array{i}, '_unit_guide']) = trial_data(1).([fn_array{i}, '_unit_guide']);
             end
             % check that the index won't crash
+            if idx_start < 1
+                disp('Requested time begins before trial begins (negative value). Defaulting to first bin.');
+                idx_start = 1;
+            end
             if idx_end > size(td.(fn_time{1}),1)
                 disp('Requested time extended beyond available trial data. Defaulting to last bin.');
                 idx_end = size(td.(fn_time{1}),1);
@@ -141,9 +144,6 @@ for trial = 1:length(trial_data)
             for i = 1:length(fn_time)
                 temp = td.(fn_time{i});
                 td_s(count).(fn_time{i}) = temp(idx_start:idx_end,:);
-            end
-            if is_continuous
-                td_s(count).is_continuous = true;
             end
         end
     end

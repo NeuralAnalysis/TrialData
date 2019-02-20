@@ -16,6 +16,7 @@
 %                   For the above, can put just 'start' or 'end' to do
 %                   first or last bin available. Also, second entry isn't
 %                   necessary. Will default to 0 for num_bins_after.
+%
 %   params:
 %       zero_pad : if true, will zero pad signals to make all trials the
 %           same length (default: false)
@@ -72,7 +73,7 @@ for trial = 1:length(trial_data)
         end
         
     else
-        error('End input not formatted properly.');
+        error('Start input not formatted properly.');
     end
     
     % parse the input to get the end idx
@@ -114,7 +115,7 @@ for trial = 1:length(trial_data)
     end
     
     if t_end > t(end)
-        warning('Requested end time went beyond trial time...')
+        warning('Trial %d: Requested end time went beyond trial time...',trial)
         if ~zero_pad
             t_end = length(t);
         end
@@ -124,6 +125,10 @@ for trial = 1:length(trial_data)
         error('Cannot trim, because some necessary indices are NaN.');
     end
     t_new = t_start:t_end;
+    
+    if t_start > t_end
+        error('Start time is after end time. Cannot trim!');
+    end
     
     % process time fields
     for iSig = 1:length(fn_time)
@@ -165,10 +170,5 @@ for trial = 1:length(trial_data)
     end
     
     
-end
-
-% if you're trimming, it's no longer continuous
-if isfield(trial_data,'is_continuous')
-    trial_data = rmfield(trial_data,'is_continuous');
 end
 

@@ -4,9 +4,13 @@
 %   This will find a time bin representing movement onset and peak speed
 % Currently for kinematics but could be easily adapted to force, etc.
 %
+%   Constrains the looking to a window specified by start_idx and end_idx
+%
 % INPUTS:
 %   trial_data : (struct) trial_data struct
 %   params     : parameter struct
+%     .start_idx    : (string) field name of idx to use for start of window
+%     .end_idx      : (string) field name to use for end of window
 %     .which_method : (string) how to compute
 %                           'peak' : uses acceleration and peak speed
 %                           'thresh' : uses a basic velocity threshold
@@ -29,6 +33,8 @@
 function trial_data = getMoveOnsetAndPeak(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
+start_idx     =  'idx_go_cue';
+end_idx       =  'idx_trial_end';
 which_method  =  'peak';
 min_ds        =  1.9;
 s_thresh      =  10;
@@ -38,37 +44,33 @@ which_field = 'speed';
 field_idx = 1;
 % these parameters aren't documented because I expect them to not need to
 % change but you can overwrite them if you need to.
-start_idx     =  'idx_goCueTime';
-end_idx       =  'idx_endTime';
 onset_name    =  'movement_on';
 peak_name     =  'peak_speed';
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 
-% some pre-processing
-td = getSpeed(trial_data);
 
 for trial = 1:length(trial_data)
     % use velocity to find bin corresponding to movement onset, movement offset, and peak speed
-    s = td(trial).(which_field)(:,field_idx);
+    s = trial_data(trial).(which_field)(:,field_idx);
     
     % find the time bins where the monkey may be moving
     move_inds = false(size(s));
-    move_inds(td(trial).(start_idx)+start_idx_offset:td(trial).(end_idx)) = true;
+    move_inds(trial_data(trial).(start_idx)+start_idx_offset:trial_data(trial).(end_idx)) = true;
     
     [on_idx,peak_idx] = deal(NaN);
     if strcmpi(which_method,'peak')
         ds = [0; diff(s)];
         dds = [0; diff(ds)];
         peaks = [dds(1:end-1)>0 & dds(2:end)<0; 0];
-        mvt_peak = find(peaks & (1:length(peaks))' > td(trial).(start_idx)+peak_idx_offset & ds > min_ds & move_inds, 1, 'first');
+        mvt_peak = find(peaks & (1:length(peaks))' > trial_data(trial).(start_idx)+peak_idx_offset & ds > min_ds & move_inds, 1, 'first');
         if ~isempty(mvt_peak)
             thresh = ds(mvt_peak)/2; % Threshold is half max of acceleration peak
             on_idx = find(ds<thresh & (1:length(ds))'<mvt_peak & move_inds,1,'last');
             
             % check to make sure the numbers make sense
-            if on_idx <= td(trial).(start_idx)
+            if on_idx <= trial_data(trial).(start_idx)
                 % something is fishy. Fall back on threshold method
                 on_idx = NaN;
             end

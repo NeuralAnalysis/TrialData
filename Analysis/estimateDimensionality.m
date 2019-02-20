@@ -1,5 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   Implements Machens method for assessing dimensionality
+%   Implements Machens method for assessing dimensionality.
+%
+% IMPORTANT: Must be done on single-trial data. No trialAverage!
 %
 % INPUTS:
 %   trial_data : the struct
@@ -41,9 +43,6 @@ if iscell(use_trials) % likely to be meta info
     use_trials = getTDidx(trial_data,use_trials{:});
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if isfield(trial_data,'is_average')
-    error('Provided average input. Must provide single trial data.');
-end
 
 trial_data = trial_data(use_trials);
 
