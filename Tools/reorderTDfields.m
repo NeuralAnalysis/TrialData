@@ -17,7 +17,7 @@ if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 fn        = fieldnames(trial_data);
 fn_idx    = getTDfields(trial_data,'idx');
 fn_neural = [getTDfields(trial_data,'neural'); getTDfields(trial_data,'unit_guides')];
-fn_cont   = getTDfields(trial_data,'cont');
+fn_cont   = [getTDfields(trial_data,'cont'); getTDfields(trial_data,'labels')];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % do some checks for bad field names

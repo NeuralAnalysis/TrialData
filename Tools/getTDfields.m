@@ -117,8 +117,9 @@ switch lower(which_type)
     case 'unit_guides'
         fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_unit_guide')));
     case 'labels'
-        fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_unit_guide')) | ...
-            cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_names')));
+        % fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_unit_guide')) | ...
+        %     cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_names')));
+        fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_names')));
     case 'arrays' % same as spikes but I only return the array name, and I exclude "shift"
         fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_spikes')) & ...
             ~cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_shift')));

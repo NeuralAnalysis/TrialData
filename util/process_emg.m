@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function binned_emg = process_emg(data,params)
+function emg_data = process_emg(data,params)
 % Process EMG - computes envelope of emg signal and then bins it. Written
 % to work with convertDataToTD.
 %
@@ -10,7 +10,6 @@ emg_LPF_cutoff  =  50;    % for EMG butterworth filter
 emg_HPF_cutoff  =  [10 900];    % for EMG butterworth filter
 emg_n_poles     =  4;     % for EMG butterworth filter
 samprate        =  [];
-bin_size        =  0.01;
 if ~isempty(params), assignParams(who,params); end
 
 
@@ -22,14 +21,21 @@ else
 end
 
 % !!! note the rectification step in the following command:
-data = filtfilt(bhigh,ahigh,double(data));
-data = 2*data.*data;
-data = filtfilt(blow,alow,data);
-data = abs(sqrt(data));
+% only run operations on non-nan samples (since there might be nans at
+% beginning and end if data doesn't exist at those points)
+data_idx = ~any(isnan(data),2);
 
-binned_emg = zeros(ceil(size(data,1)/round(bin_size*samprate)),size(data,2));
-for i = 1:size(data,2)
-    binned_emg(:,i) = decimate(data(:,i),round(bin_size*samprate))';
-end
-clear temp_data;
+% check data to see if there are any random NaNs in the middle
+block_starts = find(diff([0;data_idx;0])>0);
+block_ends = find(diff([0;data_idx;0])<0);
+assert(numel(block_starts)==1 && numel(block_ends)==1,'EMG data block is not continuous')
+
+temp = filtfilt(bhigh,ahigh,double(data(data_idx,:)));
+temp = 2*temp.*temp;
+temp = filtfilt(blow,alow,temp);
+data(data_idx,:) = abs(sqrt(temp));
+data(~data_idx,:) = NaN;
+
+emg_data = data;
+
 end
