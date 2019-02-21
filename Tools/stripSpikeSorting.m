@@ -14,6 +14,7 @@
 function trial_data = stripSpikeSorting(trial_data)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get the arrays that are present
 fn_array = getTDfields(trial_data,'arrays');
 

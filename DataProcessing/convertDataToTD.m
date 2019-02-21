@@ -27,12 +27,13 @@ function [trial_data,td_params,error_flag] = convertDataToTD(varargin)
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
-bin_size       =  0.01;    % start at 10ms bins by default
+bin_size        =  0.01;    % start at 10ms bins by default
 trigger_thresh  =  1;     % to identify time
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some parameters that CAN be overwritten, but are mostly intended to be
 % hard coded and thus aren't documented in the function header
 add_spike_times = false; % (not implemented) add unbinned spike times
+verbose         = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin == 1
     signal_info = varargin{1};

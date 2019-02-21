@@ -33,6 +33,10 @@ do_fr_check     =  true;
 min_fr          =  0;
 fr_window       =  {};
 use_trials      =  1:length(trial_data);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Some undocumented extra parameters
+verbose = false;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end

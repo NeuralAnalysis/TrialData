@@ -75,6 +75,7 @@ s                    =  [];        %    provided as a params input
 layer_sizes          =  10;        % how many feedforward layers in neural net
 train_func           =  'trainlm'; % training function for neural net
 P                    =  [];        % polynomial fit if nonlinear cascade
+verbose              =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

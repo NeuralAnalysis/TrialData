@@ -71,19 +71,20 @@ num_dims        =  []; % how many dimensions, needed for PPCA, FA, etc
 do_plot         =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some extra parameters you can change that aren't described in header
-sig_name         = '';    % output will be in field "SIG_NAMES_ALGORITHM". Defaults to concatenated names of signals
-sqrt_transform   = false; % square root transform before reduction (projections don't have it) 
-do_smoothing     = false; % will smooth before dim reduction  (trial_data projections are unsmoothed)
-width            = 0.05;  %   gaussian kernel s.d. for smoothing
-pca_algorithm    = 'svd'; % algorithm for PCA
-pca_economy      = false; % if num samples < degrees of freedom, will pad with zeros to keep output same size as degrees of freedom
-pca_centered     = true;  % whether to center data
-fa_orthogonalize = true; % whether to orthogonalize the projections
-fa_rotate        = 'none';
-add_proj_to_td   = true;  % whether to add projections
+sig_name          = '';    % output will be in field "SIG_NAMES_ALGORITHM". Defaults to concatenated names of signals
+sqrt_transform    = false; % square root transform before reduction (projections don't have it) 
+do_smoothing      = false; % will smooth before dim reduction  (trial_data projections are unsmoothed)
+width             = 0.05;  %   gaussian kernel s.d. for smoothing
+pca_algorithm     = 'svd'; % algorithm for PCA
+pca_economy       = false; % if num samples < degrees of freedom, will pad with zeros to keep output same size as degrees of freedom
+pca_centered      = true;  % whether to center data
+fa_orthogonalize  = true; % whether to orthogonalize the projections
+fa_rotate         = 'none';
+add_proj_to_td    = true;  % whether to add projections
 recenter_for_proj = true; % whether to recenter data before projecting into PC space
 w                 = [];    % w is used to know if params was info_out (e.g. whether to recompute space)
 mu                = [];    % mu is the mean from fitting, only filled if info_out is passed in
+verbose           = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1
     if ~isstruct(params)

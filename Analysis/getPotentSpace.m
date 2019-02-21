@@ -51,6 +51,8 @@ pca_centered       =  true;   % whether to center data
 pca_algorithm      =  'svd';  % which PCA algorithm
 fa_orthogonalize   =  true;
 add_proj_to_td     =  true;   % add projections to trial data
+verbose            =  false;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end

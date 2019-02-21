@@ -30,6 +30,10 @@ function [trial_data,bad_trials] = removeBadTrials(trial_data,params)
 ranges         = [];
 remove_nan_idx = false;
 nan_idx_names = 'all';
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Some undocumented extra parameters
+verbose = false;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end

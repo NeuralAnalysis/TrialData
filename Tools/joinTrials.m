@@ -22,6 +22,9 @@ function td_j = joinTrials(trial_data,params)
 % PARAMETER DEFAULTS
 % key_fields = '';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Some undocumented extra parameters
+verbose = false;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1
     assignParams(who,params);
 end

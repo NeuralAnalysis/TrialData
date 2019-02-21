@@ -22,6 +22,8 @@
 %     .start_idx_offset :  indices after start_idx to find movement onset
 %     .which_field     : which field to find movement onset from 
 %     .field_idx       : idx of the above field to find movement onset from
+%     .onset_name      : field to add for onset (default: 'movement_on')
+%     .peak_name       : field to add for peak (default: 'peak_speed')
 % OUTPUTS:
 %   trial_data : same struct, with fields for:
 %       idx_peak_speed
@@ -33,19 +35,21 @@
 function trial_data = getMoveOnsetAndPeak(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
-start_idx     =  'idx_go_cue';
-end_idx       =  'idx_trial_end';
-which_method  =  'peak';
-min_ds        =  1.9;
-s_thresh      =  10;
-peak_idx_offset = 0;
+start_idx        =  'idx_go_cue';
+end_idx          =  'idx_trial_end';
+which_method     =  'peak';
+min_ds           =  1.9;
+s_thresh         =  10;
+peak_idx_offset  = 0;
 start_idx_offset = 0;
-which_field = 'speed';
-field_idx = 1;
-% these parameters aren't documented because I expect them to not need to
-% change but you can overwrite them if you need to.
-onset_name    =  'movement_on';
-peak_name     =  'peak_speed';
+which_field      = 'speed';
+field_idx        = 1;
+onset_name       =  'movement_on';
+peak_name        =  'peak_speed';
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Some undocumented extra parameters
+verbose = false;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end

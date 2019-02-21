@@ -30,6 +30,8 @@ calc_rate       =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some extra parameters that aren't documented in the header
 do_smoothing    =  true; % will just return trial_data if this is false
+verbose = false;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1
     if ~isstruct(params) % must be a signals input
         signals = params;

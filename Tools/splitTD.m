@@ -38,6 +38,7 @@ extra_bins         =  [0 0];
 % Some parameters to overwrite that aren't documented
 start_name         =  'idx_trial_start';
 end_name           =  'idx_trial_end';
+verbose            =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1
     if ischar(params) % someone just passed in a string name. Very convenient

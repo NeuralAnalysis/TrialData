@@ -31,6 +31,9 @@ function trial_data  = getNorm(trial_data,params)
 signals    =  ''; % which signals to use
 norm_name  =  ''; % the name of the normalized signal
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Some undocumented extra parameters
+verbose = false;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin < 2
     error('Must define signals!');
 else

@@ -35,6 +35,10 @@ function trial_data = convBasisFunc(trial_data,params)
 [rcb_hpeaks, rcb_b, rcb_n] = deal([]);
 flip_time  = false;
 which_vars = getTDfields(trial_data,'time'); % default to all time signals
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Some undocumented extra parameters
+verbose = false;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1
     assignParams(who,params); % overwrite parameters
     if isempty([rcb_hpeaks, rcb_b, rcb_n])

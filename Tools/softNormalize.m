@@ -25,6 +25,10 @@ function trial_data = softNormalize(trial_data,params)
 % PARAMETER DEFAULTS:
 signals  =  getTDfields(trial_data,'spikes');
 alpha    =  5;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Some undocumented extra parameters
+verbose = false;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1
     if ~isstruct(params) % must be signals as input
         signals = params;

@@ -22,17 +22,19 @@
 function [dims,noise_eigen_prctile] = estimateDimensionality(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
-signals       =  [];
-condition     =  'target_direction';
-use_trials    =  1:length(trial_data);
-num_iter      =  1000;
-alpha         =  0.95; % what fraction of non-noise variance
-trim_idx      =  {};   % can trim data in here {'idx',val;'idx',val}
+signals         =  [];
+condition       =  'target_direction';
+use_trials      =  1:length(trial_data);
+num_iter        =  1000;
+alpha           =  0.95; % what fraction of non-noise variance
+trim_idx        =  {};   % can trim data in here {'idx',val;'idx',val}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % some undocumented parameters that you can overwrite if you need to
-pca_algorithm   = 'svd'; % algorithm for PCA
-pca_economy     = false; % if num samples < degrees of freedom, will pad with zeros to keep output same size as degrees of freedom
-pca_centered    = true;  % whether to center data
+pca_algorithm   =  'svd'; % algorithm for PCA
+pca_economy     =  false; % if num samples < degrees of freedom, will pad with zeros to keep output same size as degrees of freedom
+pca_centered    =  true;  % whether to center data
+verbose         =  false;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
