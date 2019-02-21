@@ -49,6 +49,8 @@ peak_name        =  'peak_speed';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
 verbose = false;
+absolute_acc_thresh = [];
+peak_divisor = 2;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -70,12 +72,17 @@ for trial = 1:length(trial_data)
         peaks = [dds(1:end-1)>0 & dds(2:end)<0; 0];
         mvt_peak = find(peaks & (1:length(peaks))' > trial_data(trial).(start_idx)+peak_idx_offset & ds > min_ds & move_inds, 1, 'first');
         if ~isempty(mvt_peak)
-            thresh = ds(mvt_peak)/2; % Threshold is half max of acceleration peak
+            if isempty(absolute_acc_thresh)
+                thresh = ds(mvt_peak)/peak_divisor; % Threshold is max of acceleration peak divided by divisor
+            else
+                thresh = absolute_acc_thresh;
+            end
             on_idx = find(ds<thresh & (1:length(ds))'<mvt_peak & move_inds,1,'last');
             
             % check to make sure the numbers make sense
-            if on_idx <= trial_data(trial).(start_idx)
+            if on_idx < trial_data(trial).(start_idx)+start_idx_offset
                 % something is fishy. Fall back on threshold method
+                warning('Something went wrong on trial %d...falling back to threshold method',trial)
                 on_idx = NaN;
             end
         end
