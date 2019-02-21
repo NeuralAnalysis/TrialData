@@ -70,7 +70,11 @@ for iSig = 1:size(signals,1)
     % loop along trials and differentiate
     for trial = 1:length(trial_data)
         data = trial_data(trial).(signal);
-        [~,trial_data(trial).(alias{iSig})] = gradient(data,trial_data(trial).bin_size);
+        if ~isvector(data)
+            [~,trial_data(trial).(alias{iSig})] = gradient(data,trial_data(trial).bin_size);
+        else
+            trial_data(trial).(alias{iSig}) = gradient(data,trial_data(trial).bin_size);
+        end
     end
 end
 
