@@ -94,7 +94,7 @@ for trial = 1:length(trial_data)
     if isempty(on_idx) || isnan(on_idx)
         on_idx = find(s > s_thresh & move_inds,1,'first');
         if isempty(on_idx) % usually means it never crosses threshold
-            warning('Could not identify movement onset');
+            warning('Could not identify movement onset on trial %d',trial);
             on_idx = NaN;
         end
     end
