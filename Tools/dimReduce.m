@@ -165,7 +165,7 @@ if isempty(w)
     params = struct( ...
         'signals',{signals}, ...
         'trial_idx',use_trials);
-    info_out = struct('w',w,'scores',scores,'eigen',eigen,'mu',mu,'signals',{signals},'params',params,'sig_name',sig_name,'stats',stats);
+    info_out = struct('w',w,'scores',scores,'eigen',eigen,'mu',mu,'signals',{signals},'params',params,'sig_name',sig_name,'stats',stats,'num_dims',num_dims);
 else
     info_out = params;
 end
