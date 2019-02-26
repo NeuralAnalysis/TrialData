@@ -9,6 +9,7 @@
 % INPUTS:
 %   trial_data : the struct
 %   params     : parameter struct
+%       .model_type   : which type of model from getModel (e.g. 'glm')
 %       .out_signals  : which output signal is predicted by model_name
 %       .model_name   : string name of model to evaluate
 %                         OR {'NAME1','NAME2'} to do relative metric of 2 rel to 1
