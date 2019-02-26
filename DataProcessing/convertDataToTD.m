@@ -233,6 +233,12 @@ for iFile = 1:length(signal_info)
         
         
         data = file_data_temp.data(:,idx);
+        t = file_data_temp.t;
+        % make sure t is a column vector
+        if size(t,1) == 1 && size(t,2) ~= 1
+            t = t';
+        end
+        
         if strcmpi(which_type,'spikes')
             sig_data(count).labels = file_data_temp.labels(idx,:);
         else
@@ -265,12 +271,14 @@ for iFile = 1:length(signal_info)
                         data{i} = data{i}(idx_keep);
                     end
                 else % events are binned
-                    idx_keep = file_data_temp.t >= 0;
+                    idx_keep = t >= 0;
                     data = data(idx_keep,:);
+                    t = t(idx_keep);
                 end
             otherwise
-                idx_keep = file_data_temp.t >= 0;
+                idx_keep = t >= 0;
                 data = data(idx_keep,:);
+                t = t(idx_keep);
         end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -291,7 +299,10 @@ for iFile = 1:length(signal_info)
                 data = process_emg(data,temp_params);
                 
                 % rebin the signals at the new sampling rate (given by bin_size)
-                data_resampled = resample_signals(data,file_data_temp.t,struct('bin_size',bin_size,'samprate',sig_data(count).samprate));
+                [data_resampled,t_resamp] = resample_signals(data,t, ...
+                    struct( ...
+                    'bin_size',bin_size, ...
+                    'samprate',sig_data(count).samprate));
                 % then interpolate to unified time vector
                 data_bin = interp1(t_resamp,data_resampled,t_bin);
                 
@@ -306,11 +317,23 @@ for iFile = 1:length(signal_info)
             case 'event' % these are timestamps (in seconds)
                 % will be cell if it's multiple labels, but otherwise
                 if ~iscell(data), data = {data}; end
+                % convert each to times for the events
+                for iEvent = 1:length(data)
+                    % if this is true, it's probably a true/false vector
+                    %   otherwise we assume it's times. bin_events
+                    %   ultimately wants times
+                    if length(data{iEvent}) == length(t)
+                        data{iEvent} = t(find(data{iEvent}));
+                    end
+                end
                 data_bin = bin_events(data,t_bin);
 
             case 'generic' % resample/interpolate
                 % resample signals at new sampling rate
-                [data_resampled,t_resamp] = resample_signals(data,file_data_temp.t,struct('bin_size',bin_size,'samprate',sig_data(count).samprate));
+                [data_resampled,t_resamp] = resample_signals(data,t, ...
+                    struct( ...
+                    'bin_size',bin_size, ...
+                    'samprate',sig_data(count).samprate));
                 % then interpolate to unified time vector
                 data_bin = interp1(t_resamp,data_resampled,t_bin);
                 
