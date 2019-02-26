@@ -4,6 +4,10 @@ function [dataResampled,ty] = resample_signals(data,tx,params)
 %   some extra code in here to make sure we're not extrapolating, i.e. the
 %   signals start and end at roughly the same time point.
 
+if size(tx,1) == 1 && size(tx,2) ~= 1
+    tx = tx';
+end
+
 samprate        =  [];
 bin_size        =  [];
 if ~isempty(params), assignParams(who,params); end
