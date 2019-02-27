@@ -53,6 +53,11 @@ switch lower(which_type)
             cont_vars_here = fn(ismember(fn,cont_var_ref));
         end
         
+        % ignore anything called "shift_vals" as this is added when
+        % dupeAndShift is called - manual hack but necessary
+        cont_vars_here = cont_vars_here(cellfun(@isempty,regexp(cont_vars_here,'_shift_vals')));
+        
+        
         % use the max over all trials so we have the lowest chance of
         % getting zero or one
         t = 0;
