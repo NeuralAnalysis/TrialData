@@ -30,6 +30,7 @@
 % INPUTS:
 %   trial_data : the struct
 %   params     : struct containing parameters
+%     .algorithm      : (string) which algorithm, e.g., 'pca','fa','ppca'
 %     .signals        : (cell) which signals. Two options:
 %                           1) {'NAME1','NAME2',etc}
 %                           2) {'NAME1',idx; 'NAME2',idx; etc}

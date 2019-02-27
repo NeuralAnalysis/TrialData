@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function trial_data = getDifferential(trial_data,signal,alias)
+% function trial_data = getDifferential(trial_data,params)
 %
 %   Differentiates a signal (e.g. get velocity from position). Uses the
 % GRADIENT function to compute the derivative.
