@@ -28,7 +28,7 @@ for i = 1:size(data,2)
     a(1,i) = (data_poly(end)-data_poly(1))/(t_poly(end)-t_poly(1));
     a(2,i) = data_poly(1);
 
-    dataDetrend(:,i) = data(:,i)-polyval(a(:,i),tx);
+    dataDetrend(:,i) = double(data(:,i))-polyval(a(:,i),tx);
 end
 
 % resample
