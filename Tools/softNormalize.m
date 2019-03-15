@@ -43,8 +43,8 @@ signals = check_signals(trial_data,signals);
 
 for i = 1:size(signals,1)
     % compute normalization factors
-    normfac = range(get_vars(trial_data,signals)) + alpha;
+    normfac = range(get_vars(trial_data,signals(i,:))) + alpha;
     for trial = 1:length(trial_data)
-        trial_data(trial).(signals{i,1}) = get_vars(trial_data(trial),signals)./normfac;
+        trial_data(trial).(signals{i,1}) = get_vars(trial_data(trial),signals(i,:))./normfac;
     end
 end
