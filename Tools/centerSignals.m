@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [trial_data, signal_means] = centerTD(trial_data,params)
+function [trial_data, signal_means] = centerSignals(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %   This will center (ie mean-subtract) any (or all) time varying signals
 % for the provided TD. Nothing fancy.
@@ -18,6 +18,8 @@ function [trial_data, signal_means] = centerTD(trial_data,params)
 % Written by Matt Perich. Updated March 2019.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 signals = '';
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+verbose = false;
 if nargin > 1
     if isstruct(params)
         assignParams(who,params);
