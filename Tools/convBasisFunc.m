@@ -80,11 +80,22 @@ if ~iscell(which_vars), which_vars = {which_vars}; end
 %  [iht,ihbas,ihbasis] = makeBasis_PostSpike(ihprs,dt);
 [~, ~, b] = makeBasis_PostSpike(struct('ncols',rcb_n,'hpeaks',rcb_hpeaks,'b',rcb_b),bin_size);
 
+fn_time = getTDfields(trial_data,'time');
+
 if rcb_n > 0
     % do the convolution for each trial
-    for iTrial = 1:length(trial_data) % loop along trials
+    for trial = 1:length(trial_data) % loop along trials
         for iVar = 1:length(which_vars) % loop along variables
-            temp = trial_data(iTrial).(which_vars{iVar});
+            
+            sig_name = which_vars{iVar};
+            if ~isempty(regexp(sig_name,'idx_','ONCE'))
+                sig_name = sig_name(5:end);
+                % make a time vector
+                temp = zeros(size(trial_data(trial).(fn_time{1}),1),1);
+                temp(trial_data(trial).(which_vars{iVar})) = 1;
+            else % maybe later add check to ensure it's time varying
+                temp = trial_data(trial).(which_vars{iVar});
+            end
             temp_conv = zeros(size(temp,1),size(temp,2)*size(b,2));
             for iFunc = 1:size(b,2) % loop along basis funcs
                 for i = 1:size(temp,2)
@@ -95,7 +106,7 @@ if rcb_n > 0
                     end
                 end
             end
-            trial_data(iTrial).([which_vars{iVar} '_rcb']) = temp_conv;
+            trial_data(trial).([sig_name '_rcb']) = temp_conv;
         end
     end
 else
