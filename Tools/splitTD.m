@@ -61,7 +61,8 @@ num_moves = sum(~isnan([trial_data.(split_idx_name)]));
 td_s = repmat(struct(),1,num_moves);
 
 fn_time = getTDfields(trial_data,'time');
-fn_array = getTDfields(trial_data, 'arrays');
+fn_unit_guides = getTDfields(trial_data, 'unit_guides');
+fn_lfp_guides = getTDfields(trial_data, 'lfp_guides');
 fn_idx = getTDfields(trial_data,'idx');
 % remove the requested idx field
 fn_idx = setdiff(fn_idx,split_idx_name);
@@ -116,21 +117,24 @@ for trial = 1:length(trial_data)
                 % find idx that are within idx_start and idx_end
                 temp = td.(fn_idx{i});
                 temp = temp(temp >= idx_start & temp < idx_end) - idx_start + 1;
-
+                
                 % if empty, set NaN
                 if isempty(temp)
                     temp = NaN;
                 end
-
+                
                 td_s(count).(fn_idx{i}) = temp;
             end
             
             td_s(count).(start_name) = extra_bins(1)+1;
             td_s(count).(end_name)   = idx_end - extra_bins(2) - split_idx(idx) + extra_bins(1) + 1;
             
-            % now add array information
-            for i = 1:length(fn_array)
-                td_s(count).([fn_array{i}, '_unit_guide']) = trial_data(1).([fn_array{i}, '_unit_guide']);
+            % now add array spike/lfp information
+            for i = 1:length(fn_unit_guides)
+                td_s(count).(fn_unit_guides{i}) = trial_data(1).(fn_unit_guides{i});
+            end
+            for i = 1:length(fn_lfp_guides)
+                td_s(count).(fn_lfp_guides{i}) = trial_data(1).(fn_lfp_guides{i});
             end
             % check that the index won't crash
             if idx_start < 1
