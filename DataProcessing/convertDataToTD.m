@@ -258,17 +258,17 @@ for iFile = 1:length(signal_info)
         % remove negative time values, thus aligning all signals
         switch sig_data(count).type
             case 'spikes' % it's a spike, so time
-                for i = 1:length(data)
+                for iCol = 1:length(data)
                     % shift them back in time by the amount post-sync
-                    idx_keep = data{i} >= 0;
-                    data{i} = data{i}(idx_keep);
+                    idx_keep = data{iCol} >= 0;
+                    data{iCol} = data{iCol}(idx_keep);
                 end
             case 'event'
                 if iscell(data) % events are a time
-                    for i = 1:length(data)
+                    for iCol = 1:length(data)
                         % shift them back in time by the amount post-sync
-                        idx_keep = data{i} >= 0;
-                        data{i} = data{i}(idx_keep);
+                        idx_keep = data{iCol} >= 0;
+                        data{iCol} = data{iCol}(idx_keep);
                     end
                 else % events are binned
                     idx_keep = t >= 0;
@@ -307,7 +307,22 @@ for iFile = 1:length(signal_info)
                 data_bin = interp1(t_resamp,data_resampled,t_bin);
                 
             case 'lfp' % filter into requested bands and downsample
-                error('LFP not supported yet.');
+                temp_params = signal_info{iFile}.params;
+                temp_params.bin_size = bin_size;
+                temp_params.samprate = sig_data(count).samprate;
+                temp_params.fft_step = bin_size; % default to bin size
+                
+                disp('Processing LFP...');
+                [data,t] = process_lfp(data,t,temp_params);
+                
+                % rebin the signals at the new sampling rate (given by bin_size)
+                [data_resampled,t_resamp] = resample_signals(data,t, ...
+                    struct( ...
+                    'bin_size',bin_size, ...
+                    'samprate',sig_data(count).samprate));
+                % then interpolate to unified time vector
+                data_bin = interp1(t_resamp,data_resampled,t_bin);
+                
                 
             case 'trigger' % look for threshold crossing and call it an event
                 % turn trigger into a timestamp
@@ -384,10 +399,10 @@ if ismember('spikes',file_types)
     % should be only a single entry. Breaking this assumption will require
     % some additional coding, put it on the to do list!
     idx = find(strcmpi({sig_data.type},'spikes'));
-    for i = 1:length(idx)
-        trial_data.([sig_data(idx(i)).name '_spikes'])     = sig_data(idx(i)).data;
-        trial_data.([sig_data(idx(i)).name '_unit_guide']) = sig_data(idx(i)).labels;
-        trial_data.([sig_data(idx(i)).name '_spikes_t'])   = sig_data(idx(i)).t_bin;
+    for iSig = 1:length(idx)
+        trial_data.([sig_data(idx(iSig)).name '_spikes'])     = sig_data(idx(iSig)).data;
+        trial_data.([sig_data(idx(iSig)).name '_unit_guide']) = sig_data(idx(iSig)).labels;
+        trial_data.([sig_data(idx(iSig)).name '_spikes_t'])   = sig_data(idx(iSig)).t_bin;
     end
 end
 
@@ -399,20 +414,56 @@ if ismember('emg',file_types)
     trial_data.emg_t = sig_data(idx(1)).t_bin;
 end
 
-% group all LFP signals together
+% add the LFP guide
 if ismember('lfp',file_types)
-    error('lfp is not implemented yet');
+    % requires freq_bands variable in params struct, with two columns
+    %   also requires labels to be a vector of channel IDs
+    freq_bands = params.freq_bands;
+    % check the labels
+    labels = sig_data(idx(iSig)).labels;
+    if size(labels,1) == 1 && size(labels,2) ~= 1
+        labels = labels';
+    end
+    % now get the  LFP signals
+    idx = find(strcmpi({sig_data.type},'lfp'));
+    % loop  along them
+    for iSig = 1:length(idx)
+        for j = 1:size(freq_bands,1)
+            % add the  frequency bands to the labels
+            % three columns [ELEC, LOW FREQ, HIGH FREQ]
+            %   each row is one of the columns in the _lfp signal
+            temp_guide = cat(1, temp_guide, ...
+                cat(2, labels, ...
+                repmat(size(labels,1),1,freq_bands(j,:))));
+        end
+        if size(temp_guide,1) ~= size(sig_data(idx(iSig)).data,2)
+            error_flag = true;
+            disp('ERROR: LFP guide does not match columns of LFP data');
+        end
+        trial_data.([sig_data(idx(iSig)).name '_lfp_guide']) = temp_guide;
+        trial_data.([sig_data(idx(iSig)).name '_lfp'])     = sig_data(idx(iSig)).data;
+        trial_data.([sig_data(idx(iSig)).name '_lfp_t'])   = sig_data(idx(iSig)).t_bin;
+    end
 end
 
 % generic signals are easy
 if ismember('generic',file_types)
     idx = find(strcmpi({sig_data.type},'generic'));
-    for i = 1:length(idx)
-        trial_data.(sig_data(idx(i)).name) = sig_data(idx(i)).data;
-        trial_data.([sig_data(idx(i)).name '_t']) = sig_data(idx(i)).t_bin;
+    for iSig = 1:length(idx)
+        trial_data.(sig_data(idx(iSig)).name) = sig_data(idx(iSig)).data;
+        trial_data.([sig_data(idx(iSig)).name '_t']) = sig_data(idx(iSig)).t_bin;
     end
 end
 
+if error_flag
+    trial_data = [];
+    td_params = [];
+    if nargout == 3 % the user asked for the error flag so they probably will use it appropriately
+        return;
+    else
+        error('There was an error! See the description above.');
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % trim the loaded data to be the shortest time vector
@@ -426,13 +477,13 @@ trial_data = trim_time(trial_data);
 % find indices for trigger times to turn them into events
 if ismember('trigger',file_types) || ismember('event',file_types) % triggers will need an extra "find"
     idx = find(strcmpi({sig_data.type},'trigger') | strcmpi({sig_data.type},'event'));
-    for i = 1:length(idx)
-        temp = find(sig_data(idx(i)).data)';
+    for iSig = 1:length(idx)
+        temp = find(sig_data(idx(iSig)).data)';
         % it's easier to see the numbers in the GUI if they are in a row
         if size(temp,1) > 1
             temp = temp';
         end
-        trial_data.(['idx_' sig_data(idx(i)).name]) = temp;
+        trial_data.(['idx_' sig_data(idx(iSig)).name]) = temp;
     end
 end
 
@@ -442,8 +493,8 @@ end
 for iSig = 1:length(sig_data)
     if ~isempty(sig_data(iSig).meta)
         fn = fieldnames(sig_data(iSig).meta);
-        for i = 1:length(fn)
-            trial_data.(fn{i}) = sig_data(iSig).meta.(fn{i});
+        for iName = 1:length(fn)
+            trial_data.(fn{iName}) = sig_data(iSig).meta.(fn{iName});
         end
     end
 end
@@ -555,11 +606,11 @@ t_lengths = cellfun(@(x) size(trial_data.(x),1),t_fn);
 
 t_min = min(t_lengths);
 
-for i = 1:length(fn)
+for iName = 1:length(fn)
     % see if this time length is greater than min
-    if size(trial_data.(fn{i}),1) > t_min
-        temp = trial_data.(fn{i});
-        trial_data.(fn{i}) = temp(1:t_min,:);
+    if size(trial_data.(fn{iName}),1) > t_min
+        temp = trial_data.(fn{iName});
+        trial_data.(fn{iName}) = temp(1:t_min,:);
     end
 end
 

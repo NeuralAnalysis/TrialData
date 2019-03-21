@@ -25,6 +25,10 @@ for i = 1:size(data,2)
     data_poly = data(~nanners,i);
     t_poly = tx(~nanners);
     
+    if isempty(t_poly)
+        error('Everything is NaN in this data column!')
+    end
+    
     a(1,i) = (data_poly(end)-data_poly(1))/(t_poly(end)-t_poly(1));
     a(2,i) = data_poly(1);
 
