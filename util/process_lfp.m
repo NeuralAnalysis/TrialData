@@ -27,7 +27,7 @@ freq_bands = [ ...% first column is low cutoff, second is high
     80 150; ...
     150 300];% in Hz
 samprate          =  [];       % sampling rate of data
-lfp_method        =  'fft';    % 'trfft' or 'taper' for now
+lfp_method        =  'fft';    % 'fft' for now
 downsample_fac    =  0;        % factor for decimate
 remove_common_avg =  true;     % whether to do common average referencing
 remove_time_avg   =  true;     % whether to center  data in time
@@ -105,17 +105,9 @@ win_func =  win_func./norm(win_func);
 N = floor(size(data,1)/round(fft_step*samprate));
 lfp_data = zeros(N,size(freq_bands,1)*size(data,2));
 for iSig = 1:size(data,2)
-    
-tic;
+    disp(['Processing LFP from channel ' num2str(iSig)]);
+    tic;
     switch lower(lfp_method)
-        case 'taper'
-            [~, data_fft, freq, ~]= multitaperSpectrum_univariate(data(:,iSig), ...
-                samprate, ...
-                bandwidth, ...
-                size(data,1), ...
-                remove_time_avg, ...
-                remove_common_avg, ...
-                []);
         case 'fft'
             % get FFT over time
             [data_fft, freq, t_fft] = trFFT(data(:,iSig), ...
@@ -136,7 +128,7 @@ tic;
         lfp_data(:,size(data,2)*(iBand-1)+iSig) = temp;
     end
     
-toc;
+    toc;
 end
 
 t_fft = t_fft/samprate;
@@ -152,7 +144,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [data_fft,freq,winCenter]=trFFT( ...
+function [data_fft,freq,window_centers]=trFFT( ...
     data, ...
     window_size, ...
     step, ...
@@ -166,7 +158,7 @@ function [data_fft,freq,winCenter]=trFFT( ...
 % windowSize  - length of time window
 % step        - time steps in which time window is moved
 % sampleRate  - sampling rate
-% winFunction - window function
+% win_func : window function (typically  a normalized hamming window)
 %
 % return values:
 % FFTofData   - fourie transformed signal, first dimension: frequency; second dimension: time; third dimension: trials
@@ -177,15 +169,15 @@ function [data_fft,freq,winCenter]=trFFT( ...
 % Tomislav Milekovic, 06/19/2008
 
 freq = samplerate/2*linspace(0,1,ceil(window_size/2+1));
-winCenter=window_size:step:size(data,1);
+window_centers = window_size:step:size(data,1);
 
-data_fft=nan([length(freq) length(winCenter) size(data,2)]);
+data_fft=nan([length(freq) length(window_centers) size(data,2)]);
 
 
 for iSig=1:size(data,2)
-    for iWin=1:length(winCenter)
+    for iWin=1:length(window_centers)
         
-        temp_data=data(winCenter(iWin)-window_size+1:winCenter(iWin),iSig);
+        temp_data=data(window_centers(iWin)-window_size+1:window_centers(iWin),iSig);
         temp_data=win_func.*temp_data;
         FFTrez=fft(temp_data);
         data_fft(:,iWin,iSig) = FFTrez(1:ceil(window_size/2+1));
@@ -200,12 +192,12 @@ data_fft = cat(2, ...
     NaN(size(data_fft,1),floor(window_size/2)-1,size(data_fft,3)));
 
 
-winCenter=winCenter-floor(window_size/2);
+window_centers=window_centers-floor(window_size/2);
 
-winCenter = cat(2, ...
+window_centers = cat(2, ...
     0:step:floor(window_size/2)-1, ...
-    winCenter,  ...
-    winCenter(end)+step:step:winCenter(end)+floor(window_size/2)-1);
+    window_centers,  ...
+    window_centers(end)+step:step:window_centers(end)+floor(window_size/2)-1);
 
 
 end

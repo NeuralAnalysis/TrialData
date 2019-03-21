@@ -289,7 +289,7 @@ for iFile = 1:length(signal_info)
                 temp_params.samprate = sig_data(count).samprate;
                 temp_params.fft_step = bin_size; % default to bin size
                 
-                disp('Processing LFP...');
+                % process the lfp
                 [data,t] = process_lfp(data,t,temp_params);
                 
                 % rebin the signals at the new sampling rate (given by bin_size)
