@@ -189,34 +189,7 @@ for iFile = 1:length(signal_info)
         end
         
         if ~isempty(which_label)
-            if ischar(which_label{1})
-                if strcmpi(which_type,'spikes')
-                    idx = 1:size(file_data_temp.labels,1);
-                else
-                    [~,idx] = ismember(which_label,file_data_temp.labels);
-                end
-                if any(idx==0)
-                    error_flag = true;
-                    disp(['ERROR: ' mfilename ': No label found! Here is the list: ' file_data_temp.labels]);
-                end
-            elseif length(which_label) == 1
-                temp_label = which_label{1};
-                if iscell(temp_label) && ischar(temp_label{1}) % it's multiple text entries
-                    [~,idx] = ismember(temp_label,file_data_temp.labels);
-                    if any(idx==0)
-                        error_flag = true;
-                        disp(['ERROR: ' mfilename ': No label found! Here is the list: ' file_data_temp.labels]);
-                    end
-                elseif isnumeric(temp_label) % it's not a char, so it must be an array of numbers
-                    idx = temp_label;
-                else
-                    error_flag = true;
-                    disp(['ERROR: ' mfilename ': no idea what to do with this label!']);
-                end
-            else
-                error_flag = true;
-                disp(['ERROR: ' mfilename ': Cannot parse label. It appears to be a cell array of numbers. It should either be an array of numbers or a cell array of strings.']);
-            end
+            [idx,error_flag] = match_labels(which_type,file_data_temp.labels, which_label);
         else
             idx = 1:size(file_data_temp.data,2);
         end
@@ -239,8 +212,12 @@ for iFile = 1:length(signal_info)
             t = t';
         end
         
-        if strcmpi(which_type,'spikes')
-            sig_data(count).labels = file_data_temp.labels(idx,:);
+        if strcmpi(which_type,'spikes') || strcmpi(which_type,'lfp')
+            labels = file_data_temp.labels;
+            if size(labels,1) == 1 && size(labels,2) ~= 1
+                labels = labels';
+            end
+            sig_data(count).labels = labels(idx,:);
         else
             sig_data(count).labels = file_data_temp.labels(idx);
         end
@@ -323,6 +300,21 @@ for iFile = 1:length(signal_info)
                 % then interpolate to unified time vector
                 data_bin = interp1(t_resamp,data_resampled,t_bin);
                 
+                % compute the LFP guide
+                temp_guide = [];
+                % take the labels from the signal info
+                labels = match_labels('lfp',file_data_temp.labels,signal_info{iFile}.label{iSig});
+                freq_bands = temp_params.freq_bands;
+                for j = 1:size(freq_bands,1)
+                    % add the  frequency bands to the labels
+                    % three columns [ELEC, LOW FREQ, HIGH FREQ]
+                    %   each row is one of the columns in the _lfp signal
+                    temp_guide = [temp_guide; ...
+                        cat(2, labels, ...
+                        repmat(freq_bands(j,:),size(labels,1),1))];
+                end
+                sig_data(count).labels = temp_guide;
+                
                 
             case 'trigger' % look for threshold crossing and call it an event
                 % turn trigger into a timestamp
@@ -342,7 +334,7 @@ for iFile = 1:length(signal_info)
                     end
                 end
                 data_bin = bin_events(data,t_bin);
-
+                
             case 'generic' % resample/interpolate
                 % resample signals at new sampling rate
                 [data_resampled,t_resamp] = resample_signals(data,t, ...
@@ -418,29 +410,17 @@ end
 if ismember('lfp',file_types)
     % requires freq_bands variable in params struct, with two columns
     %   also requires labels to be a vector of channel IDs
-    freq_bands = params.freq_bands;
     % check the labels
-    labels = sig_data(idx(iSig)).labels;
-    if size(labels,1) == 1 && size(labels,2) ~= 1
-        labels = labels';
-    end
+    
     % now get the  LFP signals
     idx = find(strcmpi({sig_data.type},'lfp'));
     % loop  along them
     for iSig = 1:length(idx)
-        for j = 1:size(freq_bands,1)
-            % add the  frequency bands to the labels
-            % three columns [ELEC, LOW FREQ, HIGH FREQ]
-            %   each row is one of the columns in the _lfp signal
-            temp_guide = cat(1, temp_guide, ...
-                cat(2, labels, ...
-                repmat(size(labels,1),1,freq_bands(j,:))));
-        end
         if size(temp_guide,1) ~= size(sig_data(idx(iSig)).data,2)
             error_flag = true;
             disp('ERROR: LFP guide does not match columns of LFP data');
         end
-        trial_data.([sig_data(idx(iSig)).name '_lfp_guide']) = temp_guide;
+        trial_data.([sig_data(idx(iSig)).name '_lfp_guide']) = sig_data(idx(iSig)).labels;
         trial_data.([sig_data(idx(iSig)).name '_lfp'])     = sig_data(idx(iSig)).data;
         trial_data.([sig_data(idx(iSig)).name '_lfp_t'])   = sig_data(idx(iSig)).t_bin;
     end
@@ -621,4 +601,38 @@ end
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [idx,error_flag] = match_labels(which_type,file_labels, which_label)
+error_flag = false;
 
+if ~iscell(which_label), which_label = {which_label}; end
+
+if ischar(which_label{1})
+    if strcmpi(which_type,'spikes')
+        idx = 1:size(file_labels,1);
+    else
+        [~,idx] = ismember(which_label,file_labels);
+    end
+    if any(idx==0)
+        error_flag = true;
+        disp(['ERROR: ' mfilename ': No label found! Here is the list: ' file_labels]);
+    end
+elseif length(which_label) == 1
+    temp_label = which_label{1};
+    if iscell(temp_label) && ischar(temp_label{1}) % it's multiple text entries
+        [~,idx] = ismember(temp_label,file_labels);
+        if any(idx==0)
+            error_flag = true;
+            disp(['ERROR: ' mfilename ': No label found! Here is the list: ' file_labels]);
+        end
+    elseif isnumeric(temp_label) % it's not a char, so it must be an array of numbers
+        idx = temp_label;
+    else
+        error_flag = true;
+        disp(['ERROR: ' mfilename ': no idea what to do with this label!']);
+    end
+else
+    error_flag = true;
+    disp(['ERROR: ' mfilename ': Cannot parse label. It appears to be a cell array of numbers. It should either be an array of numbers or a cell array of strings.']);
+end
+end

@@ -82,7 +82,7 @@ if filt_high_freq
     data(data_idx,:)  = temp;
     data(~data_idx,:) = NaN;
 end
-        
+
 % remove common average
 if remove_common_avg
     data = data - repmat(mean(data,2),1,size(data,2));
@@ -95,51 +95,50 @@ end
 win_func = fft_win_fun(fft_window_size);
 win_func =  win_func./norm(win_func);
 
+
+% anticipate the size of the fft output
+N = floor(size(data,1)/round(fft_step*samprate));
+lfp_data = zeros(N,size(freq_bands,1)*size(data,2));
+for iSig = 1:size(data,2)
+    
 tic;
-% break data into small overlapping chunks
-
-% loop along chunks
-
-% compute time resolved FFT of that chunk
-switch lower(lfp_method)
-    case 'taper'
-        [~, data_fft, freq, ~]= multitaperSpectrum_univariate(data, ...
-            samprate, ...
-            bandwidth, ...
-            size(data,1), ...
-            remove_time_avg, ...
-            remove_common_avg, ...
-            []);
-        
-    case 'fft'
-        % get FFT over time
-        [data_fft, freq, t_fft] = trFFT(data, ...
-            fft_window_size, ...
-            round(fft_step*samprate), ...
-            samprate, ...
-            win_func);
-    otherwise
-        error('LFP method not  recognized');
-end
-% stich the non-overlapping parts into the master matrix
-
-
+    switch lower(lfp_method)
+        case 'taper'
+            [~, data_fft, freq, ~]= multitaperSpectrum_univariate(data(:,iSig), ...
+                samprate, ...
+                bandwidth, ...
+                size(data,1), ...
+                remove_time_avg, ...
+                remove_common_avg, ...
+                []);
+        case 'fft'
+            % get FFT over time
+            [data_fft, freq, t_fft] = trFFT(data(:,iSig), ...
+                fft_window_size, ...
+                round(fft_step*samprate), ...
+                samprate, ...
+                win_func);
+        otherwise
+            error('LFP method not  recognized');
+    end
+    
+    data_fft = abs(data_fft);
+    
+    % find average power in each  band for this channel
+    for iBand = 1:size(freq_bands,1)
+        idx_freq = freq >= freq_bands(iBand,1)  &  freq  <= freq_bands(iBand,2);
+        temp = mean(data_fft(idx_freq,:),1)';
+        lfp_data(:,size(data,2)*(iBand-1)+iSig) = temp;
+    end
+    
 toc;
+end
 
-
-data_fft = abs(data_fft);
 t_fft = t_fft/samprate;
 
-% new time vector assumes it starts at 0, so subtract (or add) any offset
+% new time vector assumes it starts at 0, so subtract (or add)
+%   any offset identified in the original  processing
 t_fft = t_fft + t(1);
-
-lfp_data = zeros(size(data_fft,2),size(freq_bands,1)*size(data,2));
-
-for iBand = 1:size(freq_bands,1)
-    idx_freq = freq >= freq_bands(iBand,1)  &  freq  <= freq_bands(iBand,2);
-    temp = squeeze(mean(data_fft(idx_freq,:,:),1));
-    lfp_data(:,size(data,2)*(iBand-1)+1:size(data,2)*(iBand-1)+size(data,2)) = temp;
-end
 
 
 end
@@ -150,10 +149,10 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [data_fft,freq,winCenter]=trFFT( ...
     data, ...
-    windowSize, ...
+    window_size, ...
     step, ...
     samplerate, ...
-    winFunction)
+    win_func)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function trFFT - time-resolved fourier-transformation
 %
@@ -172,40 +171,37 @@ function [data_fft,freq,winCenter]=trFFT( ...
 
 % Tomislav Milekovic, 06/19/2008
 
-freq = samplerate/2*linspace(0,1,ceil(windowSize/2+1));
-winCenter=windowSize:step:size(data,1);
+freq = samplerate/2*linspace(0,1,ceil(window_size/2+1));
+winCenter=window_size:step:size(data,1);
 
 data_fft=nan([length(freq) length(winCenter) size(data,2)]);
 
 
 for iSig=1:size(data,2)
-    tic;
     for iWin=1:length(winCenter)
         
-        temp_data=data(winCenter(iWin)-windowSize+1:winCenter(iWin),iSig);
-        temp_data=winFunction.*temp_data;
+        temp_data=data(winCenter(iWin)-window_size+1:winCenter(iWin),iSig);
+        temp_data=win_func.*temp_data;
         FFTrez=fft(temp_data);
-        data_fft(:,iWin,iSig) = FFTrez(1:ceil(windowSize/2+1));
+        data_fft(:,iWin,iSig) = FFTrez(1:ceil(window_size/2+1));
         
     end
-    toc
 end
 
 % pad with NaN
 data_fft = cat(2, ...
-    NaN(size(data_fft,1),floor(windowSize/2),size(data_fft,3)), ...
+    NaN(size(data_fft,1),floor(window_size/2),size(data_fft,3)), ...
     data_fft, ...
-    NaN(size(data_fft,1),floor(windowSize/2)-1,size(data_fft,3)));
+    NaN(size(data_fft,1),floor(window_size/2)-1,size(data_fft,3)));
 
 
-winCenter=winCenter-floor(windowSize/2);
+winCenter=winCenter-floor(window_size/2);
 
 winCenter = cat(2, ...
-    0:step:floor(window_size/2), ...
+    0:step:floor(window_size/2)-1, ...
     winCenter,  ...
-    winCenter(end)+step:step:winCenter(end)+floor(window_size/2));
+    winCenter(end)+step:step:winCenter(end)+floor(window_size/2)-1);
 
-keyboard
 
 end
 
