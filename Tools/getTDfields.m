@@ -111,7 +111,8 @@ switch lower(which_type)
         fn_time = getTDfields(trial_data,'time');
         fn_idx  = getTDfields(trial_data,'idx');
         fn_ug   = getTDfields(trial_data,'unit_guides');
-        idx = ismember(fn,fn_time) | ismember(fn,fn_idx) | ismember(fn,fn_ug);
+        fn_lg   = getTDfields(trial_data,'lfp_guides');
+        idx = ismember(fn,fn_time) | ismember(fn,fn_idx) | ismember(fn,fn_ug) | ismember(fn,fn_lg);
         fn = fn(~idx);
     case 'cont' % same as 'time' but I exclude neural
         fn_time = getTDfields(trial_data,'time');
@@ -120,8 +121,12 @@ switch lower(which_type)
         fn = fn(ismember(fn,fn_time) & ~ismember(fn,fn_neural) & ~ismember(fn,fn_unit_guides));
     case 'spikes' % just the _spikes fields
         fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_spikes')));
+    case 'lfp' % just the _spikes fields
+        fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_lfp')));
     case 'unit_guides'
         fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_unit_guide')));
+    case 'lfp_guides'
+        fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_lfp_guide')));
     case 'labels'
         % fn = fn(cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_unit_guide')) | ...
         %     cellfun(@(x) ~isempty(x),strfind(fieldnames(trial_data),'_names')));
