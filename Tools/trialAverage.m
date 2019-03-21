@@ -31,6 +31,9 @@
 %       avg_data = trialAverage(trial_data,{'target_direction','epoch'});
 %       Note: gives a struct of size #_TARGETS * #_EPOCHS
 %
+% TO DO:
+%   Add a check that unit_guides and lfp_guides are the same for all trials
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [avg_data,cond_idx] = trialAverage(trial_data, params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -80,7 +83,7 @@ else
         cond_vals{iCond} = uc;
     end
     % build a list of all possible combinations of values
-    temp=cellfun(@(x) 1:length(x),cond_vals,'Uni',0);
+    temp = cellfun(@(x) 1:length(x),cond_vals,'Uni',0);
     all_conds = combvec(temp{:})';
     num_conds = size(all_conds,1);
 end
@@ -88,51 +91,63 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get indices for trials meeting each unique combination
 %   and make struct with trial-averaged entries
-fn_meta = getTDfields(trial_data,'meta');
+fn_meta         =  getTDfields(trial_data,'meta');
+fn_unit_guides  =  getTDfields(trial_data,'unit_guides');
+fn_lfp_guides   =  getTDfields(trial_data,'lfp_guides');
 
 cond_idx = cell(1,num_conds);
 avg_data = repmat(struct(),1,num_conds);
-for i = 1:num_conds
+for trial = 1:num_conds
     if strcmpi(conditions{1},'all')
-        cond_idx{i} = 1:length(trial_data);
+        cond_idx{trial} = 1:length(trial_data);
     else
         func_in = cell(1,2*size(all_conds,2));
         for iCond = 1:size(all_conds,2)
             func_in{2*(iCond-1)+1}   = conditions{iCond};
-            func_in{2*(iCond-1)+2} = cond_vals{iCond}{all_conds(i,iCond)};
-            avg_data(i).(conditions{iCond}) = cond_vals{iCond}{all_conds(i,iCond)};
+            func_in{2*(iCond-1)+2} = cond_vals{iCond}{all_conds(trial,iCond)};
+            avg_data(trial).(conditions{iCond}) = cond_vals{iCond}{all_conds(trial,iCond)};
         end
-        cond_idx{i}=getTDidx(trial_data,func_in);
+        cond_idx{trial}=getTDidx(trial_data,func_in);
     end
     
     % populate meta fields
     for f = 1:length(fn_meta)
         if ~isempty(regexp(fn_meta{f},'_names', 'once')) % names are a special kind of meta
-            avg_data(i).(fn_meta{f}) = trial_data(cond_idx{i}).(fn_meta{f});
+            avg_data(trial).(fn_meta{f}) = trial_data(cond_idx{trial}).(fn_meta{f});
         elseif ischar(trial_data(1).(fn_meta{f}))
-            u = unique({trial_data(cond_idx{i}).(fn_meta{f})});
+            u = unique({trial_data(cond_idx{trial}).(fn_meta{f})});
             if length(u) == 1
-                avg_data(i).(fn_meta{f}) = u{1};
+                avg_data(trial).(fn_meta{f}) = u{1};
             else
-                avg_data(i).(fn_meta{f}) = u;
+                avg_data(trial).(fn_meta{f}) = u;
             end
         elseif iscell(trial_data(1).(fn_meta{f}))
-            avg_data(i).(fn_meta{f}) = unique([trial_data(cond_idx{i}).(fn_meta{f})]);
+            avg_data(trial).(fn_meta{f}) = unique([trial_data(cond_idx{trial}).(fn_meta{f})]);
         else
             if size(trial_data(1).(fn_meta{f}),2) > 1
-                u = unique(cat(1,trial_data(cond_idx{i}).(fn_meta{f})),'rows');
+                u = unique(cat(1,trial_data(cond_idx{trial}).(fn_meta{f})),'rows');
             else
-                u = unique([trial_data(cond_idx{i}).(fn_meta{f})]);
+                u = unique([trial_data(cond_idx{trial}).(fn_meta{f})]);
             end
-            avg_data(i).(fn_meta{f}) = u;
+            avg_data(trial).(fn_meta{f}) = u;
         end
+    end
+    
+    % add unit guides
+    for f = 1:length(fn_unit_guides)
+        avg_data(trial).(fn_unit_guides{f}) = trial_data(1).(fn_unit_guides{f});
+    end
+    
+    % add lfp guides
+    for f = 1:length(fn_lfp_guides)
+        avg_data(trial).(fn_lfp_guides{f}) = trial_data(1).(fn_lfp_guides{f});
     end
     
     % now loop along time signals to average
     for v = 1:length(time_vars)
-        avg_data(i).(time_vars{v}) = mean(cat(3,trial_data(cond_idx{i}).(time_vars{v})),3);
+        avg_data(trial).(time_vars{v}) = mean(cat(3,trial_data(cond_idx{trial}).(time_vars{v})),3);
         if add_std
-            avg_data(i).([time_vars{v} '_std']) = std(cat(3,trial_data(cond_idx{i}).(time_vars{v})),[],3);
+            avg_data(trial).([time_vars{v} '_std']) = std(cat(3,trial_data(cond_idx{trial}).(time_vars{v})),[],3);
         end
     end
     
@@ -140,8 +155,8 @@ for i = 1:num_conds
     fn_idx = getTDfields(trial_data,'idx');
     
     for f = 1:length(fn_idx)
-        if length(unique([trial_data(cond_idx{i}).(fn_idx{f})])) == 1
-            avg_data(i).(fn_idx{f}) = trial_data(cond_idx{i}(1)).(fn_idx{f});
+        if length(unique([trial_data(cond_idx{trial}).(fn_idx{f})])) == 1
+            avg_data(trial).(fn_idx{f}) = trial_data(cond_idx{trial}(1)).(fn_idx{f});
         end
     end
     
