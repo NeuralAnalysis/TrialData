@@ -26,7 +26,7 @@ filt_line_noise   =  true;     % whether to filter line noise
 line_noise_freq   =  50;       % 60 for US, 50 for Europe
 filt_poles        =  2;        % for butterworth filter
 filt_high_freq    =  true;     % apply LPF at highest freq_band
-fft_window_size   =  1024;     % in samples
+fft_window_size   =  2048;     % in samples
 fft_step          =  0.01;     % in seconds (should be bin size)
 fft_win_fun       =  @hamming; % windowing function handle
 bandwidth         =  50; % max frequency. Add  case to default to  fs/2?
@@ -49,11 +49,7 @@ if downsample_fac > 0
     end
     samprate = samprate/downsample_fac;
     data = data_ds;
-    t_ds = decimate(t,downsample_fac);
-    if t(1) == 0 && t_ds(1) ~= 0
-        t_ds = t_ds-t_ds(1);
-    end
-    t = t_ds;
+    t = decimate(t,downsample_fac);
 end
 
 
