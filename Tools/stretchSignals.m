@@ -45,6 +45,10 @@ for trial = 1:length(trial_data)
     
     for iVar = 1:length(time_vars)
         temp = trial_data(trial).(time_vars{iVar});
-        trial_data(trial).(time_vars{iVar}) = interp1(1:size(temp,1),temp,linspace(1,size(temp,1),samples));
+        temp = interp1(1:size(temp,1),temp,linspace(1,size(temp,1),samples));
+        if size(temp,1) == 1 && size(temp,2) ~= 1
+            temp = temp';
+        end
+        trial_data(trial).(time_vars{iVar}) = temp;
     end
 end
