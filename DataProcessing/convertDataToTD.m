@@ -609,7 +609,12 @@ if ~iscell(which_label), which_label = {which_label}; end
 
 if ischar(which_label{1})
     if strcmpi(which_type,'spikes')
-        idx = 1:size(file_labels,1);
+        % idx = ismember(which_label,file_labels(:,1)); % match based on electrode number
+        if length(file_labels)  == length(which_label)
+            idx = 1:length(file_labels);
+        else
+            error('Querying spikes by text label is broken  right now because its hard to match to sorted neurons');
+        end
     else
         [~,idx] = ismember(which_label,file_labels);
     end
@@ -626,7 +631,11 @@ elseif length(which_label) == 1
             disp(['ERROR: ' mfilename ': No label found! Here is the list: ' file_labels]);
         end
     elseif isnumeric(temp_label) % it's not a char, so it must be an array of numbers
-        idx = temp_label;
+        if strcmpi(which_type,'spikes')% match based on electrode number only
+            idx = ismember(file_labels(:,1),temp_label);
+        else
+            idx = temp_label;
+        end
     else
         error_flag = true;
         disp(['ERROR: ' mfilename ': no idea what to do with this label!']);
