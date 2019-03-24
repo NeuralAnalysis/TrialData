@@ -72,7 +72,9 @@ switch lower(which_type)
         elseif t > 1
             idx = false(length(fn),1);
             for ifn = 1:length(fn)
-                idx(ifn) = size(trial_data(trial_idx).(fn{ifn}),1)==t;
+                idx(ifn) = size(trial_data(trial_idx).(fn{ifn}),1)==t & ...
+                    isempty(regexp(fn{ifn},'_unit_guide', 'once')) & ...
+                    isempty(regexp(fn{ifn},'_lfp_guide', 'once'));
             end
             fn = fn(idx);
         elseif t == 1
