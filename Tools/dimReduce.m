@@ -15,15 +15,16 @@
 %
 % Several algorithms are supported. Check the paramter list, since each can
 % have specific options:
-%   'pca'   : vanilla PCA, based on Matlab's built-in pca function
-%   'ppca   : probabalistc PCA, based on Matlab's built-in ppca function
-%   'fa'    : factor analysis, based on Matlab's factoran
-%       NOTE: for PPCA/FA, must provide num_dims as input
+%   'pca'     :  vanilla PCA, based on Matlab's built-in pca function
+%   'ppca     :  probabalistc PCA, based on Matlab's built-in ppca function
+%   'fa'      :  factor analysis, based on Matlab's factoran
+%   'isomap'  :  nonlinear dimensionality reduction. See util/lib/isomap
+%       NOTE: for all but PCA, must provide num_dims as input
 %
 % NOTE: centers data by default! Thus to reconstruct scores you need the
-%       means of each signal.
+%       means of each signal. It stores these
 %
-% A hint: if you want the default parameters, you can pass in just the
+% A hint: if you want the default PCA parameters, you can pass in just the
 % signals that you want instead of a params struct.
 %   e.g., trial_data = dimReduce(trial_data,'M1_spikes');
 %
@@ -42,7 +43,6 @@
 %     .num_dims       : how many dimensions (e.g. for PPCA, FA). For PCA,
 %                        do nothing and it returns same dimensionality as
 %                        input, or specify a value if you like.
-%     .do_plot        : flag to make scree plot (default: false)
 %
 % OUTPUTS:
 %   trial_data : old struct with added field for scores for each trial
@@ -59,7 +59,10 @@
 %   e.g. to add scores to trial_data later using the above output
 %       trial_data = dimReduce(trial_data, params);
 %
-% Written by Matt Perich. Updated Jan 2018.
+% TO DO:
+%   -  extend isomap to allow out of sample embedding
+%
+% Written by Matt Perich. Updated March 2019.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [trial_data,info_out] = dimReduce(trial_data, params)
@@ -69,22 +72,30 @@ algorithm       = 'pca';
 signals         =  getTDfields(trial_data,'spikes');
 use_trials      =  1:length(trial_data);
 num_dims        =  []; % how many dimensions, needed for PPCA, FA, etc
-do_plot         =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some extra parameters you can change that aren't described in header
-sig_name          = '';    % output will be in field "SIG_NAMES_ALGORITHM". Defaults to concatenated names of signals
-sqrt_transform    = false; % square root transform before reduction (projections don't have it) 
-do_smoothing      = false; % will smooth before dim reduction  (trial_data projections are unsmoothed)
-width             = 0.05;  %   gaussian kernel s.d. for smoothing
-pca_algorithm     = 'svd'; % algorithm for PCA
-pca_economy       = false; % if num samples < degrees of freedom, will pad with zeros to keep output same size as degrees of freedom
-pca_centered      = true;  % whether to center data
-fa_orthogonalize  = true; % whether to orthogonalize the projections
-fa_rotate         = 'none';
-add_proj_to_td    = true;  % whether to add projections
-recenter_for_proj = true; % whether to recenter data before projecting into PC space
-w                 = [];    % w is used to know if params was info_out (e.g. whether to recompute space)
-mu                = [];    % mu is the mean from fitting, only filled if info_out is passed in
+sig_name          = '';     % output will be in field "SIG_NAMES_ALGORITHM". Defaults to concatenated names of signals
+center_data       = true;   % whether to center data
+sqrt_transform    = false;  % square root transform before reduction (projections don't have it)
+do_smoothing      = false;  % will smooth before dim reduction  (trial_data projections are unsmoothed)
+width             = 0.05;   %   gaussian kernel s.d. for smoothing
+% PCA  parameters ---------------------------------------------------------
+pca_algorithm     = 'svd';  % algorithm for PCA
+pca_economy       = false;  % if num samples < degrees of freedom, will pad with zeros to keep output same size as degrees of freedom
+% FA parameters -----------------------------------------------------------
+fa_orthogonalize  = true;   % whether to orthogonalize the projections
+fa_rotate         = 'none'; % rotation  to apply
+% Isomap parameters  ------------------------------------------------------
+iso_n             = 12;     % neighborhood size (value for epsilon or k)
+iso_function      = 'k';    % neighborhood function ('epsilon' or 'k')
+iso_component     = 1;      % which connected component to embed, if more than one.
+iso_display       = false;  % plot residual variance and 2-D embedding?
+% parameters for projecting data ------------------------------------------
+add_proj_to_td    = true;   % whether to add projections
+recenter_for_proj = false;  % whether to recenter data before projecting into PC space
+% initialize other parameters ---------------------------------------------
+w                 = [];     % w is used to know if params was info_out (e.g. whether to recompute space)
+mu                = [];     % mu is the mean from fitting, only filled if info_out is passed in
 verbose           = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1
@@ -94,6 +105,7 @@ if nargin > 1
     else
         if isfield(params,'trial_idx')
             warning('''trial_idx'' input has been changed to ''use_trials''... FYI.');
+            use_trials = trial_idx;
         end
         assignParams(who,params); % overwrite parameters
     end
@@ -132,7 +144,7 @@ if isempty(w)
     % compute reduced space
     switch lower(algorithm)
         case 'pca'
-            [w, scores, eigen,~,~,mu] = pca(data,'Algorithm',pca_algorithm,'Centered',pca_centered,'Economy',pca_economy);
+            [w, scores, eigen,~,~,mu] = pca(data,'Algorithm',pca_algorithm,'Centered',center_data,'Economy',pca_economy);
             stats = [];
         case 'ppca'
             if isempty(num_dims), error('Must specify number of dimensions when using PPCA'); end
@@ -142,35 +154,62 @@ if isempty(w)
             if isempty(num_dims), error('Must specify number of dimensions when using FA'); end
             [w, eigen, ~, stats, scores] = factoran(data,num_dims,'Rotate',fa_rotate);
             mu = mean(data,1);
+        case 'isomap'
+            if isempty(num_dims), error('Must specify number of dimensions when using Isomap'); end
+            if length(use_trials) ~= length(trial_data)
+                error('Sorry, for now isomap cannot project new data. The embedding must be calculated using all data.')
+            end
+            iso_opts = struct( ...
+                'dims',1:num_dims, ...
+                'comp',iso_component, ...
+                'display',iso_display, ...
+                'overlay',true,  ...
+                'verbose',verbose);
+            
+            % center data
+            if center_data
+                mu = mean(data,1);
+                data = data - repmat(mu,size(data,1),1);
+            else
+                mu = zeros(1,size(data,2));
+            end
+            
+            % compute distances
+            D = L2_distance(data', data');
+            % find embedding
+            
+            if size(data,1) > 1000
+                disp('------------------------------------')
+                disp('Isomap may take a long time with > 1000 data points. Enabling verbosity so you can see.');
+                iso_opts.verbose = true;
+            end
+            [Y, R, E, iso_info] = isomap(D, iso_function, iso_n, iso_opts);
+            
+            % package things up
+            w = iso_info;
+            scores = Y.coords{end}';
+            stats.R = R;
+            eigen = [];
+            
+            if length(Y.index) ~= size(data,1)
+                disp('WARNING: Isomap could not find a single fully-connected component.');
+            end
+            
         otherwise
             error('Algorithm for dimReduce not recognized');
     end
     
-    if do_plot
-        figure,
-        subplot(2,1,1);
-        bar(eigen/sum(eigen));
-        axis('tight');
-        xlabel('eigenvalue nbr.','FontSize',14),ylabel('explained variance','FontSize',14)
-        set(gca,'Box','off','TickDir','out','FontSize',14);
-        xlim([0 size(data,2)+1])
-        
-        subplot(2,1,2);
-        plot(cumsum(eigen/sum(eigen)),'linewidth',3,'marker','d'),
-        xlabel('eigenvalue nbr.','FontSize',14),ylabel('explained variance','FontSize',14)
-        set(gca,'Box','off','TickDir','out','FontSize',14);
-        xlim([0 size(data,2)+1])
-        ylim([0 1])
-    end
-    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Package up outputs
-    params = struct( ...
-        'signals',{signals}, ...
-        'trial_idx',use_trials);
-    info_out = struct('w',w,'scores',scores,'eigen',eigen,'mu',mu,'signals',{signals},'params',params,'sig_name',sig_name,'stats',stats,'num_dims',num_dims);
+    out_params = struct();
+    out_params.signals     =  signals;
+    out_params.use_trials  =  use_trials;
+    info_out = struct('w',w,'scores',scores,'eigen',eigen,'mu',mu,'signals',{signals},'params',out_params,'sig_name',sig_name,'stats',stats,'num_dims',num_dims);
 else
     info_out = params;
+    if strcmpi(algorithm,'isomap')
+        error('Isomap currently does not support embedding out of sample points.');
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -183,35 +222,64 @@ if add_proj_to_td
     end
     n_signals = cellfun(@(x) length(x),signals(:,2));
     
-    if pca_centered
-        if recenter_for_proj % find the new mean
-            mu = mean(get_vars(trial_data,signals),1);
-        else % use the original mean
-            mu = info_out.mu;
-        end
-    else % don't subtract the mean
-        mu = zeros(1,sum(n_signals));
-    end
-    
-    for trial = 1:length(trial_data)
-        data = zeros(size(trial_data(trial).(signals{1,1}),1),sum(n_signals));
-        count = 0;
-        for i = 1:size(signals,1)
-            temp_data = cat(1,trial_data(trial).(signals{i,1}));
-            data(:,count+(1:n_signals(i))) = temp_data(:,signals{i,2});
-            count = count + n_signals(i);
-        end
+    switch lower(algorithm)
         
-        % project into low-D space and pick the num_dims requested
-        temp_proj = (data - repmat(mu,size(data,1),1)) * w;
-        if strcmpi(algorithm,'fa') && fa_orthogonalize % orthogonalize
-            [temp_proj,~] = orthogonalize(temp_proj',w);
-            temp_proj = temp_proj'; % that code uses dimensions as rows
-        end
-        if ~isempty(num_dims)
-            trial_data(trial).([[sig_name{:}] '_' lower(algorithm)]) = temp_proj(:,1:num_dims);
-        else
-            trial_data(trial).([[sig_name{:}] '_' lower(algorithm)]) = temp_proj;
-        end
+        case 'isomap' % isomap has to go off the embedding for now
+            scores = info_out.scores;
+            count = 0;
+            for trial = 1:length(trial_data)
+                N = size(trial_data(trial).(signals{1,1}),1);
+                
+                % get the
+                temp_proj = scores(count+1:count+N,:);
+                
+                % update counter
+                count = count + N;
+                
+                if ~isempty(num_dims)
+                    trial_data(trial).([[sig_name{:}] '_' lower(algorithm)]) = temp_proj(:,1:num_dims);
+                else
+                    trial_data(trial).([[sig_name{:}] '_' lower(algorithm)]) = temp_proj;
+                end
+            end
+            
+        otherwise % project into the low-D space using the weight matrix
+            if center_data
+                if recenter_for_proj % find the new mean
+                    mu = mean(get_vars(trial_data,signals),1);
+                else % use the original mean
+                    mu = info_out.mu;
+                    if isempty(mu)
+                        error('Could not find the original mean values for centering.');
+                    end
+                end
+            else % don't subtract the mean
+                mu = zeros(1,sum(n_signals));
+            end
+            
+            for trial = 1:length(trial_data)
+                % initialize data
+                data = zeros(size(trial_data(trial).(signals{1,1}),1),sum(n_signals));
+                
+                % loop along all of the columns
+                count = 0;
+                for iSig = 1:size(signals,1)
+                    temp_data = cat(1,trial_data(trial).(signals{iSig,1}));
+                    data(:,count+(1:n_signals(iSig))) = temp_data(:,signals{iSig,2});
+                    count = count + n_signals(iSig);
+                end
+                
+                % project into low-D space and pick the num_dims requested
+                temp_proj = (data - repmat(mu,size(data,1),1)) * w;
+                if strcmpi(algorithm,'fa') && fa_orthogonalize % orthogonalize
+                    [temp_proj,~] = orthogonalize(temp_proj',w);
+                    temp_proj = temp_proj'; % that code uses dimensions as rows
+                end
+                if ~isempty(num_dims)
+                    trial_data(trial).([[sig_name{:}] '_' lower(algorithm)]) = temp_proj(:,1:num_dims);
+                else
+                    trial_data(trial).([[sig_name{:}] '_' lower(algorithm)]) = temp_proj;
+                end
+            end
     end
 end
