@@ -12,6 +12,8 @@
 %     .prctile_cutoff : value (0-100) for empirical test distribution
 %     .do_fr_check    : flag to look for minimum firing rate
 %     .min_fr         : minimum firing rate value to be a good cell
+%             NOTE: assumes it's already a firing rate, i.e., it won't
+%             divide by bin size
 %     .fr_window      : when during trials to evaluate firing rate
 %                           {'idx_BEGIN',BINS_AFTER;'idx_END',BINS_AFTER}
 %     .use_trials     : can only use a subset of trials if desired
@@ -93,7 +95,7 @@ for a = 1:length(arrays)
     
     % Now check for low firing rate neurons
     if do_fr_check
-        bad_units = bad_units | mean(all_spikes./bin_size,1) < min_fr;
+        bad_units = bad_units | mean(all_spikes,1) < min_fr;
     end
     
     disp([arrays{a} ': found ' num2str(sum(bad_units)) ' bad units.']);
