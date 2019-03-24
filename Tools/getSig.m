@@ -66,6 +66,8 @@ if any(cellfun(@(x) ~isempty(regexp(x,'idx_','ONCE')),signals(:,1)'))
                 trial_data(trial).(signals{iSig}) + t_total];
             t_total = t_total + size(trial_data(trial).(fn{1}),1);
         end
+        % ignore NaNs
+        idx(isnan(idx)) = [];
         out(idx,iSig) = 1;
     end
     
