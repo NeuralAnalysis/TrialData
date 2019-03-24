@@ -17,6 +17,7 @@
 %     .fr_window      : when during trials to evaluate firing rate
 %                           {'idx_BEGIN',BINS_AFTER;'idx_END',BINS_AFTER}
 %     .use_trials     : can only use a subset of trials if desired
+%     .calc_fr        : will divide by bin_size if true
 %
 % OUTPUTS:
 %   trial_data : the struct with bad_units removed
@@ -34,6 +35,7 @@ prctile_cutoff  =  99.5;
 do_fr_check     =  true;
 min_fr          =  0;
 fr_window       =  {};
+calc_fr         =  false;
 use_trials      =  1:length(trial_data);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
@@ -95,6 +97,9 @@ for a = 1:length(arrays)
     
     % Now check for low firing rate neurons
     if do_fr_check
+        if calc_fr
+            all_spikes  = all_spikes./trial_data(1).bin_size;
+        end
         bad_units = bad_units | mean(all_spikes,1) < min_fr;
     end
     
