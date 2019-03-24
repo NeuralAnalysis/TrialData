@@ -141,7 +141,9 @@ if isempty(w)
         case 'fa'
             if isempty(num_dims), error('Must specify number of dimensions when using FA'); end
             [w, eigen, ~, stats, scores] = factoran(data,num_dims,'Rotate',fa_rotate);
-            mu = zeros(1,size(data,2));
+            mu = mean(data,1);
+        otherwise
+            error('Algorithm for dimReduce not recognized');
     end
     
     if do_plot
@@ -181,18 +183,13 @@ if add_proj_to_td
     end
     n_signals = cellfun(@(x) length(x),signals(:,2));
     
-    if recenter_for_proj
-        if pca_centered
-            if ~strcmpi(algorithm,'fa')
-                mu = mean(get_vars(trial_data,signals),1);
-            else
-                warning('Need to look into how to handle centering with FA');
-                mu = zeros(1,sum(n_signals));
-            end
-        else
-            mu = zeros(1,sum(n_signals));
+    if pca_centered
+        if recenter_for_proj % find the new mean
+            mu = mean(get_vars(trial_data,signals),1);
+        else % use the original mean
+            mu = info_out.mu;
         end
-    else
+    else % don't subtract the mean
         mu = zeros(1,sum(n_signals));
     end
     
