@@ -9,7 +9,8 @@ function [trial_data, signal_means] = centerSignals(trial_data,params)
 % INPUTS:
 %   trial_data : the struct
 %   params     : parameter struct
-%       .signals : which signal(s) to center
+%       .signals     :  which signal(s) to center
+%       .use_trials  :  which trials to  use  for centering (default all)
 %
 % OUTPUTS:
 %   trial_data  : the struct with centered signals
@@ -17,7 +18,8 @@ function [trial_data, signal_means] = centerSignals(trial_data,params)
 %
 % Written by Matt Perich. Updated March 2019.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-signals = '';
+signals     =  getTDfields(trial_data,'time');
+use_trials  =  [];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 verbose = false;
 if nargin > 1
@@ -32,11 +34,15 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 signals = check_signals(trial_data,signals);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if isempty(use_trials) || (ischar(use_trials) && strcmpi(use_trials,'all'))
+    use_trials = 1:length(trial_data);
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 signal_means = cell(1,size(signals,1));
 for iSig = 1:size(signals,1)
     m = mean(getSig(trial_data,signals(iSig,:)),1);
-    for trial = 1:length(trial_data)
+    for trial = use_trials
         temp = getSig(trial_data(trial),signals(iSig,:));
         trial_data(trial).(signals{iSig,1}) = temp - repmat(m,size(temp,1),1);
     end
