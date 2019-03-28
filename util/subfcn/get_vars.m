@@ -15,8 +15,7 @@ for iSig = 1:size(signals,1)
 end
 
 % preallocate, because with massively large datasets its worth it
-fn = getTDfields(trial_data,'time');
-x = zeros(size(cat(1,trial_data.(fn{1})),1),sum(cellfun(@(x) length(x),idx)));
+x = zeros(size(cat(1,trial_data.(signals{1,1})),1),sum(cellfun(@(x) length(x),idx)));
 count = 0;
 % piece everything together
 for iSig = 1:size(signals,1)
