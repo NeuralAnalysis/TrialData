@@ -43,7 +43,7 @@ verbose = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+trial_data = check_td_quality(trial_data);
 
 bin_size        =  trial_data(1).bin_size;
 if iscell(use_trials) % likely to be meta info

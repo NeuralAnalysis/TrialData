@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function trial_data = getMoveOnsetAndPeak(trial_data,min_ds)
+% function trial_data = getMoveOnsetAndPeak(trial_data, params)
 %
 %   This will find a time bin representing movement onset and peak speed
 % Currently for kinematics but could be easily adapted to force, etc.
@@ -54,7 +54,8 @@ peak_divisor = 2;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+trial_data = check_td_quality(trial_data);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 for trial = 1:length(trial_data)

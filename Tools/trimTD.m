@@ -35,7 +35,7 @@ zero_pad = false;
 % Some undocumented extra parameters
 verbose = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+trial_data = check_td_quality(trial_data);
 if nargin == 2 && ~isstruct(varargin{1}), error('Must provide start and end points for trimming.'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin == 2 % it's a struct

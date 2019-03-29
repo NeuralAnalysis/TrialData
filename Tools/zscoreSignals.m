@@ -23,7 +23,8 @@ function trial_data = zscoreSignals(trial_data,params)
 signals  =  getTDfields(trial_data,'spikes');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
-verbose = false;
+field_extra  =  '';   % if empty, defaults to input field name(s)
+verbose      =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1
     if ~isstruct(params) % must be signals input
@@ -33,12 +34,17 @@ if nargin > 1
     end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+trial_data = check_td_quality(trial_data);
 signals = check_signals(trial_data,signals);
 signals = signals(:,1); % you don't need the idx if they exist, just do it for them all
-
-for i = 1:size(signals,1)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% check output field addition
+field_extra  = check_field_extra(field_extra,signals);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  
+for iSig = 1:size(signals,1)
     % compute normalization factors
     for trial = 1:length(trial_data)
-        trial_data(trial).(signals{i}) = zscore(trial_data(trial).(signals{i}));
+        trial_data(trial).([signals{iSig,1} field_extra{iSig}]) = zscore(trial_data(trial).(signals{iSig,1}));
     end
 end

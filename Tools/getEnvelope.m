@@ -20,13 +20,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = getEnvelope(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-signals  = '';
-center = true;
-filt_order = 4;
-lp_cutoff = 20;
+signals      =  '';
+center       =  true;
+filt_order   =  4;
+lp_cutoff    =  20;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
-verbose = false;
+field_extra  =  '';   % if empty, defaults to input field name(s)
+verbose      =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(params)
     signals = params;
@@ -34,7 +35,12 @@ else
     assignParams(who,params);
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+trial_data = check_td_quality(trial_data);
 signals = check_signals(trial_data,signals);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% check output field addition
+field_extra  = check_field_extra(field_extra,signals);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 fs = round(1/trial_data(1).bin_size);
 
@@ -63,7 +69,7 @@ for iSig = 1:size(signals,1)
         % take square root since we squared it above
         sig = abs(sqrt(sig));
         
-        trial_data(trial).(signals{iSig,1}) = sig;
+        trial_data(trial).([signals{iSig,1} field_extra{iSig}]) = sig;
     end
 end
 

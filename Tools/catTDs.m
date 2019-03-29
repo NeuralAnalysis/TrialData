@@ -73,3 +73,6 @@ else
     disp('Only one trial_data struct. Nothing to concatenate...');
     master_td = varargin{1};
 end
+
+master_td  =  check_td_quality(master_td);
+

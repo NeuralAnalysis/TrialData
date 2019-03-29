@@ -55,7 +55,7 @@ verbose            =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+trial_data  =  check_td_quality(trial_data);
 if isempty(in_signals), error('Need to specify input signals'); end
 if isempty(out_signals), error('Need to specify output signals'); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

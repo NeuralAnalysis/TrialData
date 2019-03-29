@@ -17,24 +17,35 @@
 function td = addFiringRates(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
-array     = '';
-method    = 'averageInBin';
+array         = '';
+method        = 'averageInBin';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Here are some parameters that you can overwrite that aren't documented
-verbose  = false;
+field_extra   =  {'_FR'};
+verbose       = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-assignParams(who,params); % overwrite parameters
+if nargin > 1
+    if isstruct(params) % overwrite parameters
+        assignParams(who,params);
+    else % assumes you  passed in signals
+        signals = params;
+    end
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
-
+trial_data  =  check_td_quality(trial_data);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% check output field addition
+field_extra  = check_field_extra(field_extra,signals);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  
 switch lower(method)
     case 'averageinbin'
-        for trial_idx = 1:length(trial_data)
-            spikes = trial_data(trial_idx).([array '_spikes']);
+        for trial = 1:length(trial_data)
+            spikes = trial_data(trial).([array '_spikes']);
         
-            bin_size = trial_data(trial_idx).bin_size;
+            bin_size = trial_data(trial).bin_size;
             FR = spikes/bin_size;
-            trial_data(trial_idx).([array '_FR']) = FR;
+            trial_data(trial).([array field_extra{1}]) = FR;
         end
     otherwise
         error('That FR calculating method is not implemented')

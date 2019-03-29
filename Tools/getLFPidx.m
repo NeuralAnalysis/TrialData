@@ -1,12 +1,12 @@
-function [idx,freqs,chans] = getLFPidx(td,varargin)
+function [idx,freqs,chans] = getLFPidx(trial_data,varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 
-% function [idx,freqs,chans] = getLFPidx(td, chans, freqs)
+% function [idx,freqs,chans] = getLFPidx(trial_data, chans, freqs)
 %
 %   This function will query the lfp_guide and return indices.
 % 
 % INPUTS:
-%   td               :  the struct
+%   trial_data       :  the struct
 %   params           :  params struct
 %       .array       :  which array to use
 %       .channels    :  which channels to return. Use [] or 'all' for all
@@ -50,9 +50,11 @@ if nargin > 1
     end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+trial_data = check_td_quality(trial_data);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isempty(array)
     % first check if there is more than one LFP
-    fn = getTDfields(td,'lfp');
+    fn = getTDfields(trial_data,'lfp');
     if isempty(fn) % no LFP, no need for this function!
         disp('ERROR: getTDfields: No LFP field found!');
         idx = [];
@@ -66,11 +68,11 @@ if isempty(array)
         chans = [];
         return;
     elseif length(fn) == 1
-        array = getTDfields(td,'arrays');
+        array = getTDfields(trial_data,'arrays');
     end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-lfp_guide = td(1).([array '_lfp_guide']);
+lfp_guide = trial_data(1).([array '_lfp_guide']);
 freqs = unique(lfp_guide(:,2:3),'rows');
 chans = unique(lfp_guide(:,1));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

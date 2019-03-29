@@ -25,30 +25,40 @@
 function [td] = addCorrelatedNoise(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETER VALUES
-signals  =  {};
-noise_covar = [];
+signals         =  {};
+noise_covar     = [];
 use_trials      =  1:length(trial_data);
 do_plot         =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
-verbose = false;
+field_extra     =  {'_noisy'};
+verbose         = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if nargin > 1, assignParams(who,params); end % overwrite parameters
+if nargin > 1
+    if isstruct(params) % overwrite parameters
+        assignParams(who,params);
+    else % assumes you  passed in signals
+        signals = params;
+    end
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+trial_data  =  check_td_quality(trial_data);
 % Process inputs
 td = trial_data(use_trials);
 if isempty(signals)
     error('signals info must be provided');
 end
 signals = check_signals(td(1),signals);
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isempty(noise_covar)
     warning('no noise covariance provided, using standard normal distribution')
-    noise_covar = eye(size(data,2));
+    noise_covar = eye(sum(cellfun(@length,signals(:,2))));
 end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% check output field addition
+field_extra  = check_field_extra(field_extra,signals);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  
 
 sig_names = cellfun(@(x) strrep(x,'_spikes',''),signals(:,1),'uni',0);
 for trial = 1:length(td)
@@ -56,5 +66,5 @@ for trial = 1:length(td)
 
     noisy_data = mvnrnd(data,noise_covar);
 
-    td(trial).([[sig_names{:}] '_noisy']) = noisy_data;
+    td(trial).([[sig_names{:}] field_extra{1}]) = noisy_data;
 end

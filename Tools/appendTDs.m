@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function combined = appendTDs(varargin)
+% function combined_td = appendTDs(varargin)
 %
 %   Stitches together an arbitrary number of trial data structs in time.
 % This is useful if you want to plot discontinuous data, for instance 500
@@ -27,7 +27,7 @@
 % Written by Matt Perich. Updated Feb 2017.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function combined = appendTDs(varargin)
+function combined_td = appendTDs(varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Check the inputs
 if isempty(varargin)
@@ -51,9 +51,9 @@ if ~all(cellfun(@isstruct,varargin))
 end
 
 % now combine the  structs
-combined = varargin{1};
-for trial = 1:length(combined)
-    combined(trial).stitch_marks = 1;
+combined_td = varargin{1};
+for trial = 1:length(combined_td)
+    combined_td(trial).stitch_marks = 1;
 end
 
 if length(varargin) > 1
@@ -62,23 +62,23 @@ if length(varargin) > 1
         error('All inputs must have same number of trials');
     end
     % get the list of time variables
-    fn_time = getTDfields(combined,'time');
-    fn_idx  = getTDfields(combined,'idx');
+    fn_time = getTDfields(combined_td,'time');
+    fn_idx  = getTDfields(combined_td,'idx');
     
     for i = 2:length(varargin)
         td = varargin{i};
-        for trial = 1:length(combined)
-            combined(trial).stitch_marks = [combined(trial).stitch_marks, size(combined(trial).(fn_time{1}),1)];
+        for trial = 1:length(combined_td)
+            combined_td(trial).stitch_marks = [combined_td(trial).stitch_marks, size(combined_td(trial).(fn_time{1}),1)];
             
             % append the time variables
             for var = 1:length(fn_time)
-                combined(trial).(fn_time{var}) = [combined(trial).(fn_time{var}); td(trial).(fn_time{var})];
+                combined_td(trial).(fn_time{var}) = [combined_td(trial).(fn_time{var}); td(trial).(fn_time{var})];
             end
             
             % adjust the idx_values
             for var = 1:length(fn_idx)
                 if ~isempty(td(trial).(fn_idx{var}))
-                    combined(trial).(fn_idx{var}) = td(trial).(fn_idx{var})+size(combined(trial).(fn_time{1}),1);
+                    combined_td(trial).(fn_idx{var}) = td(trial).(fn_idx{var})+size(combined_td(trial).(fn_time{1}),1);
                 end
             end
         end
@@ -87,5 +87,7 @@ else
     disp('appendTDs: only one trial_data struct provided. Nothing to append.');
 end
 
+combined_td  =  check_td_quality(combined_td);
+
 % ensure logical order
-combined = reorderTDfields(combined);
+combined_td = reorderTDfields(combined_td);

@@ -112,8 +112,8 @@ if nargin > 1
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % process and prepare inputs
-if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
-signals = check_signals(trial_data(1),signals);
+trial_data  =  check_td_quality(trial_data);
+signals     =  check_signals(trial_data(1),signals);
 if iscell(use_trials) % likely to be meta info
     use_trials = getTDidx(trial_data,use_trials{:});
 end

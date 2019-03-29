@@ -80,7 +80,7 @@ verbose              =  false;
 assignParams(who,params); % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Process inputs
-if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+trial_data  =  check_td_quality(trial_data);
 if isempty(model_type), error('Must specify what type of model to fit'); end
 if isempty(in_signals) || isempty(out_signals)
     error('input/output info must be provided');

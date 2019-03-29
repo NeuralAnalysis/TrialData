@@ -8,7 +8,7 @@
 %   trial_data : THE STRUCT
 %   params     : parameter struct
 %       .signals   : (string/cell) which signal(s) to use
-%       .norm_name : (string/cell) field name to use for the stored norm.
+%       .field_extra : (string/cell) field name to use for the stored norm.
 %                      Default (empty) will just append '_norm'
 %                      after the signal of interest. NOTE that if multiple
 %                      signals are requested, this should be a cell array
@@ -28,11 +28,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data  = getNorm(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-signals    =  ''; % which signals to use
-norm_name  =  ''; % the name of the normalized signal
+signals      =  ''; % which signals to use
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
-verbose = false;
+field_extra  =  '_norm';   % if empty, defaults to input field name(s)
+verbose      =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin < 2
     error('Must define signals!');
@@ -44,38 +44,28 @@ else
     end
 end
 if isempty(signals), error('Must  define signals!'); end
+if isfield(params,'norm_name')
+    warning('getNorm has been updated to fit the field_extra naming convention. Update the norm_name parameter name please.');
+    field_extra =  params.norm_name;
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+trial_data = check_td_quality(trial_data);
 signals = check_signals(trial_data,signals);
-
-% must be a cell
-if ~iscell(norm_name), norm_name = {norm_name}; end
-
-% define all of the names to use
-if isempty(norm_name{1}) ||  ( length(norm_name) == 1 && isempty(norm_name{1}) )
-    all_norm_names = signals(:,1);
-    for iSig = 1:size(signals,1)
-        all_norm_names{iSig} = [all_norm_names{iSig} '_norm'];
-    end
-else
-    all_norm_names = norm_name;
-end
-
-%  check to make sure we have all the names
-if length(all_norm_names) ~= size(signals,1)
-    error('Not enough names for the fields! Need one per signal.');
-end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% check output field addition
+field_extra  = check_field_extra(field_extra,signals);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % take norm for all trials and signals
 for trial = 1:length(trial_data)
     for iSig = 1:size(signals,1)
-        sig = trial_data(trial).(signals{iSig,1});
-        n_time = size(sig,1);
-        new_sig = zeros(n_time,1);
+        data = getSig(trial_data(trial),signals(iSig,:));
+        n_time = size(data,1);
+        new_data = zeros(n_time,1);
         for t = 1:n_time
-            new_sig(t) = norm(sig(t,signals{iSig,2}));
+            new_data(t) = norm(data(t,signals{iSig,2}));
         end
         
-        trial_data(trial).(all_norm_names{iSig}) = new_sig;
+        trial_data(trial).([signals{iSig,1} field_extra{iSig}]) = new_data;
     end
 end

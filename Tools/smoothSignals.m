@@ -18,7 +18,7 @@
 % OUTPUTS:
 %   trial_data : the struct with all (signals{}) fields smoothed
 %
-% Written by Matt Perich. Updated Feb 2017.
+% Written by Matt Perich. Updated March 2019.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = smoothSignals(trial_data,params)
@@ -29,6 +29,7 @@ width           =  0.05;
 calc_rate       =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some extra parameters that aren't documented in the header
+field_extra     =  '';   % if empty, defaults to input field name(s)
 do_smoothing    =  true; % will just return trial_data if this is false
 verbose = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -41,28 +42,29 @@ if nargin > 1
 end 
 
 if isfield(params,'kernel_SD')
-    warning('smoothSignals changed!!! the kernel_SD input is now called width. it looks like you passed in kernel_SD. This means it will do nothing! Change it to width.');
+    warning('smoothSignals changed!!! the kernel_SD input is now called width. it looks like you passed in kernel_SD. Change it to width.');
+    width = params.kernel_SD;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
-if isempty(signals), error('Must provide one or more signals to smooth.'); end
-if ~iscell(signals), signals = {signals}; end
+trial_data = check_td_quality(trial_data);
 bin_size = trial_data(1).bin_size;
 % make sure the signal input formatting is good
 signals = check_signals(trial_data(1),signals);
-signals = signals(:,1); % don't need the idx if they exist
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+% check output field addition
+field_extra  = check_field_extra(field_extra,signals);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  
 if do_smoothing
     for trial = 1:length(trial_data)
-        for i = 1:length(signals)
-            data = trial_data(trial).(signals{i});
+        for iSig = 1:size(signals,1)
+            data = getSig(trial_data(trial),signals(iSig,:));
             if calc_rate, data = data./bin_size; end
             if do_smoothing
                 data = smooth_data(data,bin_size,width);
             end
-            trial_data(trial).(signals{i}) = data;
+            trial_data(trial).([signals{iSig,1} field_extra{iSig}]) = data;
         end
     end
 end

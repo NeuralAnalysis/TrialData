@@ -50,7 +50,7 @@ if nargin > 1
     end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+trial_data = check_td_quality(trial_data);
 if ~iscell(linked_fields), linked_fields = {linked_fields}; end
 if any(extra_bins < 0)
     disp('Extra bins must be positive: [BINS_BEFORE, BINS_AFTER]. Taking absolute value...');

@@ -52,7 +52,7 @@ elseif nargin < 2 % do all
     conditions = {'all'};
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+trial_data = check_td_quality(trial_data);
 if isempty(conditions), conditions = 'all'; end
 if strcmpi(conditions,'all')
     disp('trialAverage: No conditions provided. Averaging all!');

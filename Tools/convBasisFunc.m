@@ -26,18 +26,21 @@
 % OUTPUTS:
 %   trial_data : struct with fields added for convolved
 %
-% Written by Matt Perich. Updated Feb 2017.
+% Written by Matt Perich. Updated March 2019.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = convBasisFunc(trial_data,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULTS
-[rcb_hpeaks, rcb_b, rcb_n] = deal([]);
-flip_time  = false;
-which_vars = getTDfields(trial_data,'time'); % default to all time signals
+rcb_hpeaks    =  [];
+rcb_b         =  [];
+rcb_n         =  [];
+flip_time     =  false;
+signals       =  getTDfields(trial_data,'time'); % default to all time signals
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
-verbose = false;
+field_extra   =  {'_rcb'};   % if empty, defaults to input field name(s)
+verbose       =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1
     assignParams(who,params); % overwrite parameters
@@ -48,11 +51,13 @@ else
     error('Requires params input.');
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
-
-bin_size = trial_data(1).bin_size;
-if ~iscell(which_vars), which_vars = {which_vars}; end
+trial_data  =  check_td_quality(trial_data);
+signals     =  check_signals(trial_data(1),signals);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% check output field addition
+field_extra  = check_field_extra(field_extra,signals);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+bin_size = trial_data(1).bin_size;
 
 % Here is the documentation from Pillow's code so you know what's going on
 % Inputs:
@@ -85,28 +90,31 @@ fn_time = getTDfields(trial_data,'time');
 if rcb_n > 0
     % do the convolution for each trial
     for trial = 1:length(trial_data) % loop along trials
-        for iVar = 1:length(which_vars) % loop along variables
+        for iSig = 1:size(signals,1) % loop along variables
             
-            sig_name = which_vars{iVar};
+            sig_name = signals{iSig,1};
+            % check if it's an idx_ field
             if ~isempty(regexp(sig_name,'idx_','ONCE'))
                 sig_name = sig_name(5:end);
                 % make a time vector
-                temp = zeros(size(trial_data(trial).(fn_time{1}),1),1);
-                temp(trial_data(trial).(which_vars{iVar})) = 1;
+                data = zeros(size(trial_data(trial).(fn_time{1}),1),1);
+                data(trial_data(trial).(signals{iSig,1})) = 1;
             else % maybe later add check to ensure it's time varying
-                temp = trial_data(trial).(which_vars{iVar});
+                data = trial_data(trial).(signals{iSig,1});
             end
-            temp_conv = zeros(size(temp,1),size(temp,2)*size(b,2));
+            temp_conv = zeros(size(data,1),size(data,2)*size(b,2));
             for iFunc = 1:size(b,2) % loop along basis funcs
-                for i = 1:size(temp,2)
+                for i = 1:size(data,2)
                     if flip_time % acausal
-                        temp_conv(:,i+(iFunc-1)*size(temp,2)) = flipud(conv(flipud(temp(:,i)),b(:,iFunc),'same'));
+                        temp =  flipud(conv(flipud(data(:,i)),b(:,iFunc),'full'));
+                        temp_conv(:,i+(iFunc-1)*size(data,2)) = temp(end-size(data,1)+1:end);
                     else % causal (default mode)
-                        temp_conv(:,i+(iFunc-1)*size(temp,2)) = conv(temp(:,i),b(:,iFunc),'same');
+                        temp = conv(data(:,i),b(:,iFunc),'full');
+                        temp_conv(:,i+(iFunc-1)*size(data,2)) = temp(1:size(data,1));
                     end
                 end
             end
-            trial_data(trial).([sig_name '_rcb']) = temp_conv;
+            trial_data(trial).([sig_name field_extra{1}]) = temp_conv;
         end
     end
 else

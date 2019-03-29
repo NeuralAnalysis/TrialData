@@ -29,7 +29,7 @@ if nargin > 1
     assignParams(who,params);
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-assert(isstruct(trial_data),'First input must be trial_data struct!')
+trial_data = check_td_quality(trial_data);
 % if ~iscell(key_fields), key_fields = {key_fields}; end
 
 td_j = struct();

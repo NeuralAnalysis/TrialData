@@ -20,7 +20,7 @@ function trial_data = stretchSignals(trial_data,params)
 samples    =  100;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
-verbose = false;
+verbose      =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1
     if ~isstruct(params), error('Second input must be params struct'); end
@@ -31,7 +31,7 @@ if nargin > 1
     assignParams(who,params);
 end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
+trial_data = check_td_quality(trial_data);
 % get list of time-varying signals that we will average over
 time_vars = getTDfields(trial_data,'time');
 idx_vars = getTDfields(trial_data,'idx');
