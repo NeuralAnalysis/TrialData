@@ -20,10 +20,9 @@ function [trial_data,td_params,error_flag] = convertDataToTD(varargin)
 %   td_params  : contains all parameters, including inputs
 %
 % Things to do:
-%   - implement LFP
-%   - Implement read_waveforms and include_spike_times
+%   - Implement read_waveforms and add_spike_times
 %
-% Written by Matt Perich. Updated December 2018.
+% Written by Matt Perich. Updated March 2019.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DEFAULT PARAMETERS
@@ -613,7 +612,10 @@ if ischar(which_label{1})
         if length(file_labels)  == length(which_label)
             idx = 1:length(file_labels);
         else
-            error('Querying spikes by text label is broken  right now because its hard to match to sorted neurons');
+            idx = 1:length(file_labels);
+            warning(['Querying spikes by text label is broken  right now because its hard to match to sorted neurons. Taking only  the first ' ...
+                num2str(length(file_labels)) ' signals. This probably works if you are trying to include all of the signals in the order they ' ...
+                'appear in the datafile but will give you wrong assignments if you are trying to use the labels to subselect or reorder the channels.']);
         end
     else
         [~,idx] = ismember(which_label,file_labels);
