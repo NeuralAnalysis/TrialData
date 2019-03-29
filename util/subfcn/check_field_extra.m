@@ -1,5 +1,9 @@
 function field_extra = check_field_extra(field_extra,signals)
 
+if nargin == 1
+    signals = {''};
+end
+
 if isempty(field_extra) % default to input signal names
     field_extra = repmat({''},1,size(signals,1));
 else

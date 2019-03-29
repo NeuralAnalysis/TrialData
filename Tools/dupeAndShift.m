@@ -23,30 +23,48 @@
 %   trial_data : (struct) obvious
 %   varargin   : pairs of ...'field',SHIFT,...
 %       SHIFT is given in number of bins
+%   params     : (struct) must be the last input!
 %
 % OUTPUTS:
 %   trial_data : original struct with added _shift fields
 %
-% Written by Matt Perich. Updated October 2018.
+% Written by Matt Perich. Updated March 2019.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = dupeAndShift(trial_data,varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-trial_data  =  check_td_quality(trial_data);
+% some extra parameters that can be overwritten
+field_extra =  '_shift';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+params = [];
 if length(varargin) == 1 && iscell(varargin)
     varargin = varargin{1};
 else
     if rem(length(varargin),2) ~= 0
-        error('Must give pairs of inputs as ...field,shift,...');
+        % check if the last one is a params struct
+        if isstruct(varargin{end})
+            params = varargin{end};
+            varargin = varargin(1:end-1);
+        else
+            error('Must give pairs of inputs as ...field,shift,...');
+        end
     end
 end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if ~isempty(params)
+    assignParams(who,params);
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+trial_data  =  check_td_quality(trial_data);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fn = fieldnames(trial_data);
 all_shifts = {varargin{2:2:end}};
-all_fields = {varargin{1:2:end}};
-
-if all(~ismember(all_fields,fn)), error('Field not recognized'); end
+signals = {varargin{1:2:end}};
+signals = check_signals(trial_data,signals);
+signals = signals(:,1); % we don't need the idx
+field_extra =  check_field_extra(field_extra,signals');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if all(~ismember(signals,fn)), error('Field not recognized'); end
 
 % check the  shifts. They must all shift forward or all shift back in time
 if ~( all(cellfun(@(x) all(x > 0), all_shifts)) || all(cellfun(@(x) all(x < 0), all_shifts)) )
@@ -68,9 +86,9 @@ fn_idx = getTDfields(trial_data,'idx');
 
 for trial = 1:length(trial_data)
     
-    for j = 1:length(all_fields)
+    for j = 1:length(signals)
         the_shifts = all_shifts{j};
-        the_field  = all_fields{j};
+        the_field  = signals{j};
         [the_shifts,~] = sort(the_shifts,2,'Ascend');
         
         n_shifts =  length(the_shifts);
@@ -84,7 +102,7 @@ for trial = 1:length(trial_data)
                 temp_shift(1:size(temp,1)- the_shifts(k), 1+size(temp,2)*(k):size(temp,2)*(k+1)) = temp(the_shifts(k)+1:end,:);
             end
             
-            trial_data(trial).([the_field '_shift']) = temp_shift(:,size(temp,2)+1:end);
+            trial_data(trial).([the_field field_extra{j}]) = temp_shift(:,size(temp,2)+1:end);
             
         else % shift forward in time (i.e.add history)
             temp_shift = NaN(size(temp,1)+max_shift,size(temp,2)*(1+n_shifts));
@@ -95,12 +113,12 @@ for trial = 1:length(trial_data)
             
             % remove padding
             temp_shift = temp_shift(1:end-max_shift,:);
-            trial_data(trial).([all_fields{j} '_shift']) = temp_shift(:,size(temp,2)+1:end);
+            trial_data(trial).([signals{j} field_extra{j}]) = temp_shift(:,size(temp,2)+1:end);
             
         end
         
         
-        trial_data(trial).([all_fields{j} '_shift_vals']) = the_shifts;
+        trial_data(trial).([signals{j} field_extra{j} '_vals']) = the_shifts;
     end
     
     
