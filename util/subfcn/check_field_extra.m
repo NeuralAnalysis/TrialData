@@ -11,4 +11,7 @@ else
     if length(field_extra) > 1 && length(field_extra) ~= size(signals,1)
         error('If you specify field_extra, you must have one entry or one entry for every signal.');
     end
+    if length(field_extra) == 1 && size(signals,1) > 1
+        field_extra = repmat(field_extra,1,size(signals,1));
+    end
 end

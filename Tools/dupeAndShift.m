@@ -34,7 +34,8 @@
 function trial_data = dupeAndShift(trial_data,varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % some extra parameters that can be overwritten
-field_extra =  '_shift';
+field_extra  =  '_shift';
+add_vals     =  true;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 params = [];
 if length(varargin) == 1 && iscell(varargin)
@@ -62,7 +63,7 @@ all_shifts = {varargin{2:2:end}};
 signals = {varargin{1:2:end}};
 signals = check_signals(trial_data,signals);
 signals = signals(:,1); % we don't need the idx
-field_extra =  check_field_extra(field_extra,signals');
+field_extra =  check_field_extra(field_extra,signals);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if all(~ismember(signals,fn)), error('Field not recognized'); end
 
@@ -117,8 +118,9 @@ for trial = 1:length(trial_data)
             
         end
         
-        
-        trial_data(trial).([signals{j} field_extra{j} '_vals']) = the_shifts;
+        if add_vals % add the shift values as a field
+            trial_data(trial).([signals{j} field_extra{j} '_vals']) = the_shifts;
+        end
     end
     
     
