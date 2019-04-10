@@ -1,17 +1,18 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% function data_smooth = smoothSpikesForPCA(data,dt,kernel_SD)
+% function data_smooth = smooth_data(data,dt,kernel_SD)
 %
 %   Convolves spike counts or firing rates with a Guassian kernel to smooth
 % the responses. Made for spikes but works well with other signals as well.
-% Used by smoothSignals. Based on gaussian_smoothing code from Juan's proc folder.
 %
 % INPUTS:
 %   data      : array of data (rows: time, columns: signals)
-%   dt        : size of time steps in fr in s
+%   dt        : size of time steps in data in s
 %   kernel_SD : gaussian kernel standard deviation
 %
 % OUTPUTS:
 %   fr_smooth : smoothed data
+%
+% Written by Matt Perich and Juan Gallego.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function data_smooth = smooth_data(data,dt,kernel_SD)
