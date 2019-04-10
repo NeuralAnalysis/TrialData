@@ -59,7 +59,7 @@ field_extra  = check_field_extra(field_extra,signals);
 if do_smoothing
     for trial = 1:length(trial_data)
         for iSig = 1:size(signals,1)
-            data = getSig(trial_data(trial),signals(iSig,:));
+            data = getSig(trial_data(trial),signals(iSig,1));
             if calc_rate, data = data./bin_size; end
             if do_smoothing
                 data = smooth_data(data,bin_size,width);
