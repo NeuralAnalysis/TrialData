@@ -23,12 +23,16 @@ samples    =  100;
 verbose      =  false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1
-    if ~isstruct(params), error('Second input must be params struct'); end
-    if isfield(params,'num_samp')
-        warning('stretchSignals: ''num_samp'' input has been changed to ''samples'' for ease of use. Please change your code. For now the parameter is  overwritten but this warning and the overwriting will be removed in a future release');
-        samples = params.num_samp;
+    if ~isstruct(params)
+        samples = params;
+    else
+        if isfield(params,'num_samp')
+            warning('stretchSignals: ''num_samp'' input has been changed to ''samples'' for ease of use. Please change your code. For now the parameter is  overwritten but this warning and the overwriting will be removed in a future release');
+            params.samples = params.num_samp;
+        end
+        assignParams(who,params);
     end
-    assignParams(who,params);
+
 end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 trial_data = check_td_quality(trial_data);
