@@ -16,7 +16,7 @@ for i = 1:length(labels)
     labels{i} = labels{i}(temp ~= 0);
 end
 
-data = NSx.Data';
+data = double(NSx.Data)';
 if convert_to_mv
     data = data/4e3;
 end
