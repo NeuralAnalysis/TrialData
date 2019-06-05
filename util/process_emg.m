@@ -33,6 +33,8 @@ assert(numel(block_starts)==1 && numel(block_ends)==1,'EMG data block is not con
 temp = filtfilt(bhigh,ahigh,double(data(data_idx,:)));
 temp = 2*temp.*temp;
 temp = filtfilt(blow,alow,temp);
+% rectification of the signal to remove negative values due to Gibbs effect
+temp(temp<0) = 0;
 data(data_idx,:) = abs(sqrt(temp));
 data(~data_idx,:) = NaN;
 
