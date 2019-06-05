@@ -57,8 +57,8 @@ function [trial_data,model_info] = getModel(trial_data,params)
 % DEFAULT PARAMETERS
 model_type    =  '';
 model_name    =  'default';
-in_signals    =  {};%{'name',idx; 'name',idx};
-out_signals   =  {};%{'name',idx};
+in_signals    =  {}; % {'name',idx; 'name',idx};
+out_signals   =  {}; % {'name',idx};
 train_idx     =  1:length(trial_data);
 polynomial    =  0; % order of cascaded nonlinearity
 % GLM-specific parameters
@@ -120,10 +120,22 @@ if isempty(b) && isempty(net)  % fit a new model
                     % NOTE: Z-scores here!
                     [b_temp,s_temp] = lassoglm(zscore(x),y(:,iVar),glm_distribution,'lambda',lasso_lambda,'alpha',lasso_alpha);
                     b(:,iVar) = [s_temp.Intercept; b_temp];
-                    yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
+                    if strcmp(glm_distribution, 'poisson')
+                        yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
+                    elseif strcmp(glm_distribution, 'normal')
+                        yfit(:,iVar) = [ones(size(x,1),1), zscore(x)]*b(:,iVar);
+                    else
+                        error('This glm_distribution has not been implemented')
+                    end
                 else
                     [b(:,iVar),~,s_temp] = glmfit(x,y(:,iVar),glm_distribution);
-                    yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
+                    if strcmp(glm_distribution, 'poisson')
+                        yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));                    
+                    elseif strcmp(glm_distribution, 'normal')
+                        yfit(:,iVar) = [ones(size(x,1),1), x]*b(:,iVar);
+                    else
+                        error('This glm_distribution has not been implemented')
+                    end
                 end
                 
                 if isempty(s)
@@ -181,9 +193,17 @@ if add_pred_to_td
             case 'glm' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 for iVar = 1:size(b,2)
                     if do_lasso
-                        yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
+                        if strcmp(glm_distribution, 'poisson')
+                            yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));   
+                        elseif strcmp(glm_distribution, 'normal')
+                            yfit(:,iVar) = [ones(size(x,1),1), zscore(x)]*b(:,iVar);
+                        end
                     else
-                        yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));
+                        if strcmp(glm_distribution, 'poisson')
+                            yfit(:,iVar) = exp([ones(size(x,1),1), x]*b(:,iVar));   
+                        elseif strcmp(glm_distribution, 'normal')
+                            yfit(:,iVar) = [ones(size(x,1),1), x]*b(:,iVar);
+                        end
                     end
                 end
                 
@@ -225,6 +245,7 @@ switch lower(model_type)
         model_info = struct( ...
             'model_type',   model_type, ...
             'model_name',   model_name, ...
+            'glm_distribution', glm_distribution, ...
             'in_signals',   {in_signals}, ...
             'out_signals',  {out_signals}, ...
             'train_idx',    train_idx, ...
