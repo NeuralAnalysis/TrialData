@@ -39,6 +39,7 @@ fft_window_size   =  2048;     % in samples
 fft_step          =  0.01;     % in seconds (should be bin size)
 fft_win_fun       =  @hamming; % windowing function handle
 bandwidth         =  50; % max frequency. Add  case to default to  fs/2?
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isempty(params), assignParams(who,params); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -49,6 +50,11 @@ if size(freq_bands,2) ~= 2
 end
 
 data = double(data);
+
+
+% step for FFT sliding window
+step = round(fft_step*samprate);
+
 
 % downsample
 if downsample_fac > 0
@@ -103,35 +109,74 @@ win_func =  win_func./norm(win_func);
 
 % anticipate the size of the fft output
 N = floor(size(data,1)/round(fft_step*samprate));
-lfp_data = zeros(N,size(freq_bands,1)*size(data,2));
+lfp_data = nan(N,size(freq_bands,1)*size(data,2));
+
+% chop the data into blocks, to avoid memory overflows!
+block_size = fft_step*samprate*100000; % seemed reasonable to take 100000 time bins blocks; could be turn into a param
+nblocks = ceil(N/block_size);
+
+
+
 for iSig = 1:size(data,2)
     disp(['Processing LFP from channel ' num2str(iSig)]);
     tic;
-    switch lower(lfp_method)
-        case 'fft'
-            % get FFT over time
-            [data_fft, freq, t_fft] = trFFT(data(:,iSig), ...
-                fft_window_size, ...
-                round(fft_step*samprate), ...
-                samprate, ...
-                win_func);
-        otherwise
-            error('LFP method not  recognized');
+    
+    for b = 1:nblocks
+        
+        % carefully select the start of each window, so when we stitch the
+        % data, we don't have discontinuities or NaNs --this implies that
+        % the FFT winfows overlap by a number of points that depends on the
+        % FFT window size
+        bstart = single( b + block_size*(b-1) - 2*floor(fft_window_size/2)*(b-1) );
+        
+        if b ~= nblocks
+            bend = bstart + block_size - 1;
+        else
+            bend = N;
+        end
+        
+        switch lower(lfp_method)
+            case 'fft'
+                
+                % get FFT over time
+                [data_fft, freq, ~] = trFFT(data(bstart:bend,iSig), ...
+                    fft_window_size, ...
+                    step, ...
+                    samprate, ...
+                    win_func);
+
+            otherwise
+                error('LFP method not  recognized');
+        end
+
+        data_fft = abs(data_fft);
+
+        % find average power in each  band for this channel
+        for iBand = 1:size(freq_bands,1)
+            idx_freq = freq >= freq_bands(iBand,1)  &  freq  <= freq_bands(iBand,2);
+            temp = mean(data_fft(idx_freq,:),1)';
+            % lfp_data(:,size(data,2)*(iBand-1)+iSig) = temp;
+            
+            % find idx for ~NaN bins (trFFT introduces NaNs at the
+            % beginning and end of data_fft because the FFT is computed in windows ofc)
+            temp_data = temp( floor(fft_window_size/2)+1 : end-floor(fft_window_size/2)+1 );
+            
+            % find idx for where the data belong in the lfp_data matrix
+            % --remember, this is to compensate for the NaN padding at the
+            % beginning and end of data_fft
+            idx_start = single( bstart + floor(fft_window_size/2) );
+            % idx_end = single( bstart + block_size - floor(fft_window_size/2) );
+            idx_end = idx_start + length(temp_data) - 1;
+            lfp_data(idx_start:idx_end,size(data,2)*(iBand-1)+iSig) = temp_data;
+        end
+
     end
-    
-    data_fft = abs(data_fft);
-    
-    % find average power in each  band for this channel
-    for iBand = 1:size(freq_bands,1)
-        idx_freq = freq >= freq_bands(iBand,1)  &  freq  <= freq_bands(iBand,2);
-        temp = mean(data_fft(idx_freq,:),1)';
-        lfp_data(:,size(data,2)*(iBand-1)+iSig) = temp;
-    end
-    
+
     toc;
 end
 
-t_fft = t_fft/samprate;
+
+t_fft = 0:step/samprate:(size(lfp_data,1)-1)/samprate;
 
 % new time vector assumes it starts at 0, so subtract (or add)
 %   any offset identified in the original  processing
@@ -142,6 +187,7 @@ end
 
 
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [data_fft,freq,window_centers]=trFFT( ...
@@ -149,7 +195,7 @@ function [data_fft,freq,window_centers]=trFFT( ...
     window_size, ...
     step, ...
     samplerate, ...
-    win_func)
+    win_func )
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function trFFT - time-resolved fourier-transformation
 %
@@ -171,7 +217,9 @@ function [data_fft,freq,window_centers]=trFFT( ...
 freq = samplerate/2*linspace(0,1,ceil(window_size/2+1));
 window_centers = window_size:step:size(data,1);
 
-data_fft=nan([length(freq) length(window_centers) size(data,2)]);
+
+data_fft = nan([length(freq) length(window_centers) size(data,2)]);
+
 
 
 for iSig=1:size(data,2)
@@ -199,8 +247,4 @@ window_centers = cat(2, ...
     window_centers,  ...
     window_centers(end)+step:step:window_centers(end)+floor(window_size/2)-1);
 
-
 end
-
-
-
