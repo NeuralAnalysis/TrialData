@@ -27,15 +27,15 @@ verbose       = false;
 if nargin > 1
     if isstruct(params) % overwrite parameters
         assignParams(who,params);
-    else % assumes you  passed in signals
-        signals = params;
+    else % assumes you  passed in array
+        array = params;
     end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 trial_data  =  check_td_quality(trial_data);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % check output field addition
-field_extra  = check_field_extra(field_extra,signals);
+field_extra  = check_field_extra(field_extra,array);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   
 switch lower(method)
