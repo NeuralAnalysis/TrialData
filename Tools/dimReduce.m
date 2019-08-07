@@ -204,7 +204,7 @@ if isempty(w)
     out_params = struct();
     out_params.signals     =  signals;
     out_params.use_trials  =  use_trials;
-    info_out = struct('w',w,'scores',scores,'eigen',eigen,'mu',mu,'signals',{signals},'params',out_params,'sig_name',sig_name,'stats',stats,'num_dims',num_dims);
+    info_out = struct('w',w,'scores',scores,'eigen',eigen,'mu',mu,'signals',{signals},'out_params',out_params,'sig_name',sig_name,'stats',stats,'num_dims',num_dims);
 else
     info_out = params;
     if strcmpi(algorithm,'isomap')
