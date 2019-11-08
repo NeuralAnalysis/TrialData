@@ -42,15 +42,14 @@ min_ds           =  1.9;
 s_thresh         =  10;
 peak_idx_offset  = 0;
 start_idx_offset = 0;
-which_field      = 'vel_norm';
-field_idx        = 1;
+which_field      = {'vel_norm',1};
 onset_name       =  'movement_on';
 peak_name        =  'peak_speed';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
-verbose = false;
+verbose             = false;
 absolute_acc_thresh = [];
-peak_divisor = 2;
+peak_divisor        = 2;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin > 1, assignParams(who,params); end % overwrite defaults
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -60,11 +59,22 @@ trial_data = check_td_quality(trial_data);
 
 for trial = 1:length(trial_data)
     % use velocity to find bin corresponding to movement onset, movement offset, and peak speed
-    s = trial_data(trial).(which_field)(:,field_idx);
+    s = getSig(trial_data(trial),which_field);
     
     % find the time bins where the monkey may be moving
     move_inds = false(size(s));
-    move_inds(trial_data(trial).(start_idx)+start_idx_offset:trial_data(trial).(end_idx)) = true;
+    if isempty(trial_data(trial).(end_idx)) || isnan(trial_data(trial).(end_idx))
+        end_point = size(s,1);
+    else
+        end_point = trial_data(trial).(end_idx);
+    end
+     if isempty(trial_data(trial).(start_idx)) || isnan(trial_data(trial).(start_idx))
+        start_point = 1;
+    else
+        start_point = trial_data(trial).(start_idx);
+    end
+    
+    move_inds(start_point+start_idx_offset:end_point) = true;
     
     [on_idx,peak_idx] = deal(NaN);
     if strcmpi(which_method,'peak')
@@ -78,7 +88,7 @@ for trial = 1:length(trial_data)
             else
                 thresh = absolute_acc_thresh;
             end
-            on_idx = find(ds<thresh & (1:length(ds))'<mvt_peak & move_inds,1,'last');
+            on_idx = find(ds<thresh & (1:length(ds))'<mvt_peak & move_inds,1,'first');
             
             % check to make sure the numbers make sense
             if on_idx < trial_data(trial).(start_idx)+start_idx_offset
