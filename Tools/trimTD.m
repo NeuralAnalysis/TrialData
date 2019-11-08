@@ -53,6 +53,7 @@ if ~iscell(idx_end), idx_end = {idx_end}; end
 fn_time = getTDfields(trial_data,'time');
 fn_idx = getTDfields(trial_data,'idx');
 
+bad_idx = false(1,length(trial_data));
 for trial = 1:length(trial_data)
     % use any time signal to get the amount of time
     t = 1:size(trial_data(trial).(fn_time{1}),1);
@@ -79,99 +80,109 @@ for trial = 1:length(trial_data)
         error('Start input not formatted properly.');
     end
     
-    % parse the input to get the end idx
-    if length(idx_end) == 2
-        if strcmpi(idx_end{1},'start')
-            t_end = 1+idx_end{2};
-        elseif strcmpi(idx_end{1},'end')
-            t_end = size(trial_data(trial).(fn_time{1}),1) + idx_end{2};
-        else
-            t_end = ceil(trial_data(trial).(idx_end{1}) + idx_end{2});
-        end
-    elseif length(idx_end) == 1 && strcmpi(idx_end,'end')
-        t_end = size(trial_data(trial).(fn_time{1}),1);
-    elseif length(idx_end) == 1
-        if ischar(idx_end{1}) % if it's a idx field name
-            t_end = ceil(trial_data(trial).(idx_end{1}));
-        else % it's a numerical index
-            t_end = int32(idx_end{1});
-        end
+    if isempty(t_start)
+        warning('No start time found. Excluding trial.');
+        bad_idx(trial) = true;
     else
-        error('End input not formatted properly.');
-    end
-    
         
-    % if there are multiple, assume the start needs the first idx and the
-    % end needs the last idx
-    if length(t_start) > 1
-        disp('Multiple starting indices found. Using first...');
-        t_start = t_start(1);
-    end
-    if length(t_end) > 1
-        disp('Multiple ending indices found. Using last...');
-        t_end = t_end(end);
-    end
-    
-    if t_start < 1
-        warning('Requested start time is < 1. Defaulting to first index...');
-        t_start = 1;
-    end
-    
-    if t_end > t(end)
-        warning('Trial %d: Requested end time went beyond trial time...',trial)
-        if ~zero_pad
-            t_end = length(t);
-        end
-    end
-    
-    if isnan(t_start) || isnan(t_end)
-        error('Cannot trim, because some necessary indices are NaN.');
-    end
-    t_new = t_start:t_end;
-    
-    if t_start > t_end
-        error('Start time is after end time. Cannot trim!');
-    end
-    
-    % process time fields
-    for iSig = 1:length(fn_time)
-        temp = trial_data(trial).(fn_time{iSig});
-        if length(temp)<t_end
-            if ~zero_pad
-                error('Something went wrong with the zero-pad thing Raeed added...Talk to him.')
+        % parse the input to get the end idx
+        if length(idx_end) == 2
+            if strcmpi(idx_end{1},'start')
+                t_end = 1+idx_end{2};
+            elseif strcmpi(idx_end{1},'end')
+                t_end = size(trial_data(trial).(fn_time{1}),1) + idx_end{2};
             else
-                % zero pad temp to full length
-                temp_padded = zeros(t_end,size(temp,2));
-                temp_padded(1:length(temp),:) = temp;
-                temp = temp_padded;
+                t_end = ceil(trial_data(trial).(idx_end{1}) + idx_end{2});
+            end
+        elseif length(idx_end) == 1 && strcmpi(idx_end,'end')
+            t_end = size(trial_data(trial).(fn_time{1}),1);
+        elseif length(idx_end) == 1
+            if ischar(idx_end{1}) % if it's a idx field name
+                t_end = ceil(trial_data(trial).(idx_end{1}));
+            else % it's a numerical index
+                t_end = int32(idx_end{1});
+            end
+        else
+            error('End input not formatted properly.');
+        end
+        
+        
+        % if there are multiple, assume the start needs the first idx and the
+        % end needs the last idx
+        if length(t_start) > 1
+            disp('Multiple starting indices found. Using first...');
+            t_start = t_start(1);
+        end
+        if length(t_end) > 1
+            disp('Multiple ending indices found. Using last...');
+            t_end = t_end(end);
+        end
+        
+        if t_start < 1
+            warning('Requested start time is < 1. Defaulting to first index...');
+            t_start = 1;
+        end
+        
+        if t_end > t(end)
+            warning('Trial %d: Requested end time went beyond trial time...',trial)
+            if ~zero_pad
+                t_end = length(t);
             end
         end
-        trial_data(trial).(fn_time{iSig}) = temp(t_new,:);
-    end
-    
-    % process idx fields
-    for iIdx = 1:length(fn_idx)
-        temp = trial_data(trial).(fn_idx{iIdx});
-        if temp > t_end, temp = NaN; end
-        if temp < 0, temp = NaN; end
-        if ~isnan(temp)
-            % in cases like the RW go cues, there can be multiple idx_, so
-            % loop along them
-            temp_adjust = zeros(size(temp));
-            for i = 1:size(temp,2)
-                if isempty(temp(i)) || (temp(i) < t_new(1) || temp(i) > t_new(end))
-                    temp_adjust(i) = NaN;
+        
+        if isnan(t_start) || isnan(t_end)
+            error('Cannot trim, because some necessary indices are NaN.');
+        end
+        t_new = t_start:t_end;
+        
+        if t_start > t_end
+            error('Start time is after end time. Cannot trim!');
+        end
+        
+        % process time fields
+        for iSig = 1:length(fn_time)
+            temp = trial_data(trial).(fn_time{iSig});
+            if isempty(temp)
+                error('No data!');
+            elseif length(temp)<t_end
+                if ~zero_pad
+                    error('Something went wrong with the zero-pad thing Raeed added...Talk to him.')
                 else
-                    temp_adjust(i) = find(t_new <= temp(i),1,'last');
+                    % zero pad temp to full length
+                    temp_padded = zeros(t_end,size(temp,2));
+                    temp_padded(1:length(temp),:) = temp;
+                    temp = temp_padded;
                 end
             end
-            trial_data(trial).(fn_idx{iIdx}) = temp_adjust;
-        else
-            trial_data(trial).(fn_idx{iIdx}) = NaN; % Should this be NaN or []?
+            trial_data(trial).(fn_time{iSig}) = temp(t_new,:);
+        end
+        
+        % process idx fields
+        for iIdx = 1:length(fn_idx)
+            temp = trial_data(trial).(fn_idx{iIdx});
+            if temp > t_end, temp = NaN; end
+            if temp < 0, temp = NaN; end
+            if ~isnan(temp)
+                % in cases like the RW go cues, there can be multiple idx_, so
+                % loop along them
+                temp_adjust = zeros(size(temp));
+                for i = 1:size(temp,2)
+                    if isempty(temp(i)) || (temp(i) < t_new(1) || temp(i) > t_new(end))
+                        temp_adjust(i) = NaN;
+                    else
+                        temp_adjust(i) = find(t_new <= temp(i),1,'last');
+                    end
+                end
+                trial_data(trial).(fn_idx{iIdx}) = temp_adjust;
+            else
+                trial_data(trial).(fn_idx{iIdx}) = NaN; % Should this be NaN or []?
+            end
+            
         end
         
     end
-    
-    
 end
+
+trial_data(bad_idx) = [];
+
 
