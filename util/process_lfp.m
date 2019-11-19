@@ -39,7 +39,7 @@ fft_window_size   =  2048;     % in samples
 fft_step          =  0.01;     % in seconds (should be bin size)
 fft_win_fun       =  @hamming; % windowing function handle
 bandwidth         =  50; % max frequency. Add  case to default to  fs/2?
-do_LMP            =  false;
+do_LMP            =  false;    % compute the Local Motor Potential
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isempty(params), assignParams(who,params); end
