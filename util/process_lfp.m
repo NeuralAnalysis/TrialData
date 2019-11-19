@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [lfp_data,t_fft] = process_lfp(data,t,params)
+function [lfp_data,t_fft,freq_bands] = process_lfp(data,t,params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Process LFP - compute power of LFP channels. Works with convertDataToTD.
 % Ideas for default freq_bands = [ ...
@@ -39,11 +39,17 @@ fft_window_size   =  2048;     % in samples
 fft_step          =  0.01;     % in seconds (should be bin size)
 fft_win_fun       =  @hamming; % windowing function handle
 bandwidth         =  50; % max frequency. Add  case to default to  fs/2?
+do_LMP            =  false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isempty(params), assignParams(who,params); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% In case LMP is wanted, add a new row to the frequency bands to save the
+% LMP data, this will have 0 at both frequency limits
+if do_LMP
+    freq_bands = cat(1,[0 0], freq_bands);
+end
 
 if size(freq_bands,2) ~= 2
     error('LFP frequency range input should be two columns: [LOW, HIGH]');
@@ -144,18 +150,28 @@ for iSig = 1:size(data,2)
                     step, ...
                     samprate, ...
                     win_func);
+                
 
             otherwise
                 error('LFP method not  recognized');
+        end
+        
+        if do_LMP
+            % LMP is the moving average of the signal using 50ms window
+            data_lmp = movmean(data(bstart:bend,iSig),samprate*0.05);
         end
 
         data_fft = abs(data_fft);
 
         % find average power in each  band for this channel
         for iBand = 1:size(freq_bands,1)
-            idx_freq = freq >= freq_bands(iBand,1)  &  freq  <= freq_bands(iBand,2);
-            temp = mean(data_fft(idx_freq,:),1)';
-            % lfp_data(:,size(data,2)*(iBand-1)+iSig) = temp;
+            if freq_bands(iBand,1) == 0 && freq_bands(iBand,2) == 0
+                temp = data_lmp;
+            else
+                idx_freq = freq >= freq_bands(iBand,1)  &  freq  <= freq_bands(iBand,2);
+                temp = mean(data_fft(idx_freq,:),1)';
+                % lfp_data(:,size(data,2)*(iBand-1)+iSig) = temp;
+            end
             
             % find idx for ~NaN bins (trFFT introduces NaNs at the
             % beginning and end of data_fft because the FFT is computed in windows ofc)
@@ -167,7 +183,7 @@ for iSig = 1:size(data,2)
             idx_start = single( bstart + floor(fft_window_size/2) );
             % idx_end = single( bstart + block_size - floor(fft_window_size/2) );
             idx_end = idx_start + length(temp_data) - 1;
-            lfp_data(idx_start:idx_end,size(data,2)*(iBand-1)+iSig) = temp_data;
+            lfp_data(idx_start:idx_end,size(freq_bands,1)*(iSig-1)+iBand) = temp_data;
         end
 
     end

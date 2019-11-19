@@ -289,9 +289,9 @@ for iFile = 1:length(signal_info)
                 % temp_params.fft_step = bin_size; % default to bin size
 
                 % process the lfp
-                [data,t] = process_lfp(data,t,temp_params);
+                [data,t,freq_bands] = process_lfp(data,t,temp_params);
                 % load('processedM1LFPs.mat');     
-
+       
                 % rebin the signals at the new sampling rate (given by bin_size)
                 [data_resampled,t_resamp] = resample_signals(data,t, ...
                     struct( ...
@@ -304,7 +304,6 @@ for iFile = 1:length(signal_info)
                 temp_guide = [];
                 % take the labels from the signal info
                 labels = match_labels('lfp',file_data_temp.labels,signal_info{iFile}.label{iSig});
-                freq_bands = temp_params.freq_bands;
                 for j = 1:length(labels)
                     % add the  frequency bands to the labels
                     % three columns [ELEC, LOW FREQ, HIGH FREQ]
