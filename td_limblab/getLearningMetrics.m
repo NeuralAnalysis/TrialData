@@ -14,8 +14,9 @@
 %     .time_window  : {'idx_start',bins after; 'idx_end',bins after} currently for angle
 %     .corr_samples : how many datapoints to interpolate trajectory onto for corr
 %     .vel_or_pos   : 'vel' or 'pos', for velocity or position (angle only)
+%     .target_dir_fieldname : name for target direction field (default: target_direction)
 %
-% Written by Matt Perich. Updated Feb 2017.
+% Written by Matt Perich. Updated Jan 2020 by Raeed Chowdhury.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function metric = getLearningMetrics(trial_data,params)
@@ -26,11 +27,12 @@ use_bl_ref = true;
 fit_bl_ref_curve = false;
 corr_samples = 1000;
 vel_or_pos = 'vel';
+target_dir_fieldname = 'target_direction';
 if nargin > 1, assignParams(who,params); end % overwrite parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isstruct(trial_data), error('First input must be trial_data struct!'); end
 
-utheta = unique([trial_data.target_direction]);
+utheta = unique([trial_data.(target_dir_fieldname)]);
 metric = zeros(length(trial_data),1);
 
 switch lower(which_metric)
@@ -43,7 +45,7 @@ switch lower(which_metric)
                 % try fitting sins and cosines for bl_ref
                 num_freqs = 3;
                 [bl_idx,bl_trials] = getTDidx(trial_data,'epoch','bl');
-                theta = [bl_trials.target_direction];
+                theta = [bl_trials.(target_dir_fieldname)];
                 sincos = [sin(theta'*(1:num_freqs)) cos(theta'*(1:num_freqs))];
                 usincos = [sin(utheta'*(1:num_freqs)) cos(utheta'*(1:num_freqs))];
                 if isempty(bl_idx)
@@ -55,7 +57,7 @@ switch lower(which_metric)
                     t1 = trial_data(bl_idx(iTrial)).(time_window{1,1})+time_window{1,2};
                     t2 = trial_data(bl_idx(iTrial)).(time_window{2,1})+time_window{2,2};
                     temp = trial_data(bl_idx(iTrial)).(vel_or_pos);
-                    temp_err(iTrial) = angleDiff(minusPi2Pi(trial_data(bl_idx(iTrial)).target_direction), ...
+                    temp_err(iTrial) = angleDiff(minusPi2Pi(trial_data(bl_idx(iTrial)).(target_dir_fieldname)), ...
                         atan2(temp(t2,2) - temp(t1,2), temp(t2,1) - temp(t1,1)), ...
                         true,true);
                 end
@@ -67,7 +69,7 @@ switch lower(which_metric)
             % if true
             else
                 for iDir = 1:length(utheta)
-                    bl_idx = getTDidx(trial_data,'epoch','bl','target_direction',utheta(iDir));
+                    bl_idx = getTDidx(trial_data,'epoch','bl',target_dir_fieldname,utheta(iDir));
                     if isempty(bl_idx)
                         error('No BL ref found for all targets');
                     end
@@ -77,7 +79,7 @@ switch lower(which_metric)
                         t1 = trial_data(bl_idx(iTrial)).(time_window{1,1})+time_window{1,2};
                         t2 = trial_data(bl_idx(iTrial)).(time_window{2,1})+time_window{2,2};
                         temp = trial_data(bl_idx(iTrial)).(vel_or_pos);
-                        temp_err(iTrial) = angleDiff(minusPi2Pi(trial_data(bl_idx(iTrial)).target_direction), ...
+                        temp_err(iTrial) = angleDiff(minusPi2Pi(trial_data(bl_idx(iTrial)).(target_dir_fieldname)), ...
                             atan2(temp(t2,2) - temp(t1,2), temp(t2,1) - temp(t1,1)), ...
                             true,true);
                     end
@@ -98,11 +100,11 @@ switch lower(which_metric)
             t2 = trial_data(iTrial).(time_window{2,1})+time_window{2,2};
             
             temp = trial_data(iTrial).(vel_or_pos);
-            temp_err = angleDiff(minusPi2Pi(trial_data(iTrial).target_direction), ...
+            temp_err = angleDiff(minusPi2Pi(trial_data(iTrial).(target_dir_fieldname)), ...
                 atan2(temp(t2,2) - temp(t1,2), temp(t2,1) - temp(t1,1)), ...
                 true,true);
             
-            iDir = utheta==trial_data(iTrial).target_direction;
+            iDir = utheta==trial_data(iTrial).(target_dir_fieldname);
             metric(iTrial) = angleDiff(bl_metric(iDir),temp_err,true,true);
         end, clear temp;
         
@@ -112,7 +114,7 @@ switch lower(which_metric)
         % get baseline trace to each target
         bl_metric = zeros(length(utheta),corr_samples,2);
         for iDir = 1:length(utheta)
-            bl_idx = getTDidx(trial_data,'epoch','bl','target_direction',utheta(iDir));
+            bl_idx = getTDidx(trial_data,'epoch','bl',target_dir_fieldname,utheta(iDir));
             bl_temp = zeros(length(bl_idx),2,corr_samples);
             if isempty(bl_idx)
                 error('Corr needs a BL reference for each target');
@@ -136,7 +138,7 @@ switch lower(which_metric)
             t2 = trial_data(iTrial).(time_window{2,1})+time_window{2,2};
             
             idx = t1:t2;
-            iDir = utheta==trial_data(iTrial).target_direction;
+            iDir = utheta==trial_data(iTrial).(target_dir_fieldname);
             
             temp = trial_data(iTrial).vel;
             
@@ -151,7 +153,7 @@ switch lower(which_metric)
         bl_metric = zeros(length(utheta),1);
         if use_bl_ref
             for iDir = 1:length(utheta)
-                bl_idx = getTDidx(trial_data,'epoch','bl','target_direction',utheta(iDir));
+                bl_idx = getTDidx(trial_data,'epoch','bl',target_dir_fieldname,utheta(iDir));
                 if isempty(bl_idx)
                     error('No BL ref found for all targets');
                 end
@@ -175,7 +177,7 @@ switch lower(which_metric)
             temp = trial_data(iTrial).(vel_or_pos);
             temp_err = median(curvature(temp(t1:t2,:)));
             
-            iDir = utheta==trial_data(iTrial).target_direction;
+            iDir = utheta==trial_data(iTrial).(target_dir_fieldname);
             metric(iTrial) = temp_err - bl_metric(iDir);
         end, clear temp;
         
