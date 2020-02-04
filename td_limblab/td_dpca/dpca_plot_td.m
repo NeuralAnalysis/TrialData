@@ -102,15 +102,15 @@ elseif ndims(data) == 3
     numOfStimuli = size(data, 2);
     plot(time, squeeze(data(1,:,:)), 'LineWidth', 2)    
 
-elseif ndims(data) == 4 && size(data,3)==2
+elseif ndims(data) == 4 && size(data,4)==2
     % different stimuli in different colours and binary condition as
     % solid/dashed
-    numOfStimuli = size(data, 2);
+    numOfStimuli = size(data, 3);
     colors = lines(numOfStimuli);
 
     for f=1:numOfStimuli 
-        plot(time, squeeze(data(1, f, 1, :)), '--', 'color', colors(f,:), 'LineWidth', 2)
-        plot(time, squeeze(data(1, f, 2, :)), 'color', colors(f,:), 'LineWidth', 2)
+        plot(time, squeeze(data(1, :, f, 1)), '--', 'color', colors(f,:), 'LineWidth', 2)
+        plot(time, squeeze(data(1, :, f, 2)), 'color', colors(f,:), 'LineWidth', 2)
     end
 
 else

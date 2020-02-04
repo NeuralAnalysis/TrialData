@@ -279,9 +279,13 @@ if ~isempty(options.explainedVar)
     hold on
     axis([0 numCompToShow+1 0 12.5])
     ylabel('Component variance (%)')
-    b = bar(options.explainedVar.margVar(:,1:numCompToShow)' , 'stacked', 'BarWidth', 0.75);
+    b = bar(options.explainedVar.margVar(:,1:numCompToShow)' , 'stacked', 'BarWidth', 0.75,'FaceColor','flat');
     
     caxis([1 length(options.marginalizationColours)+256])
+
+    for margnum = 1:size(options.marginalizationColours,1)
+        b(margnum).CData = margnum;
+    end
 end
 
 % cumulative explained variance
