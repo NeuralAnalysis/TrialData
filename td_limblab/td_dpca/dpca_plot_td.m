@@ -1,4 +1,4 @@
-function dpca_plot_default(data, time, yspan, explVar, compNum, events, signif, marg)
+function dpca_plot_td(data, time, yspan, explVar, compNum, events, signif, marg)
 
 % Modify this function to adjust how components are plotted.
 %
@@ -111,6 +111,18 @@ elseif ndims(data) == 4 && size(data,4)==2
     for f=1:numOfStimuli 
         plot(time, squeeze(data(1, :, f, 1)), '--', 'color', colors(f,:), 'LineWidth', 2)
         plot(time, squeeze(data(1, :, f, 2)), 'color', colors(f,:), 'LineWidth', 2)
+    end
+
+elseif ndims(data) == 4 && size(data,4)==3
+    % different stimuli in different colours and binary condition as
+    % solid/dashed
+    numOfStimuli = size(data, 3);
+    colors = lines(numOfStimuli);
+
+    for f=1:numOfStimuli 
+        plot(time, squeeze(data(1, :, f, 1)), '--', 'color', colors(f,:), 'LineWidth', 2)
+        plot(time, squeeze(data(1, :, f, 2)), '-.', 'color', colors(f,:), 'LineWidth', 2)
+        plot(time, squeeze(data(1, :, f, 3)), 'color', colors(f,:), 'LineWidth', 2)
     end
 
 else
