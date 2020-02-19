@@ -32,7 +32,7 @@ for i = 1:size(data,2)
     a(1,i) = (data_poly(end)-data_poly(1))/(t_poly(end)-t_poly(1));
     a(2,i) = data_poly(1);
 
-    dataDetrend(:,i) = double(data(:,i))-polyval(a(:,i),tx);
+    dataDetrend(:,i) = double(data(:,i))-polyval(a(:,i),tx-t_poly(1));
 end
 
 % resample
@@ -55,7 +55,7 @@ temp(extrap_idx(1:size(temp,1)),:) = [];
 % retrend...
 dataResampled = zeros(size(temp,1),size(temp,2));
 for i=1:size(dataDetrend,2)
-    dataResampled(:,i) = temp(:,i)+polyval(a(:,i),ty(:,1));
+    dataResampled(:,i) = temp(:,i)+polyval(a(:,i),ty(:,1)-t_poly(1));
 end
 
 end
