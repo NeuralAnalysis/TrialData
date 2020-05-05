@@ -88,7 +88,7 @@ for trial = 1:length(trial_data)
             else
                 thresh = absolute_acc_thresh;
             end
-            on_idx = find(ds<thresh & (1:length(ds))'<mvt_peak & move_inds,1,'first');
+            on_idx = find(ds<thresh & (1:length(ds))'<mvt_peak & move_inds,1,'last');
             
             % check to make sure the numbers make sense
             if on_idx < trial_data(trial).(start_idx)+start_idx_offset
