@@ -35,7 +35,7 @@ filt_line_noise   =  true;     % whether to filter line noise
 line_noise_freq   =  50;       % 60 for US, 50 for Europe
 filt_poles        =  2;        % for butterworth filter
 filt_high_freq    =  true;     % apply LPF at highest freq_band
-fft_window_size   =  2048;     % in samples
+window_size       =  2048;     % in samples
 fft_step          =  0.01;     % in seconds (should be bin size)
 fft_win_fun       =  @hamming; % windowing function handle
 bandwidth         =  50; % max frequency. Add  case to default to  fs/2?
@@ -45,11 +45,7 @@ do_LMP            =  false;    % compute the Local Motor Potential
 if ~isempty(params), assignParams(who,params); end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% In case LMP is wanted, add a new row to the frequency bands to save the
-% LMP data, this will have 0 at both frequency limits
-if do_LMP
-    freq_bands = cat(1,[0 0], freq_bands);
-end
+
 
 if size(freq_bands,2) ~= 2
     error('LFP frequency range input should be two columns: [LOW, HIGH]');
@@ -108,88 +104,121 @@ if remove_time_avg
     data = data -  repmat(mean(data,1),size(data,1),1);
 end
 
-% set up the window for the  FFT
-win_func = fft_win_fun(fft_window_size);
-win_func =  win_func./norm(win_func);
+
+% In case LMP is wanted, add a new row to the frequency bands to save the
+% LMP data, this will have 0 at both frequency limits
+if do_LMP
+    freq_bands = cat(1,[0 0], freq_bands);
+end
 
 
-% anticipate the size of the fft output
-N = floor(size(data,1)/round(fft_step*samprate));
-lfp_data = nan(N,size(freq_bands,1)*size(data,2));
-
-% chop the data into blocks, to avoid memory overflows!
-block_size = fft_step*samprate*100000; % seemed reasonable to take 100000 time bins blocks; could be turn into a param
-nblocks = ceil(N/block_size);
-
-
-
-for iSig = 1:size(data,2)
-    disp(['Processing LFP from channel ' num2str(iSig)]);
-    tic;
+% If we are using FFT, generate the window only once
+switch lower(lfp_method)
     
-    for b = 1:nblocks
-        
-        % carefully select the start of each window, so when we stitch the
-        % data, we don't have discontinuities or NaNs --this implies that
-        % the FFT winfows overlap by a number of points that depends on the
-        % FFT window size
-        bstart = single( b + block_size*(b-1) - 2*floor(fft_window_size/2)*(b-1) );
-        
-        if b ~= nblocks
-            bend = bstart + block_size - 1;
-        else
-            bend = N;
+    case 'band-power'
+        lfp_data = nan(size(data,1),size(freq_bands,1)*size(data,2));
+        for iSig = 1:size(data,2)
+            disp(['Processing LFP from channel ' num2str(iSig)]);
+            for iBand = 1:size(freq_bands,1)
+                if freq_bands(iBand,1) == 0 && freq_bands(iBand,2) == 0
+                    temp_data = movmean(data(:,iSig),window_size);
+                else
+                    [B,A] = butter(3,[freq_bands(iBand,1),freq_bands(iBand,2)]./(samprate/2),'bandpass'); 
+                    temp_data = filtfilt(B,A,data(:,iSig));
+                    % Compute the band power in each [window_size] sliding window
+                    % with a step of [fft_step]
+                    % For low frequencies, we increase the window size to
+                    % include a full cycle
+                    temp_window_size = max(window_size,samprate/freq_bands(iBand,1));
+                    temp_data = movmean((temp_data).^2,temp_window_size);
+                      
+                end
+                lfp_data(:,size(freq_bands,1)*(iSig-1)+iBand) = temp_data;
+            end
         end
         
-        switch lower(lfp_method)
-            case 'fft'
-                
+    case 'fft'
+        % set up the window for the  FFT
+        win_func = fft_win_fun(window_size);
+        win_func =  win_func./norm(win_func);
+        
+        
+        % anticipate the size of the fft output
+        N = floor(size(data,1)/round(fft_step*samprate));
+        lfp_data = nan(N,size(freq_bands,1)*size(data,2));
+
+        % chop the data into blocks, to avoid memory overflows!
+        block_size = fft_step*samprate*100000; % seemed reasonable to take 100000 time bins blocks; could be turn into a param
+        nblocks = ceil(N/block_size);
+
+
+
+        for iSig = 1:size(data,2)
+            disp(['Processing LFP from channel ' num2str(iSig)]);
+            tic;
+    
+            for b = 1:nblocks
+        
+                % carefully select the start of each window, so when we stitch the
+                % data, we don't have discontinuities or NaNs --this implies that
+                % the FFT winfows overlap by a number of points that depends on the
+                % FFT window size
+                bstart = single( b + block_size*(b-1) - 2*floor(window_size/2)*(b-1) );
+
+                if b ~= nblocks
+                    bend = bstart + block_size - 1;
+                else
+                    bend = N;
+                end
+
+
+                if do_LMP
+                    % LMP is the moving average of the signal using 50ms window
+                    data_lmp = movmean(data(bstart:bend,iSig),samprate*0.05);
+                end
+
+
                 % get FFT over time
                 [data_fft, freq, ~] = trFFT(data(bstart:bend,iSig), ...
-                    fft_window_size, ...
-                    step, ...
+                    window_size, ...
                     samprate, ...
-                    win_func);
-                
+                    step, ...
+                    win_func ...
+                    );
 
-            otherwise
-                error('LFP method not  recognized');
-        end
-        
-        if do_LMP
-            % LMP is the moving average of the signal using 50ms window
-            data_lmp = movmean(data(bstart:bend,iSig),samprate*0.05);
-        end
 
-        data_fft = abs(data_fft);
+                data_fft = abs(data_fft);
 
-        % find average power in each  band for this channel
-        for iBand = 1:size(freq_bands,1)
-            if freq_bands(iBand,1) == 0 && freq_bands(iBand,2) == 0
-                temp = data_lmp;
-            else
-                idx_freq = freq >= freq_bands(iBand,1)  &  freq  <= freq_bands(iBand,2);
-                temp = mean(data_fft(idx_freq,:),1)';
-                % lfp_data(:,size(data,2)*(iBand-1)+iSig) = temp;
+                % find average power in each  band for this channel
+                for iBand = 1:size(freq_bands,1)
+                    if freq_bands(iBand,1) == 0 && freq_bands(iBand,2) == 0
+                        temp = data_lmp;
+                    else
+                        idx_freq = freq >= freq_bands(iBand,1)  &  freq  <= freq_bands(iBand,2);
+                        temp = mean(data_fft(idx_freq,:),1)';
+                        % lfp_data(:,size(data,2)*(iBand-1)+iSig) = temp;
+                    end
+
+                    % find idx for ~NaN bins (trFFT introduces NaNs at the
+                    % beginning and end of data_fft because the FFT is computed in windows ofc)
+                    temp_data = temp( floor(window_size/2)+1 : end-floor(window_size/2)+1 );
+
+                    % find idx for where the data belong in the lfp_data matrix
+                    % --remember, this is to compensate for the NaN padding at the
+                    % beginning and end of data_fft
+                    idx_start = single( bstart + floor(window_size/2) );
+                    % idx_end = single( bstart + block_size - floor(fft_window_size/2) );
+                    idx_end = idx_start + length(temp_data) - 1;
+                    lfp_data(idx_start:idx_end,size(freq_bands,1)*(iSig-1)+iBand) = temp_data;
+                end
             end
-            
-            % find idx for ~NaN bins (trFFT introduces NaNs at the
-            % beginning and end of data_fft because the FFT is computed in windows ofc)
-            temp_data = temp( floor(fft_window_size/2)+1 : end-floor(fft_window_size/2)+1 );
-            
-            % find idx for where the data belong in the lfp_data matrix
-            % --remember, this is to compensate for the NaN padding at the
-            % beginning and end of data_fft
-            idx_start = single( bstart + floor(fft_window_size/2) );
-            % idx_end = single( bstart + block_size - floor(fft_window_size/2) );
-            idx_end = idx_start + length(temp_data) - 1;
-            lfp_data(idx_start:idx_end,size(freq_bands,1)*(iSig-1)+iBand) = temp_data;
+            toc
         end
-
-    end
-
-    toc;
+    otherwise
+        error('LFP method not  recognized');        
 end
+
+               
 
 
 t_fft = 0:step/samprate:(size(lfp_data,1)-1)/samprate;
@@ -209,9 +238,10 @@ end
 function [data_fft,freq,window_centers]=trFFT( ...
     data, ...
     window_size, ...
-    step, ...
     samplerate, ...
-    win_func )
+    step, ...
+    win_func ...
+    )
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function trFFT - time-resolved fourier-transformation
 %
@@ -232,7 +262,6 @@ function [data_fft,freq,window_centers]=trFFT( ...
 
 freq = samplerate/2*linspace(0,1,ceil(window_size/2+1));
 window_centers = window_size:step:size(data,1);
-
 
 data_fft = nan([length(freq) length(window_centers) size(data,2)]);
 
