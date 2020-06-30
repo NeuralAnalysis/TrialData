@@ -78,6 +78,8 @@ switch lower(which_metric)
                     for iTrial = 1:length(bl_idx)
                         t1 = trial_data(bl_idx(iTrial)).(time_window{1,1})+time_window{1,2};
                         t2 = trial_data(bl_idx(iTrial)).(time_window{2,1})+time_window{2,2};
+                        t2 = min(t2,trial_data(bl_idx(iTrial)).idx_endTime);
+                        
                         temp = trial_data(bl_idx(iTrial)).(vel_or_pos);
                         temp_err(iTrial) = angleDiff(minusPi2Pi(trial_data(bl_idx(iTrial)).(target_dir_fieldname)), ...
                             atan2(temp(t2,2) - temp(t1,2), temp(t2,1) - temp(t1,1)), ...
@@ -98,6 +100,7 @@ switch lower(which_metric)
         for iTrial = 1:length(trial_data)
             t1 = trial_data(iTrial).(time_window{1,1})+time_window{1,2};
             t2 = trial_data(iTrial).(time_window{2,1})+time_window{2,2};
+            t2 = min(t2,trial_data(iTrial).idx_endTime);
             
             temp = trial_data(iTrial).(vel_or_pos);
             temp_err = angleDiff(minusPi2Pi(trial_data(iTrial).(target_dir_fieldname)), ...
