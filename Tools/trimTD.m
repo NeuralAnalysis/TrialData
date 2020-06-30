@@ -20,7 +20,8 @@
 %   params:
 %       zero_pad : if true, will zero pad signals to make all trials the
 %           same length (default: false)
-%
+%       remove_short : if true, will remove the trials where requested
+%           end time is after trial end (default: false)
 % Note bin number for alignment can be negative to go before idx
 %
 % Written by Matt Perich. Updated March 2017.
@@ -31,6 +32,7 @@ function trial_data = trimTD(trial_data,varargin)
 idx_start = {};
 idx_end   = {};
 zero_pad = false;
+remove_short = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
 verbose = false;
@@ -127,6 +129,10 @@ for trial = 1:length(trial_data)
             warning('Trial %d: Requested end time went beyond trial time...',trial)
             if ~zero_pad
                 t_end = length(t);
+            end
+            if remove_short
+                warning('Removing short trial (%d)',trial)
+                bad_idx(trial) = true;
             end
         end
         
