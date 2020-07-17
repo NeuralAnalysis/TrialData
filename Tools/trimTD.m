@@ -157,16 +157,19 @@ for trial = 1:length(trial_data)
                     warning(['Time field ' fn_time{iSig} ' is empty or NaN. Propagating empty or NaN forward.']);
                 end
                 trial_data(trial).(fn_time{iSig}) = temp;
-            elseif length(temp)<t_end
-                if ~zero_pad
-                    error('Something went wrong with the zero-pad thing Raeed added...Talk to him.')
-                else
-                    % zero pad temp to full length
-                    temp_padded = zeros(t_end,size(temp,2));
-                    temp_padded(1:length(temp),:) = temp;
-                    temp = temp_padded;
+            else
+                if length(temp)<t_end
+                    if ~zero_pad
+                        error('Something went wrong with the zero-pad thing Raeed added...Talk to him.')
+                    else
+                        % zero pad temp to full length
+                        temp_padded = zeros(t_end,size(temp,2));
+                        temp_padded(1:length(temp),:) = temp;
+                        temp = temp_padded;
+                    end
+                    
+                    
                 end
-                
                 trial_data(trial).(fn_time{iSig}) = temp(t_new,:);
             end
         end
