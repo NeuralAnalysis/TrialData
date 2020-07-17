@@ -90,18 +90,23 @@ for trial = 1:length(trial_data)
                 count = count + 1;
                 
                 % copy over the meta data
-                for i = 1:length(fn_meta)
-                    td_s(count).(fn_meta{i}) = td.(fn_meta{i});
+                for iFn = 1:length(fn_meta)
+                    td_s(count).(fn_meta{iFn}) = td.(fn_meta{iFn});
                 end
                 
                 % first split up attached fields
                 if ~isempty(linked_fields)
-                    for i = 1:length(linked_fields)
-                        if length(td.(linked_fields{i})) == length(split_idx)
-                            temp = td.(linked_fields{i});
-                            temp = temp(idx);
-                            if iscell(temp), temp = temp{1}; end
-                            td_s(count).(linked_fields{i}) = temp;
+                    for iFn = 1:length(linked_fields)
+                        if isfield(td,linked_fields{iFn})
+                            if length(td.(linked_fields{iFn})) == length(split_idx)
+                                temp = td.(linked_fields{iFn});
+                                temp = temp(idx);
+                                if iscell(temp), temp = temp{1}; end
+                                td_s(count).(linked_fields{iFn}) = temp;
+                            end
+                        else
+                            warning(['Linked field ' linked_fields{iFn} ' does not exist. Populating with NaN.']);
+                            td_s(count).(linked_fields{iFn}) = NaN;
                         end
                     end
                 end
@@ -120,9 +125,9 @@ for trial = 1:length(trial_data)
                 
                 % now add the new idx
                 td_s(count).(split_idx_name) = extra_bins(1)+1;
-                for i = 1:length(fn_idx)
+                for iFn = 1:length(fn_idx)
                     % find idx that are within idx_start and idx_end
-                    temp = td.(fn_idx{i});
+                    temp = td.(fn_idx{iFn});
                     temp = temp(temp >= idx_start & temp < idx_end) - idx_start + 1;
                     
                     % if empty, set NaN
@@ -130,18 +135,18 @@ for trial = 1:length(trial_data)
                         temp = NaN;
                     end
                     
-                    td_s(count).(fn_idx{i}) = temp;
+                    td_s(count).(fn_idx{iFn}) = temp;
                 end
                 
                 td_s(count).(start_name) = extra_bins(1)+1;
                 td_s(count).(end_name)   = idx_end - extra_bins(2) - split_idx(idx) + extra_bins(1) + 1;
                 
                 % now add array spike/lfp information
-                for i = 1:length(fn_unit_guides)
-                    td_s(count).(fn_unit_guides{i}) = trial_data(1).(fn_unit_guides{i});
+                for iFn = 1:length(fn_unit_guides)
+                    td_s(count).(fn_unit_guides{iFn}) = trial_data(1).(fn_unit_guides{iFn});
                 end
-                for i = 1:length(fn_lfp_guides)
-                    td_s(count).(fn_lfp_guides{i}) = trial_data(1).(fn_lfp_guides{i});
+                for iFn = 1:length(fn_lfp_guides)
+                    td_s(count).(fn_lfp_guides{iFn}) = trial_data(1).(fn_lfp_guides{iFn});
                 end
                 % check that the index won't crash
                 if idx_start < 1
@@ -153,9 +158,14 @@ for trial = 1:length(trial_data)
                     idx_end = size(td.(fn_time{1}),1);
                 end
                 % add time signals
-                for i = 1:length(fn_time)
-                    temp = td.(fn_time{i});
-                    td_s(count).(fn_time{i}) = temp(idx_start:idx_end,:);
+                for iFn = 1:length(fn_time)
+                    temp = td.(fn_time{iFn});
+                    if isempty(temp) || ( length(temp) == 1 && isnan(temp) )
+                        warning(['Field ' fn_time{iFn} ' is empty or NaN. Populating new struct as empty or NaN.']);
+                        td_s(count).(fn_time{iFn}) = temp;
+                    else
+                    td_s(count).(fn_time{iFn}) = temp(idx_start:idx_end,:);
+                    end
                 end
             end
         end
