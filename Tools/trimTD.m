@@ -24,7 +24,7 @@
 %           end time is after trial end (default: false)
 % Note bin number for alignment can be negative to go before idx
 %
-% Written by Matt Perich. Updated March 2017.
+% Written by Matt Perich. Updated July 2020.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function trial_data = trimTD(trial_data,varargin)
@@ -35,7 +35,7 @@ zero_pad = false;
 remove_short = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
-verbose = false;
+verbose = true;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 trial_data = check_td_quality(trial_data);
 if nargin == 2 && ~isstruct(varargin{1}), error('Must provide start and end points for trimming.'); end
@@ -121,12 +121,16 @@ for trial = 1:length(trial_data)
         end
         
         if t_start < 1
-            warning('Requested start time is < 1. Defaulting to first index...');
+            if verbose
+                warning('Requested start time is < 1. Defaulting to first index...');
+            end
             t_start = 1;
         end
         
         if t_end > t(end)
-            warning('Trial %d: Requested end time went beyond trial time...',trial)
+            if verbose
+                warning('Trial %d: Requested end time went beyond trial time...',trial)
+            end
             if ~zero_pad
                 t_end = length(t);
             end
@@ -148,8 +152,11 @@ for trial = 1:length(trial_data)
         % process time fields
         for iSig = 1:length(fn_time)
             temp = trial_data(trial).(fn_time{iSig});
-            if isempty(temp)
-                error('No data!');
+            if isempty(temp) || ( length(temp) == 1 && isnan(temp) )
+                if verbose
+                    warning(['Time field ' fn_time{iSig} ' is empty or NaN. Propagating empty or NaN forward.']);
+                end
+                trial_data(trial).(fn_time{iSig}) = temp;
             elseif length(temp)<t_end
                 if ~zero_pad
                     error('Something went wrong with the zero-pad thing Raeed added...Talk to him.')
@@ -159,8 +166,9 @@ for trial = 1:length(trial_data)
                     temp_padded(1:length(temp),:) = temp;
                     temp = temp_padded;
                 end
+                
+                trial_data(trial).(fn_time{iSig}) = temp(t_new,:);
             end
-            trial_data(trial).(fn_time{iSig}) = temp(t_new,:);
         end
         
         % process idx fields
