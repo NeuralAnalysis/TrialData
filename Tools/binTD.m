@@ -70,7 +70,7 @@ for trial = 1:length(trial_data)
         fr = zeros(length(t_bin)-1,size(temp,2));
         for iBin = 1:length(t_bin)-1
             % if we think it's a  spike, do a sum
-            if spikes_are_spikes
+            if spikes_are_spikes(iArray)
                 fr(iBin,:) = sum(temp(t_bin(iBin):t_bin(iBin+1)-1,:),1);
             else % if we think it's not, do a mean
                 fr(iBin,:) = mean(temp(t_bin(iBin):t_bin(iBin+1)-1,:),1);
