@@ -65,6 +65,7 @@ polynomial    =  0; % order of cascaded nonlinearity
 do_lasso      =  false;
 lasso_lambda  =  0;
 lasso_alpha   =  0;
+lasso_cv = 'resubstitution';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Here are some parameters that you can overwrite that aren't documented
 add_pred_to_td       =  true;      % whether to add predictions to trial_data
@@ -118,7 +119,7 @@ if isempty(b) && isempty(net)  % fit a new model
             for iVar = 1:size(y,2) % loop along outputs to predict
                 if do_lasso % not quite implemented yet
                     % NOTE: Z-scores here!
-                    [b_temp,s_temp] = lassoglm(zscore(x),y(:,iVar),glm_distribution,'lambda',lasso_lambda,'alpha',lasso_alpha);
+                    [b_temp,s_temp] = lassoglm(zscore(x),y(:,iVar),glm_distribution,'lambda',lasso_lambda,'alpha',lasso_alpha,'cv',lasso_cv);
                     b(:,iVar) = [s_temp.Intercept; b_temp];
                     if strcmp(glm_distribution, 'poisson')
                         yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
@@ -254,6 +255,7 @@ switch lower(model_type)
             'do_lasso',     do_lasso, ...
             'lasso_lambda', lasso_lambda, ...
             'lasso_alpha',  lasso_alpha, ...
+            'lasso_cv', lasso_cv,...
             'P',   P);
         
     case 'linmodel' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
