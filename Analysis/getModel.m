@@ -65,7 +65,9 @@ polynomial    =  0; % order of cascaded nonlinearity
 do_lasso      =  false;
 lasso_lambda  =  0;
 lasso_alpha   =  0;
+lasso_nlambda = 100;
 lasso_cv = 'resubstitution';
+use_glmnet = false;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Here are some parameters that you can overwrite that aren't documented
 add_pred_to_td       =  true;      % whether to add predictions to trial_data
@@ -112,21 +114,30 @@ if isempty(b) && isempty(net)  % fit a new model
     if polynomial > 0, P = zeros(size(y,2),polynomial+1); end
     b = zeros(size(x,2)+1,size(y,2));
     
-    
     switch lower(model_type)
         case 'glm' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             yfit = zeros(size(y));
             for iVar = 1:size(y,2) % loop along outputs to predict
                 if do_lasso % not quite implemented yet
-                    % NOTE: Z-scores here!
-                    [b_temp,s_temp] = lassoglm(zscore(x),y(:,iVar),glm_distribution,'lambda',lasso_lambda,'alpha',lasso_alpha,'cv',lasso_cv);
-                    b(:,iVar) = [s_temp.Intercept; b_temp];
-                    if strcmp(glm_distribution, 'poisson')
-                        yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
-                    elseif strcmp(glm_distribution, 'normal')
-                        yfit(:,iVar) = [ones(size(x,1),1), zscore(x)]*b(:,iVar);
+                    if use_glmnet
+                        % NOTE: Z-scores here!
+                        cvfit(iVar) = cvglmnet(zscore(x),y(:,iVar),glm_distribution,struct(...
+                            'alpha',lasso_alpha,...
+                            'cv',lasso_cv));
+                        b(:,iVar) = cvglmnetCoef(cvfit(iVar),'lambda_min');
+                        s_temp = NaN;
+                        yfit(:,iVar) = cvglmnetPredict(cvfit(iVar),zscore(x),'lambda_min','response');
                     else
-                        error('This glm_distribution has not been implemented')
+                        % NOTE: Z-scores here!
+                        [b_temp,s_temp] = lassoglm(zscore(x),y(:,iVar),glm_distribution,'lambda',lasso_lambda,'alpha',lasso_alpha,'cv',lasso_cv);
+                        b(:,iVar) = [s_temp.Intercept; b_temp];
+                        if strcmp(glm_distribution, 'poisson')
+                            yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));
+                        elseif strcmp(glm_distribution, 'normal')
+                            yfit(:,iVar) = [ones(size(x,1),1), zscore(x)]*b(:,iVar);
+                        else
+                            error('This glm_distribution has not been implemented')
+                        end
                     end
                 else
                     [b(:,iVar),~,s_temp] = glmfit(x,y(:,iVar),glm_distribution);
@@ -194,10 +205,14 @@ if add_pred_to_td
             case 'glm' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 for iVar = 1:size(b,2)
                     if do_lasso
-                        if strcmp(glm_distribution, 'poisson')
-                            yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));   
-                        elseif strcmp(glm_distribution, 'normal')
-                            yfit(:,iVar) = [ones(size(x,1),1), zscore(x)]*b(:,iVar);
+                        if use_glmnet
+                            yfit(:,iVar) = cvglmnetPredict(cvfit(iVar),zscore(x),'lambda_min','response');
+                        else
+                            if strcmp(glm_distribution, 'poisson')
+                                yfit(:,iVar) = exp([ones(size(x,1),1), zscore(x)]*b(:,iVar));   
+                            elseif strcmp(glm_distribution, 'normal')
+                                yfit(:,iVar) = [ones(size(x,1),1), zscore(x)]*b(:,iVar);
+                            end
                         end
                     else
                         if strcmp(glm_distribution, 'poisson')
@@ -256,6 +271,8 @@ switch lower(model_type)
             'lasso_lambda', lasso_lambda, ...
             'lasso_alpha',  lasso_alpha, ...
             'lasso_cv', lasso_cv,...
+            'use_glmnet', use_glmnet,...
+            'lasso_nlambda', lasso_nlambda,...
             'P',   P);
         
     case 'linmodel' %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
