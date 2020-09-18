@@ -48,6 +48,8 @@ params = varargin{end}; if ~isstruct(params), error('Last input must be params.'
 signals        =  [];
 num_dims       =  15;
 do_plot        =  true;
+add_proj_to_td = true;
+out_sig_prefix = 'dPCA';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % These are some more complicated inputs for the dPCA code
 % 1 - condition
@@ -187,7 +189,20 @@ end
 %     'timeEvents', time_events,               ...
 %     'timeMarginalization', 3, ...
 %     'legendSubplot', num_dims);
-
+if add_proj_to_td
+    mean_fr = mean(firing_rates(:,:)');
+    for trialnum = 1:length(trial_data)
+        in_sigs = get_vars(trial_data(trialnum),signals);
+        out_sigs = (in_sigs-mean_fr)*W;
+        
+        for margnum = 1:length(marg_names)
+            out_sig_name = strcat(out_sig_prefix,'_',marg_names{margnum});
+            if any(which_marg==margnum)
+                trial_data(trialnum).(out_sig_name) = out_sigs(:,which_marg==margnum);
+            end
+        end
+    end
+end
 
 % ------------------------------------------------------------------------
 % 3. Return dPCA results
