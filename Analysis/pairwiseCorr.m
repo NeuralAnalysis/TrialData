@@ -30,6 +30,7 @@ trial_idx        =  1:length(trial_data);
 cluster_order    =  false;
 cluster_signals  =  false;
 do_norm          =  false;
+zero_diagonal = true;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
 verbose = false;
@@ -50,7 +51,11 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get pairwise correlations (or other method), and replace diagonal with zeros
-rho = method(data).*(-1*eye(size(data,2))+ones(size(data,2)));
+if zero_diagonal
+    rho = method(data).*(-1*eye(size(data,2))+ones(size(data,2)));
+else
+    rho = method(data);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % reorder to highlight structure
