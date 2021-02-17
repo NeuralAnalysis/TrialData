@@ -216,6 +216,7 @@ dPCA_info.marg_names      = marg_names;
 dPCA_info.expl_var        = expl_var;
 dPCA_info.num_comps       = num_dims;
 dPCA_info.combined_params = combined_params;
+dPCA_info.fr_tensor       = firing_rates;
 
 end
 
