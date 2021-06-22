@@ -10,6 +10,8 @@ end
 
 samprate        =  [];
 bin_size        =  [];
+filter_n = 50;
+kaiser_beta = 20;
 if ~isempty(params), assignParams(who,params); end
 
 % get integers for resampling ratio
@@ -35,8 +37,8 @@ for i = 1:size(data,2)
     dataDetrend(:,i) = double(data(:,i))-polyval(a(:,i),tx-t_poly(1));
 end
 
-% resample
-temp = resample(dataDetrend,P,Q);
+% resample with filter length 2*N*max(p,q)+1 and Kaiser window beta
+temp = resample(dataDetrend,P,Q,filter_n,kaiser_beta);
 
 % interpolate time vector
 % using upsample -> downsample to save memory (it's the same thing
