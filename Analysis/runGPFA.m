@@ -16,7 +16,7 @@
 %   .method      : gpfa, pca, etc. See Byron's code
 %   .xdim        : assumed number of latent dimensions (default to 8, find optimal using CV)
 %   .kernsd      : kernal width in s (default to 0.03, find optimal using CV)
-%   .bin_w       : bin size desired for GPFA in s (default to 0.03)
+%   .bin_w       : bin size desired for GPFA in s (default to 0.02)
 %
 % OUTPUTS:
 % Field for gpfa_out output struct:
@@ -58,8 +58,8 @@ dat = repmat(struct(),size(trial_data));
 for iTrial = 1:length(dat)
     dat(iTrial).trialId = iTrial;
     temp = [];
-    for array = 1:length(arrays)
-        temp = [temp, trial_data(iTrial).([arrays '_spikes'])];
+    for arraynum = 1:length(arrays)
+        temp = [temp, trial_data(iTrial).([arrays{arraynum} '_spikes'])];
     end
     dat(iTrial).spikes = temp';
 end
@@ -69,10 +69,10 @@ runIdx = ['-' [arrays{:}]];
 
 % Extract neural trajectories
 result = neuralTraj_td(runIdx, dat, save_dir, 'method', method, 'xDim', xDim,...
-    'kernSDList', 1000*kernSD,'binWidth',bin_w,'dataBinWidth',1000*trial_data(1).bin_size);
+    'kernSDList', 1000*kernSD,'binWidth',1000*bin_w,'dataBinWidth',1000*trial_data(1).bin_size);
 
 % Orthonormalize neural trajectories
-[estParams, seqTrain] = postprocess(result, 'kernSD', kernSD);
+[estParams, seqTrain] = postprocess(result, 'kernSD', 1000*kernSD);
 
 % Seq train will NOT be ordered by trial. This makes labeling by trial
 % with indices quite difficult, so we reorder it to be sequential. We also
@@ -95,5 +95,5 @@ gpfa_out.params.bin_width = bin_w;
 
 % add trajectory information to trial_data struct
 for iTrial = 1:length(trial_data)
-    trial_data(iTrial).([[arrays{:}] '_gpfa']) = seqTrain(iTrial).xorth';
+    trial_data(iTrial).([[arrays{:}] '_' method]) = seqTrain(iTrial).xorth';
 end

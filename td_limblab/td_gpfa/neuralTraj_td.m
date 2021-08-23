@@ -142,7 +142,7 @@ for cvf = 0:numFolds
             'xDim', xDim, 'binWidth', binWidth, extraOpts{:});
         
     elseif ismember(method, {'fa', 'ppca', 'pca'})
-        result = twoStageEngine_matt(seqTrain, seqTest, fname,...
+        result = twoStageEngine_td(seqTrain, seqTest, fname,...
             'typ', method, 'xDim', xDim, 'binWidth', binWidth, extraOpts{:});
     end
     

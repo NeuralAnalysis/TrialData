@@ -70,7 +70,7 @@ for k = 1:length(kernSDList)
         kern(k).LL        = LL;
         
     elseif isequal(typ, 'pca')
-        [pcDirs, pcScores] = princomp(Y');
+        [pcDirs, pcScores] = pca(Y');
         
         kern(k).seqTrain = segmentByTrial(kern(k).seqTrain,...
             pcScores(:,1:xDim)', 'xpost');
@@ -113,7 +113,7 @@ WSVARS = vars(~ismember(vars, {'X', 'Y', 'LL', 'estParams',...
     'seqTrain', 'seqTest', 'pcDirs', 'pcScores', 'res'}));
 result = [];
 for wscon=1:size(WSVARS,1)
-    thisvar=evalin('caller', WSVARS{wscon});
-    result.(WSVARS{wscon})=thisvar;
+%     thisvar=eval('caller', WSVARS{wscon});
+    result.(WSVARS{wscon})=eval(WSVARS{wscon});
 end
 
