@@ -79,7 +79,7 @@ for cvf = 0:numFolds
     end
     
     % Specify filename where results will be saved
-    if ~isempty(fname)
+    if ~isempty(directory)
         fname = sprintf('%s\\%s_xDim%02d', runDir, method, xDim);
         if cvf > 0
             fname = sprintf('%s_cv%02d', fname, cvf);

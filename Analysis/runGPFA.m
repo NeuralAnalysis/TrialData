@@ -43,6 +43,8 @@ method      =  'gpfa';
 xDim        =  8;
 kernSD      =  0.03;
 bin_w       =  0.02;
+numFolds    = 0;
+runid       = '';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Some undocumented extra parameters
 verbose = false;
@@ -65,11 +67,11 @@ for iTrial = 1:length(dat)
 end
 
 % Basic extraction of neural trajectories
-runIdx = ['-' [arrays{:}]];
+runIdx = ['-' [arrays{:}] runid];
 
 % Extract neural trajectories
 result = neuralTraj_td(runIdx, dat, save_dir, 'method', method, 'xDim', xDim,...
-    'kernSDList', 1000*kernSD,'binWidth',1000*bin_w,'dataBinWidth',1000*trial_data(1).bin_size);
+    'kernSDList', 1000*kernSD,'binWidth',1000*bin_w,'dataBinWidth',1000*trial_data(1).bin_size,'numFolds',numFolds);
 
 % Orthonormalize neural trajectories
 [estParams, seqTrain] = postprocess(result, 'kernSD', 1000*kernSD);

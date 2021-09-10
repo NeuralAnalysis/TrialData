@@ -87,6 +87,9 @@ if ~isempty(seqTest) % check if there are any test trials
     else
         seqTest = cosmoother_gpfa_viaOrth(seqTest, estParams, 1:xDim);
     end
+    % Compute log-likelihood of test data
+    [blah, LLtest] = exactInferenceWithLL(seqTest, estParams);
+    result.LLtest = LLtest;
 end
 
 % =============
@@ -95,7 +98,7 @@ end
 vars  = who;
 if ~isempty(fname) % save
     fprintf('Saving %s...\n', fname);
-    save(fname, vars{~ismember(vars, {'yAll'})});
+    save(fname, vars{~ismember(vars, {'yAll', 'blah'})});
 end
 
 % assign all variables to result struct. This is to avoid NEEDING to save
