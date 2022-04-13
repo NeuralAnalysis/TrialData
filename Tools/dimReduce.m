@@ -85,6 +85,7 @@ pca_economy       = false;  % if num samples < degrees of freedom, will pad with
 % FA parameters -----------------------------------------------------------
 fa_orthogonalize  = true;   % whether to orthogonalize the projections
 fa_rotate         = 'none'; % rotation  to apply
+private_var       = [];     % private variance for each channel (when fit by FA)
 % Isomap parameters  ------------------------------------------------------
 iso_n             = 12;     % neighborhood size (value for epsilon or k)
 iso_function      = 'k';    % neighborhood function ('epsilon' or 'k')
@@ -152,8 +153,20 @@ if isempty(w)
             stats = [];
         case 'fa'
             if isempty(num_dims), error('Must specify number of dimensions when using FA'); end
-            [w, eigen, ~, stats, scores] = factoran(data,num_dims,'Rotate',fa_rotate);
-            mu = mean(data,1);
+            [fa_params,~] = fastfa(data',num_dims);
+            mu = fa_params.d';
+            eigen = [];
+            stats = [];
+            private_var = fa_params.Ph';
+
+            w = fa_params.L'; % note: this is the FA loading matrix, not a projection matrix from data to factor space
+            [fa_post,~] = fastfa_estep(data',fa_params);
+            scores = fa_post.mean';
+            if fa_orthogonalize % orthogonalize
+                [scores,w] = orthogonalize(scores',w');
+                scores = scores'; % that code uses dimensions as rows
+                w = w';
+            end
         case 'isomap'
             if isempty(num_dims), error('Must specify number of dimensions when using Isomap'); end
             if length(use_trials) ~= length(trial_data)
@@ -204,7 +217,7 @@ if isempty(w)
     out_params = struct();
     out_params.signals     =  signals;
     out_params.use_trials  =  use_trials;
-    info_out = struct('w',w,'scores',scores,'eigen',eigen,'mu',mu,'signals',{signals},'out_params',out_params,'sig_name',sig_name,'stats',stats,'num_dims',num_dims);
+    info_out = struct('algorithm',algorithm,'w',w,'scores',scores,'eigen',eigen,'mu',mu,'private_var',private_var,'signals',{signals},'out_params',out_params,'sig_name',sig_name,'stats',stats,'num_dims',num_dims);
 else
     info_out = params;
     if strcmpi(algorithm,'isomap')
@@ -242,6 +255,24 @@ if add_proj_to_td
                     trial_data(trial).([[sig_name{:}] '_' lower(algorithm)]) = temp_proj;
                 end
             end
+
+        case 'fa' % have to estimate the posterior from parameters
+            for trial = 1:length(trial_data)
+                % initialize data
+                data = zeros(size(trial_data(trial).(signals{1,1}),1),sum(n_signals));
+                
+                % loop along all of the columns
+                count = 0;
+                for iSig = 1:size(signals,1)
+                    temp_data = cat(1,trial_data(trial).(signals{iSig,1}));
+                    data(:,count+(1:n_signals(iSig))) = temp_data(:,signals{iSig,2});
+                    count = count + n_signals(iSig);
+                end
+                
+                % estimate posterior from fa params
+                [Z,~] = fastfa_estep(data',struct('L',w','Ph',private_var','d',mu'));
+                trial_data(trial).([[sig_name{:}] '_' lower(algorithm)]) = Z.mean';
+            end
             
         otherwise % project into the low-D space using the weight matrix
             if center_data
@@ -271,10 +302,6 @@ if add_proj_to_td
                 
                 % project into low-D space and pick the num_dims requested
                 temp_proj = (data - repmat(mu,size(data,1),1)) * w;
-                if strcmpi(algorithm,'fa') && fa_orthogonalize % orthogonalize
-                    [temp_proj,~] = orthogonalize(temp_proj',w);
-                    temp_proj = temp_proj'; % that code uses dimensions as rows
-                end
                 if ~isempty(num_dims)
                     trial_data(trial).([[sig_name{:}] '_' lower(algorithm)]) = temp_proj(:,1:num_dims);
                 else
